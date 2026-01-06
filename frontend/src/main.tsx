@@ -1,12 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { LanguageProvider } from "./context/LanguageProvider";
+import "./utils/i18n";
 import "./main.css";
-import "./utils/i18n"; // initializes i18n (react-i18next config)
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-root.render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </React.StrictMode>
 );

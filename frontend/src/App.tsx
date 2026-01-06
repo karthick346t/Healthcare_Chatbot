@@ -1,43 +1,66 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import Header from "./components/Header";
-import LanguageSelector from "./components/LanguageSelector";
-import Chatbot from "./components/Chatbot";
 import EmergencyBanner from "./components/EmergencyBanner";
-import { LanguageProvider } from "./context/LanguageProvider";
+import LanguageSelector from "./components/Home"; // This imports your Home component
+import Chatbot from "./components/Chatbot";
 import { LanguageContext } from "./context/LanguageContext";
-import "./main.css";
 
 function InnerApp() {
-  const { selectedLanguage } = useContext(LanguageContext);
+  const { isChatOpen, setChatOpen } = useContext(LanguageContext);
 
   return (
-    <div className="min-h-screen font-sans flex flex-col bg-[#050509] text-slate-100">
-      {/* Top app header (you can keep / tweak your existing Header component) */}
+    <div className="min-h-screen font-sans flex flex-col text-neutral-dark relative bg-gradient-to-br from-primary-light to-secondary-light">
       <Header />
 
-      {/* Optional emergency ticker – looks better if made slim */}
-      <div className="border-b border-red-900/40 bg-red-950/40">
+      <div className="border-b border-critical/20 bg-critical/10">
         <EmergencyBanner />
       </div>
 
-      {/* Main area – ChatGPT-style centered column */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-5xl mx-auto">
-          {!selectedLanguage ? (
-            <LanguageSelector />
-          ) : (
-            <Chatbot />
-          )}
+          {/* Main Content (Home Screen) */}
+          <LanguageSelector onStartChat={() => setChatOpen(true)} />
         </div>
       </main>
+
+      {/* --- Floating Action Button (Visible only when chat is CLOSED) --- */}
+      {!isChatOpen && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 btn-primary rounded-full p-4 shadow-xl z-50 hover-lift animate-fadeIn"
+          aria-label="Open Chat"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+      )}
+
+      {/* --- Chatbot Modal Wrapper (Visible only when chat is OPEN) --- */}
+      {isChatOpen && (
+        <div className="fixed bottom-6 right-6 z-[100] w-full max-w-md animate-slideInRight">
+          <div className="relative">
+            {/* External Close Button */}
+            <button
+              onClick={() => setChatOpen(false)}
+              className="absolute -top-3 -right-3 bg-white text-neutral-medium hover:text-critical border border-neutral-200 hover:border-critical/30 rounded-full p-1.5 shadow-lg z-50 transition-colors"
+              aria-label="Close Chat"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+
+            {/* The Chatbot Component */}
+            <div className="rounded-2xl shadow-2xl overflow-hidden border border-primary/20 bg-white">
+              <Chatbot />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function App() {
-  return (
-    <LanguageProvider>
-      <InnerApp />
-    </LanguageProvider>
-  );
-}
+export default InnerApp;

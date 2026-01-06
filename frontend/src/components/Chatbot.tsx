@@ -11,9 +11,8 @@ import { GiCycle } from "react-icons/gi";
 import { useTranslation } from "react-i18next";
 
 import BotLogo from "../assets/logo.png";
-import languages from "../locales/languages.json"; // kept for internal usage
-import i18n from "../utils/i18n";
 
+/* ---------- SESSION HELPER ---------- */
 function getSessionId() {
   let sid = window.sessionStorage.getItem("healthbot-session-id");
   if (!sid) {
@@ -36,9 +35,12 @@ type UIMessage = {
 
 export default function Chatbot() {
   const userSessionId = useRef(getSessionId()).current;
-  const { selectedLanguage, setLanguage } = useContext(LanguageContext);
+  const { selectedLanguage } = useContext(LanguageContext);
   const { t } = useTranslation();
 
+  /* ---------- CHAT STATE ---------- */
+  // Note: We removed 'open' state because App.tsx handles visibility now
+  
   const [messages, setMessages] = useState<UIMessage[]>([
     { sender: "bot", text: t("greeting") },
   ]);
@@ -48,181 +50,142 @@ export default function Chatbot() {
   ]);
 
   const [isTyping, setIsTyping] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto scroll
+  /* ---------- AUTO SCROLL ---------- */
+  // Runs whenever messages change to keep view at the bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Update greeting when language changes
+  /* ---------- UPDATE GREETING ON LANGUAGE CHANGE ---------- */
   useEffect(() => {
-    const newGreeting = t("greeting");
-    setMessages([{ sender: "bot", text: newGreeting }]);
-    setConversationHistory([{ role: "assistant", content: newGreeting }]);
-  }, [selectedLanguage]);
-
-  // Keep the close-menu logic (though UI is hidden)
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest(".lang-menu")) {
-        setShowLangMenu(false);
-      }
+    // Only reset if it's the very first message to avoid wiping active chats
+    if (messages.length === 1 && messages[0].sender === 'bot') {
+       const greeting = t("greeting");
+       setMessages([{ sender: "bot", text: greeting }]);
+       setConversationHistory([{ role: "assistant", content: greeting }]);
     }
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  }, [selectedLanguage, t]);
 
-  // SEND MESSAGE
+  /* ---------- SEND MESSAGE ---------- */
   async function handleUserMessage(text: string) {
-    setMessages((msgs) => [...msgs, { sender: "user", text }]);
+    setMessages((m) => [...m, { sender: "user", text }]);
 
-    const newHistory: Message[] = [
-      ...conversationHistory,
-      { role: "user", content: text },
-    ];
-
+    const history: Message[] = [...conversationHistory, { role: "user", content: text }];
     setIsTyping(true);
 
     try {
-      const botReply = await sendChatMessage({
+      const reply = await sendChatMessage({
         message: text,
-        conversationHistory: newHistory,
+        conversationHistory: history,
         locale: selectedLanguage || "en",
         sessionId: userSessionId,
       });
 
-      setMessages((msgs) => [...msgs, { sender: "bot", text: botReply }]);
-      setConversationHistory([
-        ...newHistory,
-        { role: "assistant", content: botReply },
-      ]);
+      setMessages((m) => [...m, { sender: "bot", text: reply }]);
+      setConversationHistory([...history, { role: "assistant", content: reply }]);
     } catch {
       const err = t("error_something_went_wrong");
-
-      setMessages((msgs) => [...msgs, { sender: "bot", text: err }]);
-      setConversationHistory([
-        ...newHistory,
-        { role: "assistant", content: err },
-      ]);
+      setMessages((m) => [...m, { sender: "bot", text: err }]);
     } finally {
       setIsTyping(false);
     }
   }
 
-  // FILE UPLOAD
+  /* ---------- FILE UPLOAD ---------- */
   async function handleFileUpload(file: File) {
-    const fileType = file.type.startsWith("image/") ? "🖼️" : "📄";
-    const uploadMsg = `${fileType} ${t("file_uploaded")}: ${file.name}`;
+    const label = `${file.type.startsWith("image/") ? "🖼️" : "📄"} ${file.name}`;
+    setMessages((m) => [...m, { sender: "user", text: label }]);
 
-    setMessages((msgs) => [...msgs, { sender: "user", text: uploadMsg }]);
-
-    const newHistory: Message[] = [
-      ...conversationHistory,
-      { role: "user", content: uploadMsg },
-    ];
-
+    const history: Message[] = [...conversationHistory, { role: "user", content: label }];
     setIsTyping(true);
 
     try {
-      const response = await uploadFile({
+      const res = await uploadFile({
         file,
-        conversationHistory: newHistory,
+        conversationHistory: history,
         locale: selectedLanguage || undefined,
         sessionId: userSessionId,
       });
 
-      setMessages((msgs) => [
-        ...msgs,
-        {
-          sender: "bot",
-          text: response.message,
-          isHealthRelated: response.isHealthRelated,
-        },
+      setMessages((m) => [
+        ...m,
+        { sender: "bot", text: res.message, isHealthRelated: res.isHealthRelated },
       ]);
-
-      setConversationHistory([
-        ...newHistory,
-        { role: "assistant", content: response.message },
-      ]);
-    } catch {
-      const err = t("error_file_upload");
-      setMessages((msgs) => [...msgs, { sender: "bot", text: err }]);
     } finally {
       setIsTyping(false);
     }
   }
 
-  // Restart
+  /* ---------- RESTART ---------- */
   function handleStartOver() {
-    const startMsg = t("greeting");
-    setMessages([{ sender: "bot", text: startMsg }]);
-    setConversationHistory([{ role: "assistant", content: startMsg }]);
+    const greeting = t("greeting");
+    setMessages([{ sender: "bot", text: greeting }]);
+    setConversationHistory([{ role: "assistant", content: greeting }]);
   }
 
+  /* ---------- UI RENDER ---------- */
+  // The outer container fills the wrapper provided by App.tsx
   return (
-    <div className="w-full h-full flex justify-center">
-      <div className="flex flex-col w-full max-w-5xl h-[81vh] bg-[#0a0a0c] rounded-2xl border border-gray-800 shadow-xl overflow-visible">
-
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 bg-[#0c0c10]">
-
-          {/* LOGO */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-emerald-400/30 blur-xl animate-pulse"></div>
-              <div className="relative h-11 w-11 rounded-full overflow-hidden bg-gray-900 border border-emerald-400 shadow-lg shadow-emerald-500/40">
-                <img src={BotLogo} className="h-full w-full object-contain p-2" />
-              </div>
+    <div className="flex flex-col w-full h-[600px] bg-white text-neutral-dark">
+      
+      {/* HEADER: Teal Background */}
+      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark border-b border-primary-darker">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/10 p-1 rounded-lg">
+             <img src={BotLogo} className="h-8 w-8 object-contain" alt="Bot Logo" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-white">
+              {t("HealthBot Assistant")}
             </div>
-
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-white">{t("HealthBot Assistant")}</span>
-              <span className="text-xs text-gray-400">{t("Always here to help")}</span>
+            <div className="text-xs text-primary-lighter opacity-90">
+              {t("Always here to help")}
             </div>
           </div>
-
-          {/* ONLY Restart Button (Language button removed) */}
-          <button
-            onClick={handleStartOver}
-            className="w-9 h-9 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white"
-          >
-            <GiCycle className="w-5 h-5" />
-          </button>
-
         </div>
 
-        {/* CHAT AREA */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-[#0a0a0c]">
-          {messages.map((msg, idx) => (
-            <ChatBubble key={idx} sender={msg.sender} text={msg.text} isHealthRelated={msg.isHealthRelated} />
-          ))}
+        <button
+          onClick={handleStartOver}
+          className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+          title={t("Start Over")}
+        >
+          <GiCycle />
+        </button>
+      </div>
 
-          {isTyping && <TyperIndicator />}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* INPUT AREA */}
-        <div className="border-t border-gray-800 bg-[#0a0a0c] px-5 py-4 space-y-3">
-
-          <QuickReplies
-            options={[t("Yes"), t("No"), t("Not sure")]}
-            onSelect={handleUserMessage}
+      {/* MESSAGES AREA: Light Teal/Grey Background */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-secondary-light">
+        {messages.map((m, i) => (
+          <ChatBubble 
+            key={i} 
+            sender={m.sender} 
+            text={m.text} 
+            isHealthRelated={m.isHealthRelated} 
           />
+        ))}
+        {isTyping && <TyperIndicator />}
+        <div ref={messagesEndRef} />
+      </div>
 
-          <MessageInput
-            onSend={handleUserMessage}
-            onFileUpload={handleFileUpload}
-          />
-
-          <p className="text-[11px] text-gray-500 text-center">
-            HealthBot may make mistakes. For serious concerns, consult a doctor.
-          </p>
-        </div>
-
+      {/* INPUT AREA: White Background */}
+      <div className="border-t border-gray-100 bg-white px-5 py-4 space-y-3">
+        {messages.length > 0 && messages[messages.length - 1].sender === 'bot' && (
+             <QuickReplies
+                options={[t("Yes"), t("No"), t("Not sure")]}
+                onSelect={handleUserMessage}
+              />
+        )}
+        
+        <MessageInput
+          onSend={handleUserMessage}
+          onFileUpload={handleFileUpload}
+        />
+        
+        <p className="text-[10px] text-neutral-medium text-center">
+          HealthBot may make mistakes. Consult a doctor for serious issues.
+        </p>
       </div>
     </div>
   );

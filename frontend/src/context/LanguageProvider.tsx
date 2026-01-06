@@ -1,13 +1,19 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
+import React, { useState } from "react";
 import { LanguageContext } from "./LanguageContext";
 
-export { LanguageContext };
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [isChatOpen, setChatOpen] = useState(false);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [selectedLanguage, setLanguage] = useState<string | null>(null);
   return (
-    <LanguageContext.Provider value={{ selectedLanguage, setLanguage }}>
+    <LanguageContext.Provider
+      value={{
+        selectedLanguage,
+        setLanguage: setSelectedLanguage,
+        isChatOpen,
+        setChatOpen,
+      }}
+    >
       {children}
     </LanguageContext.Provider>
   );
