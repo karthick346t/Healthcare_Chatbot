@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { handleMessage, handleTriage } from '../services/chatbotService';
-import { translateViaM2M100 } from '../services/translationService'; // <-- MAKE SURE TO IMPLEMENT THIS
 import { Request, Response } from 'express';
+
+// Existing Services
+import { handleMessage, handleTriage } from '../services/chatbotService';
+import { translateViaM2M100 } from '../services/translationService';
+
+// --- NEW IMPORTS FOR DB & AWS ---
+import ChatSession from '../models/ChatSession';
+import { uploadSessionToS3 } from '../services/awsService';
 
 const router = Router();
 
@@ -14,15 +20,15 @@ router.post(
     body("locale").optional().isString(),
     body("sessionId").exists().isString().isLength({ min: 8 }),
   ],
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response): Promise<void> => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(422).json({ error: "Invalid input", details: errors.array() });
+      res.status(422).json({ error: "Invalid input", details: errors.array() });
+      return;
     }
 
     let { message, conversationHistory = [], locale = 'en', sessionId } = req.body;
     console.log(`Chat request from session ${sessionId}: "${message}"`);
-    console.log(`Conversation history length: ${conversationHistory.length}`);
 
     let translatedInput = message;
     let response = null;
@@ -46,7 +52,33 @@ router.post(
         output = await translateViaM2M100(response, 'en', locale);
       }
 
+      // --- STEP 4: STORE IN MONGODB ---
+      // We store the original 'message' (what user typed) and final 'output' (what user sees)
+      const updatedSession = await ChatSession.findOneAndUpdate(
+        { sessionId },
+        {
+          $setOnInsert: { locale: locale }, // Only set locale if creating new session
+          $push: {
+            messages: [
+              { role: 'user', content: message, timestamp: new Date() },
+              { role: 'assistant', content: output, timestamp: new Date() }
+            ]
+          },
+          $set: { lastUpdated: new Date() }
+        },
+        { new: true, upsert: true } // Create if doesn't exist, return updated doc
+      );
+
+      // --- STEP 5: BACKUP TO AWS S3 ---
+      // We do not await this, so we don't delay the user's response
+      if (updatedSession) {
+        uploadSessionToS3(sessionId, updatedSession)
+          .catch(err => console.error(`Background S3 upload failed for ${sessionId}:`, err));
+      }
+
+      // Step 6: Send Response
       res.json({ message: output });
+
     } catch (error: any) {
       console.error('Chat route error:', error);
       res.status(500).json({

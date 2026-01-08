@@ -1,16 +1,35 @@
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 import app from "./app";
 import config from "./config";
 import { vectorStore, loadPrecomputedEmbeddings } from "./services/ragService";
 
+// Load environment variables immediately
+dotenv.config();
+
 const PORT = process.env.PORT || 4000;
+// Use 127.0.0.1 to avoid Node.js/IPv6 issues on Windows
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/healthbot";
 
 async function initializeServer() {
+  console.log("⏳ Starting server initialization...");
+
+  // --- STEP 1: Connect to MongoDB ---
   try {
-    // Initialize RAG system if enabled
+    await mongoose.connect(MONGO_URI);
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
+    console.error("❌ MongoDB Connection Error:", err);
+    // Critical failure: Stop the server if DB is down
+    throw err; 
+  }
+
+  // --- STEP 2: Initialize RAG System ---
+  try {
     if (config.RAG_ENABLED) {
       console.log("🚀 Initializing RAG system...");
 
-      // 🔹 Load precomputed MedlinePlus embeddings from Python pipeline
+      // Load precomputed MedlinePlus embeddings from Python pipeline
       await loadPrecomputedEmbeddings();
 
       const docCount = vectorStore.getDocuments().length;
@@ -22,7 +41,7 @@ async function initializeServer() {
         );
       } else {
         console.log(
-          `✅ RAG system ready with ${docCount} document chunks indexed (from Python pipeline)`
+          `✅ RAG system ready with ${docCount} document chunks indexed`
         );
       }
     } else {
@@ -36,7 +55,7 @@ async function initializeServer() {
   }
 }
 
-// Initialize server
+// --- STEP 3: Start Express Server ---
 initializeServer()
   .then(() => {
     app.listen(PORT, () => {

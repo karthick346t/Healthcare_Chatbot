@@ -12,16 +12,6 @@ import { useTranslation } from "react-i18next";
 
 import BotLogo from "../assets/logo.png";
 
-/* ---------- SESSION HELPER ---------- */
-function getSessionId() {
-  let sid = window.sessionStorage.getItem("healthbot-session-id");
-  if (!sid) {
-    sid = crypto.randomUUID();
-    window.sessionStorage.setItem("healthbot-session-id", sid);
-  }
-  return sid;
-}
-
 type Message = {
   role: "user" | "assistant";
   content: string;
@@ -34,13 +24,16 @@ type UIMessage = {
 };
 
 export default function Chatbot() {
-  const userSessionId = useRef(getSessionId()).current;
+  // 1. STATE: Manage Session ID dynamically so we can reset it
+  const [sessionId, setSessionId] = useState(() => {
+    // On first load, generate a fresh session ID
+    return crypto.randomUUID();
+  });
+
   const { selectedLanguage } = useContext(LanguageContext);
   const { t } = useTranslation();
 
   /* ---------- CHAT STATE ---------- */
-  // Note: We removed 'open' state because App.tsx handles visibility now
-  
   const [messages, setMessages] = useState<UIMessage[]>([
     { sender: "bot", text: t("greeting") },
   ]);
@@ -53,14 +46,13 @@ export default function Chatbot() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   /* ---------- AUTO SCROLL ---------- */
-  // Runs whenever messages change to keep view at the bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
   /* ---------- UPDATE GREETING ON LANGUAGE CHANGE ---------- */
   useEffect(() => {
-    // Only reset if it's the very first message to avoid wiping active chats
+    // Only reset if it's the very first message
     if (messages.length === 1 && messages[0].sender === 'bot') {
        const greeting = t("greeting");
        setMessages([{ sender: "bot", text: greeting }]);
@@ -80,7 +72,7 @@ export default function Chatbot() {
         message: text,
         conversationHistory: history,
         locale: selectedLanguage || "en",
-        sessionId: userSessionId,
+        sessionId: sessionId, // <--- Uses dynamic State ID
       });
 
       setMessages((m) => [...m, { sender: "bot", text: reply }]);
@@ -106,7 +98,7 @@ export default function Chatbot() {
         file,
         conversationHistory: history,
         locale: selectedLanguage || undefined,
-        sessionId: userSessionId,
+        sessionId: sessionId, // <--- Uses dynamic State ID
       });
 
       setMessages((m) => [
@@ -118,15 +110,20 @@ export default function Chatbot() {
     }
   }
 
-  /* ---------- RESTART ---------- */
+  /* ---------- RESTART (Create New Session) ---------- */
   function handleStartOver() {
+    // 1. Generate a NEW Session ID
+    const newId = crypto.randomUUID();
+    setSessionId(newId);
+    console.log("🔄 Starting new session:", newId);
+
+    // 2. Reset Chat History
     const greeting = t("greeting");
     setMessages([{ sender: "bot", text: greeting }]);
     setConversationHistory([{ role: "assistant", content: greeting }]);
   }
 
   /* ---------- UI RENDER ---------- */
-  // The outer container fills the wrapper provided by App.tsx
   return (
     <div className="flex flex-col w-full h-[600px] bg-white text-neutral-dark">
       
@@ -155,7 +152,7 @@ export default function Chatbot() {
         </button>
       </div>
 
-      {/* MESSAGES AREA: Light Teal/Grey Background */}
+      {/* MESSAGES AREA */}
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-secondary-light">
         {messages.map((m, i) => (
           <ChatBubble 
@@ -169,7 +166,7 @@ export default function Chatbot() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* INPUT AREA: White Background */}
+      {/* INPUT AREA */}
       <div className="border-t border-gray-100 bg-white px-5 py-4 space-y-3">
         {messages.length > 0 && messages[messages.length - 1].sender === 'bot' && (
              <QuickReplies
