@@ -1,12 +1,19 @@
 // 1. Define the base URL dynamically
-// If you are using Vite (which you are), use import.meta.env.
-// If using Create React App, use process.env.REACT_APP_API_URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-type Message = {
+export type Message = {
   role: 'user' | 'assistant';
   content: string;
 };
+
+// New Type for the History Sidebar
+export type ChatSessionSummary = {
+  sessionId: string;
+  title: string;
+  date: string;
+};
+
+/* ---------- CHAT & UPLOAD FUNCTIONS ---------- */
 
 export async function sendChatMessage({
   message,
@@ -33,7 +40,6 @@ export async function sendChatMessage({
       }),
     });
 
-    // 2. Read the actual error from the backend if available
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({})); 
       throw new Error(errorData.error || `Error: ${response.status} ${response.statusText}`);
@@ -43,7 +49,7 @@ export async function sendChatMessage({
     return data.message;
   } catch (error) {
     console.error("Chat API Error:", error);
-    throw error; // Re-throw so the UI can show the error state
+    throw error;
   }
 }
 
@@ -60,7 +66,6 @@ export async function uploadFile({
 }): Promise<{ message: string; isHealthRelated: boolean }> {
   const formData = new FormData();
   formData.append("file", file);
-  // Important: Backend must JSON.parse() this field
   formData.append("conversationHistory", JSON.stringify(conversationHistory)); 
   formData.append("locale", locale);
   formData.append("sessionId", sessionId);
@@ -69,7 +74,6 @@ export async function uploadFile({
     const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
       body: formData,
-      // Note: Do NOT set Content-Type header for FormData; fetch sets it automatically with the boundary
     });
 
     if (!response.ok) {
@@ -84,6 +88,42 @@ export async function uploadFile({
     };
   } catch (error) {
     console.error("Upload API Error:", error);
+    throw error;
+  }
+}
+
+/* ---------- HISTORY FUNCTIONS (NEW) ---------- */
+
+// 1. Fetch the list of past conversations (for the sidebar)
+export async function getChatSessions(): Promise<ChatSessionSummary[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/chat/sessions`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to load history: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Get Sessions Error:", error);
+    throw error;
+  }
+}
+
+// 2. Fetch the specific messages for one session (when clicking a history item)
+export async function getSessionHistory(sessionId: string): Promise<Message[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to load session: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Get History Error:", error);
     throw error;
   }
 }
