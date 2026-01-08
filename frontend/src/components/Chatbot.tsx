@@ -125,7 +125,7 @@ export default function Chatbot() {
 
   /* ---------- UI RENDER ---------- */
   return (
-    <div className="flex flex-col w-full h-[600px] bg-white text-neutral-dark">
+    <div className="flex flex-col w-full h-full bg-white text-neutral-dark">
       
       {/* HEADER: Teal Background */}
       <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark border-b border-primary-darker">
