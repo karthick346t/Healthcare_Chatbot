@@ -161,7 +161,11 @@ export default function Chatbot() {
   }
 
   return (
+<<<<<<< HEAD
     <div className="flex flex-col w-full h-[600px] bg-white text-neutral-dark relative overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
+=======
+    <div className="flex flex-col w-full h-full bg-white text-neutral-dark">
+>>>>>>> 88a95050df9daf517fa7800523017683f0046e0b
       
       {/* HEADER */}
       <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark border-b border-primary-darker z-20 shrink-0">

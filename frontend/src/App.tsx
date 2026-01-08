@@ -38,12 +38,12 @@ function InnerApp() {
 
       {/* --- Chatbot Modal Wrapper (Visible only when chat is OPEN) --- */}
       {isChatOpen && (
-        <div className="fixed bottom-6 right-6 z-[100] w-full max-w-md animate-slideInRight">
-          <div className="relative">
+        <div className="fixed inset-0 z-[100] w-full h-full bg-black/40 flex items-center justify-center animate-fadeIn">
+          <div className="relative w-full h-full">
             {/* External Close Button */}
             <button
               onClick={() => setChatOpen(false)}
-              className="absolute -top-3 -right-3 bg-white text-neutral-medium hover:text-critical border border-neutral-200 hover:border-critical/30 rounded-full p-1.5 shadow-lg z-50 transition-colors"
+              className="absolute top-6 right-6 bg-white text-neutral-medium hover:text-critical border border-neutral-200 hover:border-critical/30 rounded-full p-1.5 shadow-lg z-50 transition-colors"
               aria-label="Close Chat"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -53,7 +53,7 @@ function InnerApp() {
             </button>
 
             {/* The Chatbot Component */}
-            <div className="rounded-2xl shadow-2xl overflow-hidden border border-primary/20 bg-white">
+            <div className="w-full h-full rounded-none overflow-hidden border border-primary/20 bg-white">
               <Chatbot />
             </div>
           </div>
