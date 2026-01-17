@@ -172,7 +172,7 @@ export default function Chatbot() {
              <img src={BotLogo} className="h-8 w-8 object-contain" alt="Bot Logo" />
           </div>
           <div>
-            <div className="text-sm font-bold text-white">{t("HealthBot Assistant")}</div>
+            <div className="text-sm font-bold text-primary-lighter opacity-90">{t("HealthBot Assistant")}</div>
             <div className="text-xs text-primary-lighter opacity-90">{t("Always here to help")}</div>
           </div>
         </div>
