@@ -4,7 +4,9 @@ import { cleanModelText } from '../utils/cleanText';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
-const VISION_MODEL = 'nvidia/nemotron-nano-12b-v2-vl:free';
+// ✅ SEPARATE MODELS
+const VISION_MODEL = 'nvidia/nemotron-nano-12b-v2-vl:free'; 
+const TEXT_MODEL = 'google/gemma-3-27b-it:free';
 
 export async function analyzeImagesWithNvidia(
   base64Images: string[],
@@ -17,24 +19,9 @@ export async function analyzeImagesWithNvidia(
     const messages: any[] = [
       {
         role: 'system',
-        content: `You are a helpful medical assistant with advanced vision and OCR capabilities. 
-
-**IMPORTANT**: 
-- If the document/image is NOT about health, medicine, wellness, medical research, or public health, clearly state this at the beginning.
-- Start with: "⚠️ This document/image does not appear to be health-related."
-- Then provide a brief description of what it actually shows.
-- Do NOT try to find medical connections where none exist.
-
-When analyzing health-related documents and images:
-- Carefully read and extract ALL text from the image(s)
-- Understand tables, charts, and formatted data
-- Recognize medical terminology and values
-- Provide clear, compassionate analysis
-- Highlight key medical findings, test results, dates, and recommendations
-
-You are NOT a replacement for professional medical advice.
-
-Remember previous conversation context and refer to it when relevant.`
+        content: `You are a helpful medical assistant with advanced vision capabilities. 
+If the image is NOT health-related, clearly state: "⚠️ This image does not appear to be health-related."
+If it IS health-related, provide a clear, empathetic analysis of findings.`
       }
     ];
 
@@ -49,39 +36,11 @@ Remember previous conversation context and refer to it when relevant.`
       });
     }
 
-    let promptText = '';
-    
-    if (isDocument) {
-      promptText = `I've uploaded a document called "${fileName}" ${base64Images.length > 1 ? `with ${base64Images.length} pages` : ''}.
+    let promptText = isDocument 
+      ? `Analyze this health document image ("${fileName}"). Extract text and provide a brief summary.` 
+      : `Analyze this medical image ("${fileName}"). Describe findings.`;
 
-**First, determine if this document is about health, medicine, wellness, or medical topics.**
-
-If YES (health-related):
-1. Read and extract ALL text using your OCR capabilities
-2. Provide a clear summary
-3. Highlight key medical findings: test results, diagnoses, prescriptions, recommendations
-4. Point out any concerning or abnormal values
-5. Connect to any health concerns I mentioned earlier
-
-If NO (not health-related):
-1. Start with: "⚠️ This document does not appear to be health-related."
-2. Briefly describe what the document is actually about
-3. Suggest uploading a health-related document instead`;
-    } else {
-      promptText = `I've uploaded a medical image or scan called "${fileName}".
-
-**First, determine if this is a health/medical image.**
-
-If YES: Analyze carefully and provide helpful medical observations.
-If NO: State that it's not health-related and describe what you see.`;
-    }
-
-    const content: any[] = [
-      {
-        type: 'text',
-        text: promptText
-      }
-    ];
+    const content: any[] = [{ type: 'text', text: promptText }];
 
     base64Images.forEach((base64Image) => {
       content.push({
@@ -92,20 +51,17 @@ If NO: State that it's not health-related and describe what you see.`;
       });
     });
 
-    messages.push({
-      role: 'user',
-      content: content
-    });
+    messages.push({ role: 'user', content });
 
-    console.log(`Sending ${fileName} (${base64Images.length} image(s)) to NVIDIA Nemotron for OCR + analysis`);
+    console.log(`[Vision] Sending ${fileName} (${base64Images.length} image(s)) to ${VISION_MODEL}`);
 
     const response = await axios.post(
       `${OPENROUTER_BASE_URL}/chat/completions`,
       {
         model: VISION_MODEL,
         messages: messages,
-        max_tokens: 3000,
-        temperature: 0.7
+        max_tokens: 1000,
+        temperature: 0.2
       },
       {
         headers: {
@@ -122,36 +78,18 @@ If NO: State that it's not health-related and describe what you see.`;
 
     if (!text) {
       return {
-        analysis: `I received your file "${fileName}", but couldn't generate a detailed analysis. Could you provide more context about what you'd like to know?`,
+        analysis: `I received your image "${fileName}", but couldn't generate an analysis. Please ensure it is clear.`,
         isHealthRelated: false
       };
     }
 
     const isHealthRelated = !text.includes('⚠️') && !text.toLowerCase().includes('not appear to be health-related');
 
-    return {
-      analysis: text,
-      isHealthRelated: isHealthRelated
-    };
+    return { analysis: text, isHealthRelated };
 
   } catch (error: any) {
-    console.error('NVIDIA Vision analysis error:', error.response?.data || error.message);
-    
-    if (error.response?.status === 429 || error.response?.data?.error?.code === 429) {
-      return {
-        analysis: `I'm experiencing high traffic right now. Please try again in a few moments.`,
-        isHealthRelated: false
-      };
-    }
-    
-    if (error.response?.status === 400) {
-      return {
-        analysis: `I had trouble processing "${fileName}". The file might be too large or in an unsupported format. Try uploading individual pages or reducing the file size.`,
-        isHealthRelated: false
-      };
-    }
-    
-    throw new Error('Failed to analyze file with NVIDIA Vision');
+    console.error('Vision analysis error:', error.message);
+    return { analysis: "I encountered an error analyzing this image.", isHealthRelated: false };
   }
 }
 
@@ -162,22 +100,23 @@ export async function analyzeDocumentTextWithNvidia(
   conversationHistory: any[] = []
 ): Promise<{ analysis: string; isHealthRelated: boolean }> {
   try {
+    // ✅ NEW "SHORT & SIMPLE" SYSTEM PROMPT
     const messages: any[] = [
       {
         role: 'system',
-        content: `You are a helpful medical assistant analyzing health documents.
+        content: `You are a helpful Medical Assistant AI.
+Your goal is to provide a **brief, high-level overview** of uploaded medical documents.
 
-**IMPORTANT**: 
-- If the document is NOT about health, medicine, wellness, medical research, or public health, clearly state this at the beginning of your response.
-- Start with: "⚠️ This document does not appear to be health-related."
-- Then provide a brief summary of what it actually contains.
-- Do NOT try to find medical connections where none exist.
+**Instructions:**
+1. **Determine Relevance:** If the text is NOT health-related, say: "⚠️ This document does not appear to be health-related."
+2. **Be Concise:** Do NOT generate long tables or full reports unless explicitly asked.
+3. **Structure:**
+   * **Document Type:** (e.g., Lab Report, Prescription)
+   * **Summary:** (1-2 sentences on the main diagnosis or reason for visit)
+   * **Key Alerts:** (Only mention Critical/High/Low values that need immediate attention. If none, skip this.)
+   * **Closing:** Ask the user if they want to see the full lab results, treatment plan, or specific details.
 
-If the document IS health-related:
-- Provide clear summaries and highlight key medical information
-- Point out test results, diagnoses, or recommendations
-- Always remind users to consult healthcare professionals for medical decisions
-- Remember previous conversation context`
+**Tone:** Professional, calm, and concise.`
       }
     ];
 
@@ -192,41 +131,28 @@ If the document IS health-related:
       });
     }
 
-    const truncatedText = documentText.slice(0, 20000);
     const wordCount = documentText.split(/\s+/).length;
+    const truncatedText = documentText.slice(0, 15000);
 
     messages.push({
       role: 'user',
-      content: `I've uploaded a document called "${fileName}" with approximately ${wordCount} words.
+      content: `I've uploaded a document called "${fileName}" (${wordCount} words).
+Please give me a short summary.
 
-**First, determine if this document is about health, medicine, wellness, or medical topics.**
-
-If YES (health-related):
-1. Provide a brief summary
-2. Highlight key medical findings, test results, or important information
-3. Point out any concerning values, dates, or recommendations
-4. Connect to any health concerns I mentioned earlier
-
-If NO (not health-related):
-1. Start with: "⚠️ This document does not appear to be health-related."
-2. Briefly describe what the document is actually about
-3. Suggest uploading a health-related document instead
-
-Here is the document content:
----
+"""
 ${truncatedText}
----`
+"""`
     });
 
-    console.log(`Sending document text (${wordCount} words) from ${fileName} to NVIDIA for analysis`);
+    console.log(`[Text] Sending ${wordCount} words to ${TEXT_MODEL}`);
 
     const response = await axios.post(
       `${OPENROUTER_BASE_URL}/chat/completions`,
       {
-        model: VISION_MODEL,
+        model: TEXT_MODEL,
         messages: messages,
-        max_tokens: 2500,
-        temperature: 0.7
+        max_tokens: 1000, // Reduced token limit since we want short answers
+        temperature: 0.3
       },
       {
         headers: {
@@ -243,28 +169,28 @@ ${truncatedText}
 
     if (!text) {
       return {
-        analysis: `I reviewed your document "${fileName}" (${wordCount} words), but couldn't generate a detailed analysis. What specific information are you looking for?`,
+        analysis: `I reviewed "${fileName}", but the analysis came back empty.`,
         isHealthRelated: false
       };
     }
 
     const isHealthRelated = !text.includes('⚠️') && !text.toLowerCase().includes('not appear to be health-related');
 
-    return {
-      analysis: text,
-      isHealthRelated: isHealthRelated
-    };
+    return { analysis: text, isHealthRelated };
 
   } catch (error: any) {
     console.error('Document text analysis error:', error.response?.data || error.message);
     
-    if (error.response?.status === 429 || error.response?.data?.error?.code === 429) {
+    if (error.response?.status === 429) {
       return {
-        analysis: `I'm experiencing high traffic right now. Please try again in a few moments.`,
+        analysis: `I'm experiencing high traffic. Please try again in a moment.`,
         isHealthRelated: false
       };
     }
     
-    throw new Error('Failed to analyze document');
+    return {
+      analysis: `I'm having trouble analyzing "${fileName}" right now.`,
+      isHealthRelated: false
+    };
   }
 }

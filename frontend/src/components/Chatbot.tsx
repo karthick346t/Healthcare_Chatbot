@@ -35,16 +35,31 @@ export default function Chatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  /* ---------- AUTO-LOAD LAST CHAT (RESUME) ---------- */
+  useEffect(() => {
+    async function loadMostRecentChat() {
+      try {
+        const sessions = await getChatSessions();
+        if (sessions.length > 0) {
+          const lastSessionId = sessions[0].sessionId;
+          if (lastSessionId !== sessionId) {
+            console.log("🔄 Auto-resuming last session:", lastSessionId);
+            await switchChat(lastSessionId);
+          }
+        }
+      } catch (err) {
+        console.error("Could not auto-load last chat", err);
+      }
+    }
+    loadMostRecentChat(); 
+  }, []);
+
   /* ---------- ACTION: NEW CHAT ---------- */
   function handleNewChat() {
     const newId = crypto.randomUUID();
     setSessionId(newId);
-    
-    // Reset visual messages
     const greeting = t("greeting");
     setMessages([{ sender: "bot", text: greeting }]);
-    
-    // Reset AI context history
     setConversationHistory([{ role: "assistant", content: greeting }]);
     setShowHistory(false);
     console.log("✨ Started strict new session:", newId);
@@ -65,7 +80,7 @@ export default function Chatbot() {
 
   /* ---------- ACTION: SWITCH TO SPECIFIC CHAT ---------- */
   async function switchChat(targetSessionId: string) {
-    if (targetSessionId === sessionId) {
+    if (targetSessionId === sessionId && messages.length > 1) {
       setShowHistory(false); 
       return;
     }
@@ -127,7 +142,6 @@ export default function Chatbot() {
   async function handleFileUpload(file: File) {
     const label = `${file.type.startsWith("image/") ? "🖼️" : "📄"} ${file.name}`;
     setMessages((prev) => [...prev, { sender: "user", text: label }]);
-
     const currentHistory: Message[] = [...conversationHistory, { role: "user", content: label }];
     setIsTyping(true);
 
@@ -149,7 +163,7 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="flex flex-col w-full h-[80vh] max-h-[600px] bg-white text-neutral-dark relative overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
+    <div className="flex flex-col w-full h-full bg-white text-neutral-dark relative overflow-hidden">
       
       {/* HEADER */}
       <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark border-b border-primary-darker z-20 shrink-0">
@@ -163,18 +177,25 @@ export default function Chatbot() {
           </div>
         </div>
 
+        {/* --- CHANGED: Buttons are now Grey --- */}
         <div className="flex gap-2">
+          {/* History Button */}
           <button
             onClick={toggleHistory}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${showHistory ? 'bg-white text-primary' : 'bg-white/20 text-white hover:bg-white/30'}`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 ${
+              showHistory 
+                ? 'bg-white text-primary' 
+                : 'bg-white/20 text-gray-700 hover:text-gray-500 hover:bg-white/30'
+            }`}
             title={t("Chat History")}
           >
             {showHistory ? <MdArrowBack size={20} /> : <MdHistory size={20} />}
           </button>
 
+          {/* New Chat Button */}
           <button
             onClick={handleNewChat}
-            className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-white/20 text-gray-700 hover:text-gray-500 hover:bg-white/30 flex items-center justify-center transition-all duration-300 transform hover:scale-110"
             title={t("New Chat")}
           >
             <MdAdd size={22} />
@@ -182,12 +203,12 @@ export default function Chatbot() {
         </div>
       </div>
 
-      {/* --- SIDEBAR (Absolute Overlay) --- */}
+      {/* --- SIDEBAR --- */}
       <div 
         className={`absolute inset-0 z-10 flex transition-transform duration-300 ease-in-out ${showHistory ? "translate-x-0" : "-translate-x-full"}`}
         style={{ marginTop: '72px' }} 
       >
-        <div className="w-64 h-full bg-gray-50 border-r border-gray-200 shadow-lg flex flex-col">
+        <div className="w-64 h-full bg-gray-50 border-r border-gray-200 shadow-lg flex flex-col bg-white">
           <div className="p-4 border-b border-gray-200">
             <button 
                 onClick={() => { handleNewChat(); setShowHistory(false); }}
@@ -244,7 +265,7 @@ export default function Chatbot() {
         <div ref={messagesEndRef} className="h-0" />
       </div>
 
-      {/* INPUT AREA - TIGHTENED */}
+      {/* INPUT AREA */}
       <div className="border-t border-gray-100 bg-white px-4 py-2 shrink-0">
         {messages.length > 0 && messages[messages.length - 1].sender === 'bot' && (
              <div className="mb-2">

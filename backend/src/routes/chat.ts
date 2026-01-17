@@ -1,25 +1,30 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import ChatSession from '../models/ChatSession'; // Ensure this path matches your structure
+import multer from 'multer'; // Import Multer for file handling
+import ChatSession from '../models/ChatSession'; 
 import { handleMessage, handleTriage } from '../services/chatbotService';
 import { translateViaM2M100 } from '../services/translationService';
 import { uploadSessionToS3 } from '../services/awsService';
 
 const router = Router();
 
+// --- CONFIG: Multer (Memory Storage for quick processing) ---
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // Limit to 5MB
+});
+
 // ==========================================
 // 1. GET ALL SESSIONS (For Sidebar List)
 // ==========================================
 router.get('/sessions', async (req: Request, res: Response) => {
   try {
-    // Fetch last 20 sessions, sorted by newest first
     const sessions = await ChatSession.find()
       .sort({ lastUpdated: -1 })
       .select('sessionId messages lastUpdated')
       .limit(20);
 
     const formattedSessions = sessions.map(session => {
-        // Find the first user message to use as the "Title"
         const firstUserMsg = session.messages.find((m: any) => m.role === 'user');
         const titleText = firstUserMsg ? firstUserMsg.content : 'New Chat';
         
@@ -50,7 +55,6 @@ router.get('/session/:sessionId', async (req: Request, res: Response): Promise<v
       return;
     }
 
-    // Return just the messages array
     res.json(session.messages);
   } catch (error) {
     console.error('Error fetching session:', error);
@@ -59,7 +63,7 @@ router.get('/session/:sessionId', async (req: Request, res: Response): Promise<v
 });
 
 // ==========================================
-// 3. POST CHAT (Send Message)
+// 3. POST CHAT (Send Text Message)
 // ==========================================
 router.post(
   '/',
@@ -86,7 +90,7 @@ router.post(
         translatedInput = await translateViaM2M100(message, locale, 'en');
       }
 
-      // --- B. AI PROCESSING (Triage or Normal) ---
+      // --- B. AI PROCESSING ---
       let response = null;
       if (/triage/i.test(translatedInput)) {
         response = await handleTriage(translatedInput, sessionId, conversationHistory, 'en');
@@ -100,7 +104,7 @@ router.post(
         output = await translateViaM2M100(response, 'en', locale);
       }
 
-      // --- D. SAVE TO MONGODB (The "Memory") ---
+      // --- D. SAVE TO MONGODB ---
       const updatedSession = await ChatSession.findOneAndUpdate(
         { sessionId },
         {
@@ -116,13 +120,12 @@ router.post(
         { new: true, upsert: true }
       );
 
-      // --- E. BACKUP TO AWS S3 (Async) ---
+      // --- E. S3 BACKUP ---
       if (updatedSession) {
         uploadSessionToS3(sessionId, updatedSession)
           .catch(err => console.error(`⚠️ S3 Background Upload Failed:`, err.message));
       }
 
-      // Return the AI response
       res.json({ message: output });
 
     } catch (error: any) {
@@ -131,6 +134,79 @@ router.post(
         error: 'Failed to generate response',
         message: 'Sorry, I encountered an error. Please try again.'
       });
+    }
+  }
+);
+
+// ==========================================
+// 4. POST UPLOAD (Handle File + AI Analysis)
+// ==========================================
+router.post(
+  '/upload', 
+  upload.single('file'), 
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      if (!req.file) {
+         res.status(400).json({ error: "No file uploaded" });
+         return;
+      }
+
+      const { sessionId, locale = 'en' } = req.body;
+      
+      // FormData sends arrays/objects as JSON strings, so we parse them
+      const conversationHistory = req.body.conversationHistory ? JSON.parse(req.body.conversationHistory) : [];
+
+      console.log(`📂 File Upload | Session: ${sessionId} | File: ${req.file.originalname}`);
+
+      // --- 1. CONSTRUCT PROMPT FOR AI ---
+      // In a real app, you might send the image buffer to GPT-4 Vision or extract text via OCR.
+      // Here, we simulate the context by telling the AI a file was uploaded.
+      const filePrompt = `[System: The user has uploaded a file named "${req.file.originalname}". Analyze this action as a request for help regarding this document.]`;
+      
+      // --- 2. AI PROCESSING ---
+      // We reuse handleMessage to get a context-aware response about the file
+      const aiResponse = await handleMessage(filePrompt, sessionId, conversationHistory, 'en');
+
+      // --- 3. TRANSLATION (Output) ---
+      let output = aiResponse;
+      if (locale !== 'en') {
+        output = await translateViaM2M100(aiResponse, 'en', locale);
+      }
+
+      // --- 4. SAVE TO MONGODB ---
+      // We save the file upload as a user message, marking it with an icon or prefix
+      const userMsgContent = `📄 Uploaded: ${req.file.originalname}`;
+      
+      const updatedSession = await ChatSession.findOneAndUpdate(
+        { sessionId },
+        {
+          $setOnInsert: { locale: locale },
+          $push: {
+            messages: [
+              { role: 'user', content: userMsgContent, timestamp: new Date() },
+              { role: 'assistant', content: output, timestamp: new Date() }
+            ]
+          },
+          $set: { lastUpdated: new Date() }
+        },
+        { new: true, upsert: true }
+      );
+
+      // --- 5. S3 BACKUP ---
+      if (updatedSession) {
+        uploadSessionToS3(sessionId, updatedSession)
+          .catch(err => console.error(`⚠️ S3 Background Upload Failed:`, err.message));
+      }
+
+      // Return consistent format
+      res.json({ 
+        message: output,
+        isHealthRelated: true 
+      });
+
+    } catch (error) {
+      console.error('❌ Upload route error:', error);
+      res.status(500).json({ error: "File upload processing failed" });
     }
   }
 );

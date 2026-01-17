@@ -1,38 +1,73 @@
-import React, { useState, useRef, useCallback, memo, useContext } from "react";
+import React, { useState, useRef, useCallback, memo, useContext, useEffect } from "react";
 import { HiDocument } from "react-icons/hi2";
 import { RiVoiceAiFill } from "react-icons/ri";
 import { TbSend } from "react-icons/tb";
-import { useSpeechRecognition } from "../hooks/useSpeechRecognition"; // Import the hook
-import { LanguageContext } from "../context/LanguageContext"; // To get current language
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition"; 
+import { LanguageContext } from "../context/LanguageContext"; 
 
 type MessageInputProps = {
   onSend: (text: string) => void;
   onFileUpload: (file: File) => void;
 };
 
+// Healthcare-specific placeholder texts
+const PLACEHOLDER_TEXTS = [
+  "Describe your symptoms...",
+  "Upload a blood test report...",
+  "Ask about medication side effects...",
+  "How do I lower my cholesterol?",
+  "Ask about preventative care..."
+];
+
 const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: MessageInputProps) {
   const { selectedLanguage } = useContext(LanguageContext);
   const [input, setInput] = useState("");
+  
+  // --- TYPEWRITER STATE START ---
+  const [placeholder, setPlaceholder] = useState("");
+  const [textIndex, setTextIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // --- TYPEWRITER STATE END ---
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // --- TYPEWRITER EFFECT LOGIC ---
+  useEffect(() => {
+    // Pause animation if user is typing or listening
+    if (input.length > 0) return;
+
+    const currentText = PLACEHOLDER_TEXTS[textIndex];
+    const typingSpeed = isDeleting ? 40 : 80; 
+
+    const timeout = setTimeout(() => {
+      if (!isDeleting) {
+        // Typing forward
+        setPlaceholder(currentText.substring(0, charIndex + 1));
+        setCharIndex((prev) => prev + 1);
+
+        // If full phrase typed, wait before deleting
+        if (charIndex + 1 === currentText.length) {
+          setTimeout(() => setIsDeleting(true), 250); 
+        }
+      } else {
+        // Deleting backward
+        setPlaceholder(currentText.substring(0, charIndex - 1));
+        setCharIndex((prev) => prev - 1);
+
+        // If fully deleted, switch to next text
+        if (charIndex - 1 === 0) {
+          setIsDeleting(false);
+          setTextIndex((prev) => (prev + 1) % PLACEHOLDER_TEXTS.length);
+        }
+      }
+    }, typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [charIndex, isDeleting, textIndex, input]);
+
   // --- VOICE LOGIC START ---
-  const handleVoiceResult = useCallback((text: string) => {
-    // Append text with a space if input already has content
-    setInput((prev) => {
-      const separator = prev.trim().length > 0 ? " " : "";
-      return prev + separator + text;
-    });
-    // Auto-adjust height after voice input
-    setTimeout(adjustHeight, 0); 
-  }, []);
-
-  const { isListening, toggleListening, isSupported } = useSpeechRecognition({
-    onResult: handleVoiceResult,
-    langCode: selectedLanguage
-  });
-  // --- VOICE LOGIC END ---
-
   const adjustHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -40,6 +75,20 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
   }, []);
+
+  const handleVoiceResult = useCallback((text: string) => {
+    setInput((prev) => {
+      const separator = prev.trim().length > 0 ? " " : "";
+      return prev + separator + text;
+    });
+    setTimeout(adjustHeight, 0); 
+  }, [adjustHeight]);
+
+  const { isListening, toggleListening, isSupported } = useSpeechRecognition({
+    onResult: handleVoiceResult,
+    langCode: selectedLanguage
+  });
+  // --- VOICE LOGIC END ---
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -114,7 +163,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
             type="button"
             onClick={handleFileClick}
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 
-                     hover:text-primary transition-colors"
+                      hover:text-primary transition-colors"
             aria-label="Upload file"
           >
             <HiDocument className="w-5 h-5" />
@@ -129,13 +178,14 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
           />
         </div>
 
-        {/* Auto-resizing textarea */}
+        {/* Auto-resizing textarea with Typewriter Placeholder */}
         <textarea
           ref={textareaRef}
           value={input}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder={isListening ? "Listening..." : "Message HealthBot..."}
+          // LOGIC: If listening, say "Listening...", otherwise use typewriter state
+          placeholder={isListening ? "Listening..." : placeholder}
           className="flex-1 max-h-[200px] py-2 bg-transparent outline-none border-none 
                      text-gray-900 placeholder-gray-400 
                      text-[15px] leading-6 resize-none overflow-y-auto focus:ring-0"
