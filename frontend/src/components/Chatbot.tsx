@@ -36,7 +36,6 @@ export default function Chatbot() {
   }, [messages, isTyping]);
 
   /* ---------- ACTION: NEW CHAT ---------- */
-  // Strictly resets state to a blank slate
   function handleNewChat() {
     const newId = crypto.randomUUID();
     setSessionId(newId);
@@ -47,10 +46,7 @@ export default function Chatbot() {
     
     // Reset AI context history
     setConversationHistory([{ role: "assistant", content: greeting }]);
-    
-    // Close sidebar on mobile/small screens logic if needed (optional)
     setShowHistory(false);
-    
     console.log("✨ Started strict new session:", newId);
   }
 
@@ -69,48 +65,41 @@ export default function Chatbot() {
 
   /* ---------- ACTION: SWITCH TO SPECIFIC CHAT ---------- */
   async function switchChat(targetSessionId: string) {
-    // 1. Prevent reloading the same chat
     if (targetSessionId === sessionId) {
       setShowHistory(false); 
       return;
     }
 
-    setIsTyping(true); // Show loading state briefly
+    setIsTyping(true);
 
     try {
-      // 2. Fetch the specific isolated history for this ID
       const oldMessages = await getSessionHistory(targetSessionId);
       
-      // 3. Transform for UI (Visuals)
       const uiMsgs: UIMessage[] = oldMessages.map((m: Message) => ({
         sender: m.role === 'user' ? 'user' : 'bot',
         text: m.content
       }));
 
-      // 4. Transform for AI Context (Memory)
       const historyMsgs: Message[] = oldMessages.map((m: Message) => ({
         role: m.role,
         content: m.content
       }));
 
-      // 5. STRICT STATE SWAP
       setSessionId(targetSessionId);
       setMessages(uiMsgs);
       setConversationHistory(historyMsgs);
-      
       console.log("📂 Loaded isolated session:", targetSessionId);
 
     } catch (err) {
       console.error("Failed to load chat session", err);
     } finally {
       setIsTyping(false);
-      setShowHistory(false); // Close sidebar after selection
+      setShowHistory(false); 
     }
   }
 
   /* ---------- ACTION: SEND MESSAGE ---------- */
   async function handleUserMessage(text: string) {
-    // Optimistic UI Update
     setMessages((prev) => [...prev, { sender: "user", text }]);
     const currentHistory: Message[] = [...conversationHistory, { role: "user", content: text }];
     
@@ -121,7 +110,7 @@ export default function Chatbot() {
         message: text,
         conversationHistory: currentHistory,
         locale: selectedLanguage || "en",
-        sessionId: sessionId, // Always uses the current isolated ID
+        sessionId: sessionId,
       });
 
       setMessages((prev) => [...prev, { sender: "bot", text: reply }]);
@@ -154,14 +143,13 @@ export default function Chatbot() {
         ...prev,
         { sender: "bot", text: res.message, isHealthRelated: res.isHealthRelated },
       ]);
-      // Note: Typically you'd update conversationHistory here too if the bot returns a text response to the file
     } finally {
       setIsTyping(false);
     }
   }
 
   return (
-    <div className="flex flex-col w-full h-[600px] bg-white text-neutral-dark relative overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
+    <div className="flex flex-col w-full h-[80vh] max-h-[600px] bg-white text-neutral-dark relative overflow-hidden rounded-2xl shadow-2xl border border-gray-200">
       
       {/* HEADER */}
       <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark border-b border-primary-darker z-20 shrink-0">
@@ -176,7 +164,6 @@ export default function Chatbot() {
         </div>
 
         <div className="flex gap-2">
-          {/* Toggle History Sidebar */}
           <button
             onClick={toggleHistory}
             className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${showHistory ? 'bg-white text-primary' : 'bg-white/20 text-white hover:bg-white/30'}`}
@@ -185,7 +172,6 @@ export default function Chatbot() {
             {showHistory ? <MdArrowBack size={20} /> : <MdHistory size={20} />}
           </button>
 
-          {/* New Chat Button */}
           <button
             onClick={handleNewChat}
             className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
@@ -199,11 +185,9 @@ export default function Chatbot() {
       {/* --- SIDEBAR (Absolute Overlay) --- */}
       <div 
         className={`absolute inset-0 z-10 flex transition-transform duration-300 ease-in-out ${showHistory ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ marginTop: '72px' }} // Starts below header
+        style={{ marginTop: '72px' }} 
       >
-        {/* Sidebar Content */}
         <div className="w-64 h-full bg-gray-50 border-r border-gray-200 shadow-lg flex flex-col">
-          
           <div className="p-4 border-b border-gray-200">
             <button 
                 onClick={() => { handleNewChat(); setShowHistory(false); }}
@@ -248,29 +232,29 @@ export default function Chatbot() {
             ))}
           </div>
         </div>
-
-        {/* Click outside to close */}
         <div className="flex-1 bg-black/20 backdrop-blur-[1px]" onClick={() => setShowHistory(false)} />
       </div>
 
       {/* MESSAGES AREA */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 bg-secondary-light/50">
+      <div className="flex-1 overflow-y-auto px-5 pt-4 pb-2 space-y-4 bg-secondary-light/50">
         {messages.map((m, i) => (
           <ChatBubble key={i} sender={m.sender} text={m.text} isHealthRelated={m.isHealthRelated} />
         ))}
         {isTyping && <TyperIndicator />}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} className="h-0" />
       </div>
 
-      {/* INPUT AREA */}
-      <div className="border-t border-gray-100 bg-white px-5 py-4 space-y-3 shrink-0">
+      {/* INPUT AREA - TIGHTENED */}
+      <div className="border-t border-gray-100 bg-white px-4 py-2 shrink-0">
         {messages.length > 0 && messages[messages.length - 1].sender === 'bot' && (
-             <QuickReplies options={[t("Yes"), t("No"), t("Not sure")]} onSelect={handleUserMessage} />
+             <div className="mb-2">
+                 <QuickReplies options={[t("Yes"), t("No"), t("Not sure")]} onSelect={handleUserMessage} />
+             </div>
         )}
         
         <MessageInput onSend={handleUserMessage} onFileUpload={handleFileUpload} />
         
-        <p className="text-[10px] text-neutral-medium text-center">
+        <p className="text-[10px] text-neutral-medium text-center mt-1">
           HealthBot may make mistakes. Consult a doctor for serious issues.
         </p>
       </div>
