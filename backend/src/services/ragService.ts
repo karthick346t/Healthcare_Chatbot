@@ -468,9 +468,10 @@ export async function loadDocumentsFromCSV(
  */
 export async function loadPrecomputedEmbeddings(): Promise<void> {
   try {
-    const embeddingsPath = path.resolve(
-      __dirname,
-      "../data/medlineplus_embeddings.jsonl"
+    const embeddingsPath = path.join(
+      process.cwd(),
+      "data",
+      "medlineplus_embeddings.jsonl"
     );
 
     if (!fs.existsSync(embeddingsPath)) {
