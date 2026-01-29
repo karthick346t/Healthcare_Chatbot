@@ -12,10 +12,15 @@ import uploadRouter from './routes/upload';
 import ragRouter from './routes/rag';
 import localizationMiddleware from './middleware/localization';
 
+import path from 'path';
+
 const app = express();
 
 // Security Headers
-app.use(helmet());
+// Adjust Helmet for local files
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 
 // CORS
 app.use(cors({ origin: true, credentials: true }));
@@ -44,8 +49,14 @@ app.use('/api/chat', chatRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/rag', ragRouter);
 
-app.get('/', (req: Request, res: Response) => {
-  res.json({ status: 'Health Chatbot API running with file upload support.' });
+// --- SERVE FRONTEND (Single Port Deployment) ---
+// The frontend build files will be moved to backend/public during deployment
+const frontendPath = path.join(__dirname, '../public');
+app.use(express.static(frontendPath));
+
+// Catch-all route: Requests that don't match /api/... return the React App
+app.get('*', (req: Request, res: Response) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 export default app;
