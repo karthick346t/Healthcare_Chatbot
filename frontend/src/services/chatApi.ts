@@ -1,5 +1,7 @@
 // 1. Define the base URL dynamically
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:4000" : "");
 
 export type Message = {
   role: 'user' | 'assistant';
@@ -41,7 +43,7 @@ export async function sendChatMessage({
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({})); 
+      const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Error: ${response.status} ${response.statusText}`);
     }
 
@@ -66,7 +68,7 @@ export async function uploadFile({
 }): Promise<{ message: string; isHealthRelated: boolean }> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("conversationHistory", JSON.stringify(conversationHistory)); 
+  formData.append("conversationHistory", JSON.stringify(conversationHistory));
   formData.append("locale", locale);
   formData.append("sessionId", sessionId);
 
@@ -98,7 +100,7 @@ export async function uploadFile({
 export async function getChatSessions(): Promise<ChatSessionSummary[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/chat/sessions`);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Failed to load history: ${response.statusText}`);
@@ -115,7 +117,7 @@ export async function getChatSessions(): Promise<ChatSessionSummary[]> {
 export async function getSessionHistory(sessionId: string): Promise<Message[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Failed to load session: ${response.statusText}`);
