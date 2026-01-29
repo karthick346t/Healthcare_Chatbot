@@ -31,11 +31,22 @@ Because you don't have an "Elastic IP", your Public IP will be different every t
 * **Result:** You don't need to change any code! Just open the **New IP:4000** in your browser and it will work automatically.
 
 ### 2. Starting the Code
-When the server turns on, you need to restart the backend. If you ran the `pm2 startup` command earlier, it might happen automatically. If not, just run:
+When the server turns on, you need to bring the chatbot back online.
+
 ```bash
+# 1. Enter the backend folder
 cd Healthcare_Chatbot/backend
+
+# 2. Try to restart the existing process
 pm2 restart healthcare-bot
+
+# 3. IF THE ABOVE FAILS with "Process not found", run this instead:
+pm2 start dist/server.js --name "healthcare-bot"
+
+# 4. CRITICAL: Save the list so it works next time
+pm2 save
 ```
+
 
 ---
 
