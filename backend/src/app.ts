@@ -55,7 +55,7 @@ const frontendPath = path.join(__dirname, '../public');
 app.use(express.static(frontendPath));
 
 // Catch-all route: Requests that don't match /api/... return the React App
-app.get('*', (req: Request, res: Response) => {
+app.get(/(.*)/, (req: Request, res: Response) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
