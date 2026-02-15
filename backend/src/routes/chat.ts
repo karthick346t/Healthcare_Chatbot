@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import multer from 'multer'; // Import Multer for file handling
-import ChatSession from '../models/ChatSession'; 
+import ChatSession from '../models/ChatSession';
 import { handleMessage, handleTriage } from '../services/chatbotService';
 import { translateViaM2M100 } from '../services/translationService';
 import { uploadSessionToS3 } from '../services/awsService';
@@ -9,7 +9,7 @@ import { uploadSessionToS3 } from '../services/awsService';
 const router = Router();
 
 // --- CONFIG: Multer (Memory Storage for quick processing) ---
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // Limit to 5MB
 });
@@ -25,14 +25,14 @@ router.get('/sessions', async (req: Request, res: Response) => {
       .limit(20);
 
     const formattedSessions = sessions.map(session => {
-        const firstUserMsg = session.messages.find((m: any) => m.role === 'user');
-        const titleText = firstUserMsg ? firstUserMsg.content : 'New Chat';
-        
-        return {
-            sessionId: session.sessionId,
-            title: titleText.length > 30 ? titleText.substring(0, 30) + '...' : titleText,
-            date: session.lastUpdated
-        };
+      const firstUserMsg = session.messages.find((m: any) => m.role === 'user');
+      const titleText = firstUserMsg ? firstUserMsg.content : 'New Chat';
+
+      return {
+        sessionId: session.sessionId,
+        title: titleText.length > 30 ? titleText.substring(0, 30) + '...' : titleText,
+        date: session.lastUpdated
+      };
     });
 
     res.json(formattedSessions);
@@ -117,7 +117,7 @@ router.post(
           },
           $set: { lastUpdated: new Date() }
         },
-        { new: true, upsert: true }
+        { returnDocument: 'after', upsert: true }
       );
 
       // --- E. S3 BACKUP ---
@@ -142,17 +142,17 @@ router.post(
 // 4. POST UPLOAD (Handle File + AI Analysis)
 // ==========================================
 router.post(
-  '/upload', 
-  upload.single('file'), 
+  '/upload',
+  upload.single('file'),
   async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.file) {
-         res.status(400).json({ error: "No file uploaded" });
-         return;
+        res.status(400).json({ error: "No file uploaded" });
+        return;
       }
 
       const { sessionId, locale = 'en' } = req.body;
-      
+
       // FormData sends arrays/objects as JSON strings, so we parse them
       const conversationHistory = req.body.conversationHistory ? JSON.parse(req.body.conversationHistory) : [];
 
@@ -162,7 +162,7 @@ router.post(
       // In a real app, you might send the image buffer to GPT-4 Vision or extract text via OCR.
       // Here, we simulate the context by telling the AI a file was uploaded.
       const filePrompt = `[System: The user has uploaded a file named "${req.file.originalname}". Analyze this action as a request for help regarding this document.]`;
-      
+
       // --- 2. AI PROCESSING ---
       // We reuse handleMessage to get a context-aware response about the file
       const aiResponse = await handleMessage(filePrompt, sessionId, conversationHistory, 'en');
@@ -176,7 +176,7 @@ router.post(
       // --- 4. SAVE TO MONGODB ---
       // We save the file upload as a user message, marking it with an icon or prefix
       const userMsgContent = `📄 Uploaded: ${req.file.originalname}`;
-      
+
       const updatedSession = await ChatSession.findOneAndUpdate(
         { sessionId },
         {
@@ -189,7 +189,7 @@ router.post(
           },
           $set: { lastUpdated: new Date() }
         },
-        { new: true, upsert: true }
+        { returnDocument: 'after', upsert: true }
       );
 
       // --- 5. S3 BACKUP ---
@@ -199,9 +199,9 @@ router.post(
       }
 
       // Return consistent format
-      res.json({ 
+      res.json({
         message: output,
-        isHealthRelated: true 
+        isHealthRelated: true
       });
 
     } catch (error) {

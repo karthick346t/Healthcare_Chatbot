@@ -33,11 +33,11 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|txt/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype) || 
-                     file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-                     file.mimetype === 'application/msword' ||
-                     file.mimetype === 'application/pdf';
-    
+    const mimetype = allowedTypes.test(file.mimetype) ||
+      file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.mimetype === 'application/msword' ||
+      file.mimetype === 'application/pdf';
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -56,13 +56,13 @@ async function imageToBase64Async(filePath: string): Promise<string> {
 async function extractPdfText(pdfPath: string): Promise<string> {
   try {
     console.log('📄 Extracting text from PDF...');
-    
+
     // 1. Read file buffer
     const dataBuffer = await fsPromises.readFile(pdfPath);
-    
+
     // 2. Parse (Version 1.1.1 is always a function)
     const data = await pdfParse(dataBuffer);
-    
+
     console.log(`✅ Extracted ${data.text.length} characters from PDF.`);
     return data.text;
 
@@ -90,13 +90,13 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
   }
 
   const file = req.file;
-  
+
   try {
     const { locale = 'en', sessionId, conversationHistory } = req.body;
     let history = [];
     if (conversationHistory) {
-      history = typeof conversationHistory === 'string' 
-        ? JSON.parse(conversationHistory) 
+      history = typeof conversationHistory === 'string'
+        ? JSON.parse(conversationHistory)
         : conversationHistory;
     }
 
@@ -105,7 +105,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     // --- 1. AI ANALYSIS ---
     let responseMessage = '';
     let isHealthRelated = false;
-    
+
     const isPDF = file.mimetype === 'application/pdf';
     const isImage = file.mimetype.startsWith('image/');
     const isDocx = file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -114,7 +114,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 
     if (isPDF) {
       const pdfText = await extractPdfText(file.path);
-      
+
       if (pdfText.startsWith("Error: Could not extract")) {
         responseMessage = `I encountered a technical error reading your PDF. Please ensure it is a valid text PDF.`;
       } else if (!pdfText.trim()) {
@@ -169,22 +169,22 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
           $setOnInsert: { locale: locale },
           $push: {
             messages: [
-              { 
-                role: 'user', 
-                content: `Uploaded file: ${file.originalname}`, 
+              {
+                role: 'user',
+                content: `Uploaded file: ${file.originalname}`,
                 timestamp: new Date(),
-                attachmentUrl: s3Url || undefined 
+                attachmentUrl: s3Url || undefined
               },
-              { 
-                role: 'assistant', 
-                content: responseMessage, 
-                timestamp: new Date() 
+              {
+                role: 'assistant',
+                content: responseMessage,
+                timestamp: new Date()
               }
             ]
           },
           $set: { lastUpdated: new Date() }
         },
-        { new: true, upsert: true }
+        { returnDocument: 'after', upsert: true }
       );
     }
 
@@ -192,7 +192,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     res.json({
       message: responseMessage,
       fileId: file.filename,
-      fileUrl: s3Url, 
+      fileUrl: s3Url,
       fileType: 'document',
       originalName: file.originalname,
       isHealthRelated: isHealthRelated
@@ -200,7 +200,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 
   } catch (error: any) {
     console.error('Upload error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Processing failed',
       message: 'Sorry, I encountered an error processing your file.',
       isHealthRelated: false
