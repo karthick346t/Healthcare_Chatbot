@@ -2,12 +2,14 @@ import React, { useState, useRef, useCallback, memo, useContext, useEffect } fro
 import { HiDocument } from "react-icons/hi2";
 import { RiVoiceAiFill } from "react-icons/ri";
 import { TbSend } from "react-icons/tb";
-import { useSpeechRecognition } from "../hooks/useSpeechRecognition"; 
-import { LanguageContext } from "../context/LanguageContext"; 
+import QuickReplies from "./QuickReplies";
+import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
+import { LanguageContext } from "../context/LanguageContext";
 
 type MessageInputProps = {
   onSend: (text: string) => void;
   onFileUpload: (file: File) => void;
+  quickReplies?: string[];
 };
 
 // Healthcare-specific placeholder texts
@@ -19,10 +21,10 @@ const PLACEHOLDER_TEXTS = [
   "Ask about preventative care..."
 ];
 
-const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: MessageInputProps) {
+const MessageInput = memo(function MessageInput({ onSend, onFileUpload, quickReplies = [] }: MessageInputProps) {
   const { selectedLanguage } = useContext(LanguageContext);
   const [input, setInput] = useState("");
-  
+
   // --- TYPEWRITER STATE START ---
   const [placeholder, setPlaceholder] = useState("");
   const [textIndex, setTextIndex] = useState(0);
@@ -39,7 +41,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
     if (input.length > 0) return;
 
     const currentText = PLACEHOLDER_TEXTS[textIndex];
-    const typingSpeed = isDeleting ? 40 : 80; 
+    const typingSpeed = isDeleting ? 40 : 80;
 
     const timeout = setTimeout(() => {
       if (!isDeleting) {
@@ -49,7 +51,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
 
         // If full phrase typed, wait before deleting
         if (charIndex + 1 === currentText.length) {
-          setTimeout(() => setIsDeleting(true), 250); 
+          setTimeout(() => setIsDeleting(true), 250);
         }
       } else {
         // Deleting backward
@@ -81,7 +83,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
       const separator = prev.trim().length > 0 ? " " : "";
       return prev + separator + text;
     });
-    setTimeout(adjustHeight, 0); 
+    setTimeout(adjustHeight, 0);
   }, [adjustHeight]);
 
   const { isListening, toggleListening, isSupported } = useSpeechRecognition({
@@ -147,11 +149,10 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
             <button
               type="button"
               onClick={toggleListening}
-              className={`p-2 rounded-lg transition-all duration-300 ${
-                isListening 
-                  ? "bg-red-100 text-red-600 animate-pulse" 
-                  : "text-gray-500 hover:bg-gray-100 hover:text-primary"
-              }`}
+              className={`p-2 rounded-lg transition-all duration-300 ${isListening
+                ? "bg-red-100 text-red-600 animate-pulse"
+                : "text-gray-500 hover:bg-gray-100 hover:text-primary"
+                }`}
               aria-label={isListening ? "Stop recording" : "Start recording"}
             >
               <RiVoiceAiFill className="w-5 h-5" />
@@ -168,7 +169,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
           >
             <HiDocument className="w-5 h-5" />
           </button>
-          
+
           <input
             ref={fileInputRef}
             type="file"
@@ -193,22 +194,28 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload }: Messag
           rows={1}
         />
 
+        {/* Quick Replies inside the bar */}
+        {quickReplies.length > 0 && input.length === 0 && (
+          <div className="flex items-center absolute right-[44px] sm:right-[52px] top-[7px] sm:top-[9px] z-10 animate-fadeIn max-w-[50%] sm:max-w-none overflow-x-auto no-scrollbar py-0.5">
+            <QuickReplies options={quickReplies} onSelect={onSend} />
+          </div>
+        )}
+
         {/* Send button */}
         <div className="pb-1">
           <button
             type="submit"
             disabled={isDisabled}
-            className={`p-2 rounded-lg transition-all ${
-              isDisabled
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-white bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transform active:scale-95"
-            }`}
+            className={`p-2 rounded-lg transition-all ${isDisabled
+              ? "text-gray-300 cursor-not-allowed"
+              : "text-white bg-primary hover:bg-primary-dark shadow-md hover:shadow-lg transform active:scale-95"
+              }`}
           >
             <TbSend className="w-5 h-5" />
           </button>
         </div>
       </form>
-      
+
       {/* Listening Indicator Text */}
       {isListening && (
         <p className="text-xs text-red-500 text-center mt-2 font-medium animate-pulse">

@@ -1,10 +1,19 @@
-# Deployment Task List
+# Appointment System Expansion & Navigation Fix
 
-- [x] Initial Server Setup (AWS, Node, Mongo)
-- [x] RAG Pipeline Execution
-- [x] Backend Configuration (.env, Wildcard Route)
-- [x] Build Script Creation
-- [ ] **Fix Frontend API Connection** <!-- id: 0 -->
-    - [ ] Update `chatApi.ts` to use relative paths in production <!-- id: 1 -->
-    - [ ] Push fixes to GitHub <!-- id: 2 -->
-    - [ ] Verify fix on AWS <!-- id: 3 -->
+Implement district selection, patient forms, PDF downloads, and fix global navigation.
+
+- [x] **Navigation Fix**
+    - [x] Add "Close" button in `Chatbot.tsx` header for easy exit
+- [x] **Data Model Expansion**
+    - [x] Update `Hospital` model with `district` field
+    - [x] Update `Appointment` model with `patientAge, patientGender, patientAddress, problem`
+    - [x] Create massive seed data (7 districts x 5 hospitals x 5 doctors)
+- [x] **Feature Implementation**
+    - [x] Add District selection screen (Step 0) in `Appointments.tsx`
+    - [x] Add "Patient Details Form" step (Step 3.5) in booking flow
+    - [x] Implement PDF generation and download for booking confirmation
+- [x] **Verification & Deployment**
+    - [x] Test backend routes with new fields
+    - [x] Local verification successful
+- [ ] **Deployment**
+    - [ ] Deploy to AWS (User requested to double check first)

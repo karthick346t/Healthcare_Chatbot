@@ -15,34 +15,34 @@
   --primary-darker: #004D4D;
   --primary-light: #E6F5F5;
   --primary-lighter: #CCF0F0;
-  
+
   /* SECONDARY (30% - Neutral) */
   --secondary: #FFFFFF;
   --secondary-light: #F5F5F5;
   --secondary-dark: #E0E0E0;
-  
+
   /* ACCENT (10% - Alerts) */
   --accent-orange: #FF6B35;
   --accent-red: #E63946;
   --accent-green: #06D6A0;
   --accent-yellow: #FFD166;
-  
+
   /* TEXT COLORS */
   --neutral-light: #FAFAFA;
   --neutral-dark: #212121;
   --neutral-medium: #616161;
-  
+
   /* SEMANTIC COLORS */
   --critical: #E63946;
   --success: #06D6A0;
   --warning: #FFD166;
-  
+
   /* GRADIENTS - Updated to Teal Theme */
   --gradient-primary: linear-gradient(135deg, #008080 0%, #006666 100%);
   --gradient-secondary: linear-gradient(135deg, #CCF0F0 0%, #99E0E0 100%);
   --gradient-health: linear-gradient(135deg, #008080 0%, #06D6A0 100%);
   --gradient-background: linear-gradient(135deg, #E6F5F5 0%, #CCF0F0 100%);
-  
+
   font-family: 'Inter', 'Noto Sans', 'Open Sans', Arial, sans-serif;
 }
 
@@ -105,7 +105,9 @@ body::before {
    BUTTON STYLES
    ============================================ */
 
-button, input, textarea {
+button,
+input,
+textarea {
   font-family: inherit;
   font-weight: 500;
 }
@@ -149,12 +151,15 @@ button, input, textarea {
    INPUT STYLES
    ============================================ */
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   @apply ring-2 ring-primary-500 ring-offset-2 outline-none;
   @apply border-primary-500;
 }
 
-input, textarea {
+input,
+textarea {
   @apply rounded-xl border border-gray-300;
   @apply transition-all duration-200;
 }
@@ -174,18 +179,19 @@ input, textarea {
    ============================================ */
 
 @keyframes fadeIn {
-from {
-  opacity: 0;
-  transform: translateY(10px);
-}
-to {
-  opacity: 1;
-  transform: translateY(0);
-}
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
-animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.25s ease-out;
 }
 
 
@@ -194,6 +200,7 @@ animation: fadeIn 0.25s ease-out;
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -205,6 +212,7 @@ animation: fadeIn 0.25s ease-out;
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -212,18 +220,24 @@ animation: fadeIn 0.25s ease-out;
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -277,23 +291,34 @@ animation: fadeIn 0.25s ease-out;
   box-shadow: 0 8px 24px rgba(0, 128, 128, 0.3);
 }
 
-/* ===== Custom Scrollbar (Dark ChatGPT Style) ===== */
+/* ===== Custom Scrollbar (Subtle Healthcare Style) ===== */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0c;        /* Chatbot background */
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2d39;        /* Dark grey thumb */
-  border-radius: 10px;
-  border: 2px solid #0a0a0c;  /* Creates spacing effect */
+  background: rgba(0, 128, 128, 0.2);
+  /* Soft teal thumb */
+  border-radius: 20px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3d47;        /* Slightly lighter on hover */
+  background: rgba(0, 128, 128, 0.4);
+  /* Slightly darker on hover */
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 
@@ -301,16 +326,45 @@ animation: fadeIn 0.25s ease-out;
    UTILITY CLASSES (Teal Theme)
    ============================================ */
 
-.bg-primary { background-color: var(--primary); }
-.text-primary { color: var(--primary); }
-.bg-secondary { background-color: var(--secondary); }
-.text-secondary { color: var(--neutral-medium); }
-.bg-accent { background-color: var(--accent-green); }
-.text-accent { color: var(--accent-green); }
-.bg-critical { background-color: var(--critical); }
-.text-critical { color: var(--critical); }
-.bg-neutral-light { background-color: var(--neutral-light); }
-.text-neutral-dark { color: var(--neutral-dark); }
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.bg-secondary {
+  background-color: var(--secondary);
+}
+
+.text-secondary {
+  color: var(--neutral-medium);
+}
+
+.bg-accent {
+  background-color: var(--accent-green);
+}
+
+.text-accent {
+  color: var(--accent-green);
+}
+
+.bg-critical {
+  background-color: var(--critical);
+}
+
+.text-critical {
+  color: var(--critical);
+}
+
+.bg-neutral-light {
+  background-color: var(--neutral-light);
+}
+
+.text-neutral-dark {
+  color: var(--neutral-dark);
+}
 
 .gradient-text {
   background: linear-gradient(135deg, #008080 0%, #006666 100%);
@@ -329,12 +383,13 @@ animation: fadeIn 0.25s ease-out;
     height: 85vh !important;
     padding: 1rem !important;
   }
-  
+
   .card {
     border-radius: 1rem;
   }
-  
-  .btn-primary, .btn-secondary {
+
+  .btn-primary,
+  .btn-secondary {
     padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
   }

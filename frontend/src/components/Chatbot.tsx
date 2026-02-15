@@ -1,4 +1,5 @@
 import { useState, useContext, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from 'uuid';
 import ChatBubble from "./ChatBubble";
 import MessageInput from "./MessageInput";
@@ -8,7 +9,7 @@ import TyperIndicator from "./TyperIndicator";
 import { sendChatMessage, uploadFile, getChatSessions, getSessionHistory, type ChatSessionSummary } from "../services/chatApi";
 import { LanguageContext } from "../context/LanguageContext";
 
-import { MdHistory, MdArrowBack, MdAdd, MdChatBubbleOutline } from "react-icons/md";
+import { MdHistory, MdArrowBack, MdAdd, MdChatBubbleOutline, MdClose } from "react-icons/md";
 import { useTranslation } from "react-i18next";
 
 import BotLogo from "../assets/logo.png";
@@ -18,6 +19,7 @@ type Message = { role: "user" | "assistant"; content: string };
 type UIMessage = { sender: "user" | "bot"; text: string; isHealthRelated?: boolean };
 
 export default function Chatbot() {
+  const navigate = useNavigate();
   const { selectedLanguage } = useContext(LanguageContext);
   const { t } = useTranslation();
 
@@ -166,41 +168,48 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full bg-white text-neutral-dark relative overflow-hidden">
+    <div className="flex flex-col w-full h-screen bg-white text-neutral-dark relative overflow-hidden">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-primary to-primary-dark border-b border-primary-darker z-20 shrink-0">
+      <div className="flex items-center justify-between px-5 py-3 bg-white/80 backdrop-blur-xl border-b border-primary/10 z-20 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="bg-white/10 p-1 rounded-lg">
+          <button
+            onClick={() => navigate("/")}
+            className="w-10 h-10 flex items-center justify-center bg-primary/10 text-primary rounded-2xl hover:bg-primary/20 transition-all shadow-sm"
+            title={t("Back to Dashboard")}
+          >
+            <MdArrowBack size={22} />
+          </button>
+          <div className="bg-primary/5 p-1.5 rounded-xl border border-primary/10">
             <img src={BotLogo} className="h-8 w-8 object-contain" alt="Bot Logo" />
           </div>
           <div>
-            <div className="text-sm font-bold text-primary-lighter opacity-90">{t("HealthBot Assistant")}</div>
-            <div className="text-xs text-primary-lighter opacity-90">{t("Always here to help")}</div>
+            <div className="text-sm font-black text-neutral-800 tracking-tight">{t("HealthBot Assistant")}</div>
+            <div className="text-[10px] font-bold text-primary uppercase tracking-widest opacity-70">{t("Always here to help")}</div>
           </div>
         </div>
 
-        {/* --- CHANGED: Buttons are now Grey --- */}
+
         <div className="flex gap-2">
           {/* History Button */}
           <button
             onClick={toggleHistory}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 ${showHistory
-              ? 'bg-white text-primary'
-              : 'bg-white/20 text-gray-700 hover:text-gray-500 hover:bg-white/30'
+            className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-105 ${showHistory
+              ? 'bg-primary text-white shadow-lg shadow-primary/30'
+              : 'bg-primary/5 text-primary hover:bg-primary/10'
               }`}
             title={t("Chat History")}
           >
-            {showHistory ? <MdArrowBack size={20} /> : <MdHistory size={20} />}
+            <MdHistory size={22} />
           </button>
 
           {/* New Chat Button */}
           <button
             onClick={handleNewChat}
-            className="w-9 h-9 rounded-full bg-white/20 text-gray-700 hover:text-gray-500 hover:bg-white/30 flex items-center justify-center transition-all duration-300 transform hover:scale-110"
+            className="w-10 h-10 rounded-2xl bg-primary/5 text-primary hover:bg-primary/10 flex items-center justify-center transition-all duration-300 transform hover:scale-105"
             title={t("New Chat")}
           >
-            <MdAdd size={22} />
+            <MdAdd size={24} />
           </button>
         </div>
       </div>
@@ -267,16 +276,17 @@ export default function Chatbot() {
       </div>
 
       {/* INPUT AREA */}
-      <div className="border-t border-gray-100 bg-white px-4 py-2 shrink-0">
-        {messages.length > 0 && messages[messages.length - 1].sender === 'bot' && (
-          <div className="mb-2">
-            <QuickReplies options={[t("Yes"), t("No"), t("Not sure")]} onSelect={handleUserMessage} />
-          </div>
-        )}
+      <div className="border-t border-primary/5 bg-white/80 backdrop-blur-xl px-4 py-3 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,128,128,0.05)]">
+        <MessageInput
+          onSend={handleUserMessage}
+          onFileUpload={handleFileUpload}
+          quickReplies={messages.length > 0 && messages[messages.length - 1].sender === 'bot'
+            ? [t("Yes"), t("No"), t("Not sure")]
+            : []
+          }
+        />
 
-        <MessageInput onSend={handleUserMessage} onFileUpload={handleFileUpload} />
-
-        <p className="text-[10px] text-neutral-medium text-center mt-1">
+        <p className="text-[10px] text-neutral-medium text-center mt-1 opacity-70">
           HealthBot may make mistakes. Consult a doctor for serious issues.
         </p>
       </div>

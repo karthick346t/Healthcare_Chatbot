@@ -129,6 +129,7 @@ You are **not** a replacement for a licensed healthcare provider. Your role is t
 - Encourage healthy habits and responsible self-care.  
 - End conversations with positive encouragement.
 - **Remember previous conversation context** and refer back to it when relevant.
+- **Remember previous conversation context** and refer back to it when relevant.
 
 ---
 
@@ -174,9 +175,9 @@ async function callModel(
     role: "user",
     content: imageUrl
       ? [
-          { type: "text", text: message },
-          { type: "image_url", image_url: { url: imageUrl } },
-        ]
+        { type: "text", text: message },
+        { type: "image_url", image_url: { url: imageUrl } },
+      ]
       : message,
   };
 
@@ -242,7 +243,7 @@ async function callModel(
 // 🔹 Automatic model switch logic with conversation history and RAG
 // ----------------------------------------
 async function callWithFallback(
-  message: string, 
+  message: string,
   conversationHistory: any[] = [],
   imageUrl?: string,
   ragContext?: string
@@ -312,7 +313,7 @@ export async function handleMessage(
   locale = "en"
 ): Promise<string> {
   console.log(`[handleMessage] History length: ${conversationHistory.length}`);
-  
+
   const ragEnabled = config.RAG_ENABLED !== false;
 
   // ❌ We will NOT use ragContextManager anymore
@@ -368,7 +369,7 @@ export async function handleTriage(
 ): Promise<string> {
   const triagePrompt = `Perform symptom triage. Guide the user with empathetic, clear, and simple questions. User's concern: ${message}`;
   console.log(`[handleTriage] History length: ${conversationHistory.length}`);
-  
+
   try {
     console.log("[RAG][Triage] Retrieving triage-related context (stateless)...");
     const ragContext = await retrieveContext(message, conversationHistory, {

@@ -1,7 +1,9 @@
 import clsx from "clsx";
-import React from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { MdVolumeUp, MdStop } from "react-icons/md";
+import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
 interface ChatBubbleProps {
   sender: "user" | "bot";
@@ -113,6 +115,7 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
   const showWarning = sender === "bot" && isHealthRelated === false;
 
   const normalizedText = React.useMemo(() => normalizeHealthMarkdown(text), [text]);
+  const { speak, stop, isSpeaking, isSupported } = useTextToSpeech();
 
   return (
     <div
@@ -129,6 +132,20 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
           isUser ? "bg-[#4C5BD8] text-white" : "bg-[#3A4CA8] text-white"
         )}
       >
+        {/* Speaker Button for Bot */}
+        {!isUser && isSupported && (
+          <button
+            onClick={() => isSpeaking ? stop() : speak(text)}
+            className={clsx(
+              "absolute top-2 right-2 p-1.5 rounded-full transition-all duration-200",
+              isSpeaking ? "bg-red-500/20 text-red-200" : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+            )}
+            title={isSpeaking ? "Stop speaking" : "Read out loud"}
+          >
+            {isSpeaking ? <MdStop className="w-4 h-4" /> : <MdVolumeUp className="w-4 h-4" />}
+          </button>
+        )}
+
         {/* Bubble tail */}
         <span
           className={clsx(
