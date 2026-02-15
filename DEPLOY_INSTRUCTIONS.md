@@ -57,8 +57,8 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Generate Embeddings (This takes time!)
-python embeddings/03_build_faiss_index.py
-python export_node_embeddings.py
+python embeddings/05_build_faiss_index.py
+python 06_export_node_embeddings.py
 
 # Done with python
 deactivate

@@ -1,4 +1,4 @@
-# 04_qa_faiss.py
+# 07_qa_faiss.py
 """
 FAISS retrieval with SBERT embeddings + OpenRouter for generated answers.
 """

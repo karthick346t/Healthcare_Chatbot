@@ -1,4 +1,4 @@
-# export_node_embeddings.py
+# 06_export_node_embeddings.py
 """
 Export SBERT embeddings for use in the Node backend.
 
@@ -10,7 +10,7 @@ Instead, we:
   - write backend/data/medlineplus_embeddings.jsonl
 
 Run:
-    (venv) python export_node_embeddings.py
+    (venv) python 06_export_node_embeddings.py
 """
 
 import os

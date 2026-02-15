@@ -186,7 +186,7 @@ const realData = [
 
 async function seed() {
     try {
-        const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/healthcare_bot';
+        const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/healthbot';
         await mongoose.connect(mongoUri);
         console.log('Connected to MongoDB for real data seeding...');
 

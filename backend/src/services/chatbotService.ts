@@ -15,6 +15,17 @@ const BACKUP_MODEL_ID_2 = "mistralai/mistral-7b-instruct:free";
 
 const AXIOS_TIMEOUT = 25_000; // 25 seconds
 
+interface OpenRouterResponse {
+  choices: {
+    message: {
+      content: string;
+      role: string;
+    };
+    text?: string;
+  }[];
+}
+
+
 // ----------------------------------------
 // 🔹 Helper: Small utils
 // ----------------------------------------
@@ -203,10 +214,11 @@ async function callModel(
   const headers = buildHeaders();
 
   try {
-    const response = await axios.post(OPENROUTER_API_URL, payload, {
+    const response = await axios.post<OpenRouterResponse>(OPENROUTER_API_URL, payload, {
       headers,
       timeout: AXIOS_TIMEOUT,
     });
+
 
     let text: string =
       response.data?.choices?.[0]?.message?.content ||

@@ -10,7 +10,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { pipeline } from "@xenova/transformers";
+// import { pipeline } from "@xenova/transformers"; // Removed for dynamic import compatibility
 
 // ============================================
 // Types & Interfaces
@@ -75,6 +75,7 @@ let embeddingPipelinePromise: Promise<any> | null = null;
  */
 async function getEmbeddingPipeline() {
   if (!embeddingPipelinePromise) {
+    const { pipeline } = await (eval('import("@xenova/transformers")') as Promise<any>);
     embeddingPipelinePromise = pipeline(
       "feature-extraction",
       "Xenova/all-MiniLM-L6-v2" // ONNX export matching sentence-transformers/all-MiniLM-L6-v2

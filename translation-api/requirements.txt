@@ -1,5 +1,5 @@
-fastapi==0.110.0
-uvicorn[standard]==0.29.0
-transformers==4.40.0
-torch>=2.1.0      # If you have a GPU, use torch with CUDA, see PyTorch website for GPU wheels
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+transformers>=4.45.0
+torch>=2.4.0
 sentencepiece

@@ -1,4 +1,4 @@
-# 03_build_faiss_index.py
+# 05_build_faiss_index.py
 """
 Build FAISS index using SBERT local embeddings.
 No API calls required.

@@ -1,4 +1,4 @@
-# 02_chunk_texts.py
+# 04_chunk_texts.py
 """
 Chunk cleaned text files from data_text_clean/ into overlapping segments
 ready to embed for RAG.
@@ -19,7 +19,7 @@ Each JSONL line has:
     }
 
 Run from project root (rag/):
-    (venv) python chunking/02_chunk_texts.py
+    (venv) python chunking/04_chunk_texts.py
 """
 
 import os

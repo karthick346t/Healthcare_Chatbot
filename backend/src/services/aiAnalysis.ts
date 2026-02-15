@@ -5,8 +5,18 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 // ✅ SEPARATE MODELS
-const VISION_MODEL = 'nvidia/nemotron-nano-12b-v2-vl:free'; 
+const VISION_MODEL = 'nvidia/nemotron-nano-12b-v2-vl:free';
 const TEXT_MODEL = 'google/gemma-3-27b-it:free';
+
+interface OpenRouterResponse {
+  choices: {
+    message: {
+      content: string;
+      role: string;
+    };
+  }[];
+}
+
 
 export async function analyzeImagesWithNvidia(
   base64Images: string[],
@@ -36,8 +46,8 @@ If it IS health-related, provide a clear, empathetic analysis of findings.`
       });
     }
 
-    let promptText = isDocument 
-      ? `Analyze this health document image ("${fileName}"). Extract text and provide a brief summary.` 
+    let promptText = isDocument
+      ? `Analyze this health document image ("${fileName}"). Extract text and provide a brief summary.`
       : `Analyze this medical image ("${fileName}"). Describe findings.`;
 
     const content: any[] = [{ type: 'text', text: promptText }];
@@ -55,8 +65,9 @@ If it IS health-related, provide a clear, empathetic analysis of findings.`
 
     console.log(`[Vision] Sending ${fileName} (${base64Images.length} image(s)) to ${VISION_MODEL}`);
 
-    const response = await axios.post(
+    const response = await axios.post<OpenRouterResponse>(
       `${OPENROUTER_BASE_URL}/chat/completions`,
+
       {
         model: VISION_MODEL,
         messages: messages,
@@ -146,8 +157,9 @@ ${truncatedText}
 
     console.log(`[Text] Sending ${wordCount} words to ${TEXT_MODEL}`);
 
-    const response = await axios.post(
+    const response = await axios.post<OpenRouterResponse>(
       `${OPENROUTER_BASE_URL}/chat/completions`,
+
       {
         model: TEXT_MODEL,
         messages: messages,
@@ -180,14 +192,14 @@ ${truncatedText}
 
   } catch (error: any) {
     console.error('Document text analysis error:', error.response?.data || error.message);
-    
+
     if (error.response?.status === 429) {
       return {
         analysis: `I'm experiencing high traffic. Please try again in a moment.`,
         isHealthRelated: false
       };
     }
-    
+
     return {
       analysis: `I'm having trouble analyzing "${fileName}" right now.`,
       isHealthRelated: false
