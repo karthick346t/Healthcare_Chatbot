@@ -13,6 +13,8 @@ import { MdHistory, MdArrowBack, MdAdd, MdChatBubbleOutline, MdClose } from "rea
 import { useTranslation } from "react-i18next";
 
 import BotLogo from "../assets/logo.png";
+import NexaLogo from "../assets/NEXA.png";
+
 
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -33,11 +35,16 @@ export default function Chatbot() {
   const [showHistory, setShowHistory] = useState(false);
   const [historyList, setHistoryList] = useState<ChatSessionSummary[]>([]);
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   /* ---------- AUTO SCROLL ---------- */
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages, isTyping]);
 
   /* ---------- AUTO-LOAD LAST CHAT (RESUME) ---------- */
@@ -168,7 +175,11 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="flex flex-col w-full h-screen bg-white text-neutral-dark relative overflow-hidden">
+    <div className="fixed inset-0 flex flex-col w-full h-full bg-[#eef2f6] text-neutral-dark overflow-hidden selection:bg-primary/20 z-50">
+
+      {/* Background Gradients */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none" />
 
       {/* HEADER */}
       <div className="flex items-center justify-between px-5 py-3 bg-white/80 backdrop-blur-xl border-b border-primary/10 z-20 shrink-0">
@@ -183,9 +194,13 @@ export default function Chatbot() {
           <div className="bg-primary/5 p-1.5 rounded-xl border border-primary/10">
             <img src={BotLogo} className="h-8 w-8 object-contain" alt="Bot Logo" />
           </div>
-          <div>
-            <div className="text-sm font-black text-neutral-800 tracking-tight">{t("HealthBot Assistant")}</div>
-            <div className="text-[10px] font-bold text-primary uppercase tracking-widest opacity-70">{t("Always here to help")}</div>
+          <div className="flex flex-col">
+            <img 
+               src={NexaLogo} 
+               alt="NEXA" 
+               className="h-4 w-auto drop-shadow-sm pointer-events-none select-none opacity-80 brightness-0"
+            />
+            <div className="text-[7px] font text-neutral-500 -mt-0.5 whitespace-nowrap tracking-wider">{t("Your wellness companion")}</div>
           </div>
         </div>
 
@@ -267,12 +282,14 @@ export default function Chatbot() {
       </div>
 
       {/* MESSAGES AREA */}
-      <div className="flex-1 overflow-y-auto px-5 pt-4 pb-2 space-y-4 bg-secondary-light/50">
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto px-5 pt-4 pb-2 space-y-4 bg-transparent z-10"
+      >
         {messages.map((m, i) => (
           <ChatBubble key={i} sender={m.sender} text={m.text} isHealthRelated={m.isHealthRelated} />
         ))}
         {isTyping && <TyperIndicator />}
-        <div ref={messagesEndRef} className="h-0" />
       </div>
 
       {/* INPUT AREA */}
