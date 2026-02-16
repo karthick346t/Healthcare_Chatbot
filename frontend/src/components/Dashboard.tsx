@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom"; // <--- 1. IMPORT THIS
 import Sidebar from "./Sidebar";
+import Header from "./Header";
 import {
   MdSearch,
   MdNotifications,
@@ -132,39 +133,7 @@ export default function Dashboard() {
 
       <main className="flex-1 flex flex-col relative z-10 overflow-y-auto pl-2 pr-6 py-6">
 
-        <header className="flex items-center justify-between mb-8">
-          <div className="flex items-center bg-white/60 border border-white/80 backdrop-blur-xl rounded-2xl px-5 py-3 w-1/3 shadow-sm text-neutral-500 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-            <MdSearch className="text-2xl mr-3 opacity-50" />
-            <input type="text" placeholder={t("Search...") || "Search..."} className="bg-transparent outline-none w-full text-sm font-medium placeholder-neutral-400 border-none p-0 focus:ring-0" />
-            <MdMic className="text-lg cursor-pointer hover:text-primary transition-colors ml-2 opacity-50 hover:opacity-100" />
-          </div>
-
-          <div className="flex items-center gap-5">
-            <div className="relative" ref={langMenuRef}>
-              <button onClick={() => setShowLangMenu(!showLangMenu)} className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 border border-white/80 text-xs font-bold text-neutral-600 shadow-sm cursor-pointer hover:bg-white/80 transition-all">
-                <span className="text-base">{currentLang.emoji}</span>
-                <span>{currentLang.code.toUpperCase()}</span>
-              </button>
-              {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-xl border border-white/60 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
-                  {languages.map((lang) => (
-                    <button key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={`w-full text-left px-4 py-3 text-xs font-medium flex items-center gap-3 transition-colors ${selectedLanguage === lang.code ? "bg-primary/10 text-primary" : "text-neutral-600 hover:bg-white/50"}`}>
-                      <span className="text-lg">{lang.emoji}</span>
-                      <span>{lang.native}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className="relative p-2 rounded-xl hover:bg-white/40 transition-colors">
-              <MdNotifications className="text-2xl text-neutral-600" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 p-[2px] cursor-pointer shadow-lg shadow-blue-500/20">
-              <img src="https://i.pravatar.cc/150?img=5" alt="Profile" className="w-full h-full rounded-full border-2 border-white object-cover" />
-            </div>
-          </div>
-        </header>
+        <Header />
 
         <div className="flex flex-col h-full">
           <div className="flex justify-between items-end mb-6">

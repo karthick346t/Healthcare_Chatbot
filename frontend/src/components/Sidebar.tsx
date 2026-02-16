@@ -9,6 +9,9 @@ import {
   MdSettings 
 } from "react-icons/md";
 
+import logo from "../assets/logo.png";
+import NexaLogo from "../assets/NEXA.png";
+
 const menuItems = [
   { icon: MdDashboard, label: "Dashboard", active: true },
   { icon: MdVideoCameraFront, label: "Telemedicine Video" },
@@ -23,10 +26,29 @@ export default function Sidebar() {
   return (
     <div className="h-full flex flex-col py-6 pr-2 z-20 w-64 hidden lg:flex">
       {/* Brand Name with Gradient */}
-      <div className="flex items-center gap-2 px-8 mb-10">
-        <h1 className="text-3xl font-extrabold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600 drop-shadow-sm">
-          NEXA
-        </h1>
+      <div className="flex items-center gap-3 px-6 mb-10 cursor-pointer select-none group">
+        <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-cyan-400/20 blur-xl opacity-40 group-hover:opacity-60 transition-opacity" />
+            <div className="relative h-11 w-11 rounded-xl overflow-hidden border border-white/60 shadow-lg shadow-cyan-500/10 bg-white/80 flex items-center justify-center">
+              <img
+                src={logo}
+                alt="NEXA icon"
+                className="h-full w-full object-contain p-1.5"
+              />
+            </div>
+          </div>
+
+          {/* Brand name using NEXA image */}
+          <div className="flex flex-col">
+            <img
+              src={NexaLogo}
+              alt="NEXA"
+              className="h-6 w-auto drop-shadow-sm pointer-events-none select-none opacity-90"
+            />
+            <p className="text-[10px] text-neutral-500 -mt-1 font-medium whitespace-nowrap">
+              Your wellness companion
+            </p>
+          </div>
       </div>
 
       {/* Navigation Menu */}
