@@ -15,6 +15,15 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Lock files (keep package-lock.json, ignore pnpm)
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Python files in Node.js projects
+backend/requirements.txt
+frontend/requirements.txt
+
 # === Build Artifacts ===
 dist/
 build/

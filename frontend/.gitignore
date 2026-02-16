@@ -25,6 +25,14 @@ dist-ssr
 .vite/
 .pnpm-store/
 
+# Lock files (keep package-lock.json, ignore pnpm)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Python files (not needed in React frontend)
+requirements.txt
+venv/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

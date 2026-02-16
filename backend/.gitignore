@@ -5,6 +5,14 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Lock files (keep package-lock.json, ignore pnpm)
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Python files (not needed in Node.js backend)
+requirements.txt
+venv/
+
 # === Environment ===
 .env
 .env.*
