@@ -55,6 +55,7 @@ src.backup/
 *.log
 logs/
 
-backend/src/data/medlineplus_embeddings.jsonl
+# Data files (embeddings, large datasets)
+backend/data/
 backend/src/data/
-backend/src/data/medlineplus_embeddings.jsonl
+*.jsonl
