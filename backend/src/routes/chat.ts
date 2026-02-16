@@ -122,7 +122,22 @@ router.post(
 
       // --- E. S3 BACKUP ---
       if (updatedSession) {
-        uploadSessionToS3(sessionId, updatedSession)
+        // Try to get userId from header for organized backup
+        let userId: string | undefined;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          try {
+            // Lazy import to avoid circular dependency issues if any
+            const { verifyToken } = require('../services/authService');
+            const token = authHeader.split(' ')[1];
+            const decoded = verifyToken(token);
+            userId = decoded.userId;
+          } catch (e) {
+            console.warn('Invalid token in chat request, saving as anonymous');
+          }
+        }
+
+        uploadSessionToS3(sessionId, updatedSession, userId)
           .catch(err => console.error(`⚠️ S3 Background Upload Failed:`, err.message));
       }
 

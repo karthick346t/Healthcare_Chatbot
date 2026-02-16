@@ -11,6 +11,7 @@ import chatRouter from './routes/chat';
 import uploadRouter from './routes/upload';
 import ragRouter from './routes/rag';
 import appointmentRouter from './routes/appointments';
+import authRouter from './routes/auth';
 import localizationMiddleware from './middleware/localization';
 
 import path from 'path';
@@ -50,6 +51,7 @@ app.use('/api/chat', chatRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/rag', ragRouter);
 app.use('/api/appointments', appointmentRouter);
+app.use('/api/auth', authRouter);
 
 // --- SERVE FRONTEND (Single Port Deployment) ---
 // The frontend build files will be moved to backend/public during deployment

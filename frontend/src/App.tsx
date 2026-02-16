@@ -1,49 +1,71 @@
-import { useContext } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // 1. Import Router components
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Chatbot from "./components/Chatbot";
 import WorkInProgress from "./pages/WorkInProgress";
 import Appointments from "./pages/Appointments";
-import { LanguageContext } from "./context/LanguageContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function InnerApp() {
   return (
-    // 3. Wrap everything in Router so 'useNavigate' inside Dashboard works
     <Router>
       <div className="min-h-screen font-sans text-neutral-dark relative">
-
-        {/* 4. Define your Routes */}
         <Routes>
-          {/* Home Route - The Main Dashboard */}
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected Routes */}
           <Route
             path="/"
-            element={<Dashboard />}
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
           />
-
           <Route
             path="/chat"
-            element={<Chatbot />}
+            element={
+              <ProtectedRoute>
+                <Chatbot />
+              </ProtectedRoute>
+            }
           />
-
-          {/* New Feature Routes */}
           <Route
             path="/symptoms"
-            element={<WorkInProgress title="Symptom Checker" />}
+            element={
+              <ProtectedRoute>
+                <WorkInProgress title="Symptom Checker" />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/labs"
-            element={<WorkInProgress title="Lab Reports" />}
+            element={
+              <ProtectedRoute>
+                <WorkInProgress title="Lab Reports" />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/medications"
-            element={<WorkInProgress title="Medication Tracker" />}
+            element={
+              <ProtectedRoute>
+                <WorkInProgress title="Medication Tracker" />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/appointments"
-            element={<Appointments />}
+            element={
+              <ProtectedRoute>
+                <Appointments />
+              </ProtectedRoute>
+            }
           />
         </Routes>
-
       </div>
     </Router>
   );

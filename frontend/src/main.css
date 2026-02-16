@@ -439,3 +439,156 @@ textarea {
   color: var(--primary-dark);
   border: 1px solid rgba(0, 128, 128, 0.2);
 }
+
+/* ============================================
+   LOGIN / REGISTER PAGE STYLES
+   ============================================ */
+
+/* Login page gradient background */
+.login-gradient-bg {
+  background: linear-gradient(135deg, #004D4D 0%, #006666 25%, #008080 50%, #06D6A0 100%);
+}
+
+/* Glassmorphism login card */
+.login-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 128, 128, 0.12);
+  box-shadow:
+    0 20px 60px rgba(0, 128, 128, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Card entrance animation */
+@keyframes loginCardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-card-enter {
+  animation: loginCardEnter 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Staggered field entrance */
+@keyframes loginFieldEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-field-enter {
+  opacity: 0;
+  animation: loginFieldEnter 0.4s ease-out forwards;
+}
+
+/* Shake animation for errors */
+@keyframes loginShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
+}
+
+.login-shake {
+  animation: loginShake 0.5s ease-in-out;
+}
+
+/* Stagger in animation for branding items */
+@keyframes loginStaggerIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.login-stagger-in {
+  opacity: 0;
+  animation: loginStaggerIn 0.5s ease-out forwards;
+}
+
+/* Slow pulse for branding logo */
+@keyframes loginPulseSlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 24px 8px rgba(255, 255, 255, 0.15);
+  }
+}
+
+.login-pulse-slow {
+  animation: loginPulseSlow 3s ease-in-out infinite;
+}
+
+/* Floating decorative shapes */
+@keyframes loginFloat1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(30px, -40px) rotate(5deg); }
+  50% { transform: translate(-20px, -60px) rotate(-3deg); }
+  75% { transform: translate(15px, -25px) rotate(3deg); }
+}
+
+@keyframes loginFloat2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-40px, 30px) rotate(-5deg); }
+  66% { transform: translate(20px, -30px) rotate(5deg); }
+}
+
+@keyframes loginFloat3 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-25px, 40px); }
+}
+
+.login-float-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(1px);
+}
+
+.login-float-shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -80px;
+  right: -60px;
+  animation: loginFloat1 15s ease-in-out infinite;
+}
+
+.login-float-shape-2 {
+  width: 200px;
+  height: 200px;
+  bottom: 10%;
+  left: -40px;
+  animation: loginFloat2 12s ease-in-out infinite;
+}
+
+.login-float-shape-3 {
+  width: 150px;
+  height: 150px;
+  top: 40%;
+  right: 15%;
+  animation: loginFloat3 10s ease-in-out infinite;
+}
+
+/* Login page resets - prevent global transition on login elements */
+.login-page input:focus {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}

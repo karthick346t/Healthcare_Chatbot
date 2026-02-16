@@ -415,97 +415,98 @@ const Appointments = () => {
 
                 {/* STEP 3: Date Select */}
                 {step === 3 && selectedHospital && selectedDoctor && (
-                    <div className="animate-fadeIn max-w-2xl">
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("select_date_title")}</h1>
-                        <p className="text-neutral-500 mb-10 font-medium">{t("select_preferred_date")}</p>
+                    <div className="animate-fadeIn max-w-2xl mx-auto">
+                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("Select Appointment Date")}</h1>
+                        <p className="text-neutral-500 mb-8 font-medium">{t("select_preferred_date")}</p>
 
-                        <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-xl">
-                            <div className="flex items-center gap-4 mb-10">
-                                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-3xl">
-                                    <MdPerson />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-2xl text-neutral-800">{t(selectedDoctor.name || "")}</h4>
-                                    <p className="text-primary font-bold text-sm tracking-wide">{t(selectedDoctor.specialty || "")}</p>
-                                    <p className="text-neutral-500 text-sm font-medium">{t(selectedHospital.name || "")}</p>
-                                </div>
+                        {/* Doctor Info Card - Outside main container */}
+                        <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-lg mb-6 flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
+                                <MdPerson />
                             </div>
+                            <div>
+                                <h4 className="font-bold text-xl text-neutral-800">{t(selectedDoctor.name || "")}</h4>
+                                <p className="text-primary font-bold text-xs tracking-wide uppercase">{t(selectedDoctor.specialty || "")}</p>
+                                <p className="text-neutral-500 text-sm font-medium">{t(selectedHospital.name || "")}</p>
+                            </div>
+                        </div>
 
-                            <div className="mb-6">
-                                <label className="text-sm font-bold text-neutral-400 uppercase tracking-widest mb-4 block">{t("select_preferred_date")}</label>
-                                <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                                    {next7Days.map((date: string) => {
-                                        const d = new Date(date);
-                                        const isSelected = selectedDate === date;
-                                        const availability = availabilityMap[date];
-                                        const isLoading = loadingAvailability && !availability;
-                                        const isSunday = d.getDay() === 0; // 0 = Sunday
-                                        
-                                        // Determine availability status
-                                        let availabilityStatus: 'available' | 'limited' | 'full' | 'loading' | 'closed' = 'loading';
+                        {/* Date Selection Card */}
+                        <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-xl">
+                            <label className="text-sm font-bold text-neutral-400 uppercase tracking-widest mb-6 block">{t("select_preferred_date")}</label>
+                            
+                            <div className="grid grid-cols-4 md:grid-cols-7 gap-4 mb-8">
+                                {next7Days.map((date: string) => {
+                                    const d = new Date(date);
+                                    const isSelected = selectedDate === date;
+                                    const availability = availabilityMap[date];
+                                    const isLoading = loadingAvailability && !availability;
+                                    const isSunday = d.getDay() === 0; // 0 = Sunday
+                                    
+                                    // Determine availability status
+                                    let availabilityStatus: 'available' | 'limited' | 'full' | 'loading' | 'closed' = 'loading';
+                                    
+                                    if (isSunday) {
+                                        availabilityStatus = 'closed';
+                                    } else if (availability) {
+                                        if (availability.isFull) {
+                                            availabilityStatus = 'full';
+                                        } else if (availability.availableSlots <= 2) {
+                                            availabilityStatus = 'limited';
+                                        } else {
+                                            availabilityStatus = 'available';
+                                        }
+                                    }
+
+                                    // Color classes based on status
+                                    const getColorClasses = () => {
+                                        if (isSelected && !isSunday) {
+                                            return "bg-primary border-primary text-white shadow-lg shadow-primary/30";
+                                        }
                                         
                                         if (isSunday) {
-                                            availabilityStatus = 'closed';
-                                        } else if (availability) {
-                                            if (availability.isFull) {
-                                                availabilityStatus = 'full';
-                                            } else if (availability.availableSlots <= 2) {
-                                                availabilityStatus = 'limited';
-                                            } else {
-                                                availabilityStatus = 'available';
-                                            }
+                                            return "bg-gray-100 border-gray-300 text-gray-400 opacity-50 cursor-not-allowed";
+                                        }
+                                        
+                                        if (isLoading) {
+                                            return "bg-white/30 border-white/60 text-neutral-400 animate-pulse";
                                         }
 
-                                        // Color classes based on status
-                                        const getColorClasses = () => {
-                                            if (isSelected && !isSunday) {
-                                                return "bg-primary border-primary text-white shadow-lg shadow-primary/30";
-                                            }
-                                            
-                                            if (isSunday) {
-                                                return "bg-gray-100 border-gray-300 text-gray-400 opacity-50 cursor-not-allowed";
-                                            }
-                                            
-                                            if (isLoading) {
-                                                return "bg-white/30 border-white/60 text-neutral-400 animate-pulse";
-                                            }
+                                        switch (availabilityStatus) {
+                                            case 'available':
+                                                return "bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100";
+                                            case 'limited':
+                                                return "bg-amber-50 border-amber-400 text-amber-700 hover:bg-amber-100";
+                                            case 'full':
+                                                return "bg-red-50 border-red-300 text-red-400 opacity-60 cursor-not-allowed";
+                                            default:
+                                                return "bg-white/50 border-white/80 text-neutral-600";
+                                        }
+                                    };
 
-                                            switch (availabilityStatus) {
-                                                case 'available':
-                                                    return "bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100";
-                                                case 'limited':
-                                                    return "bg-amber-50 border-amber-400 text-amber-700 hover:bg-amber-100";
-                                                case 'full':
-                                                    return "bg-red-50 border-red-300 text-red-400 opacity-60 cursor-not-allowed";
-                                                default:
-                                                    return "bg-white/50 border-white/80 text-neutral-600";
-                                            }
-                                        };
+                                    const isDisabled = availabilityStatus === 'full' || isLoading || isSunday;
+                                    
+                                    const getTooltip = () => {
+                                        if (isSunday) return t("Closed - Sunday");
+                                        if (availability) return `${availability.availableSlots} of ${availability.totalSlots} slots available`;
+                                        return 'Loading...';
+                                    };
 
-                                        const isDisabled = availabilityStatus === 'full' || isLoading || isSunday;
-                                        
-                                        const getTooltip = () => {
-                                            if (isSunday) return t("Closed - Sunday");
-                                            if (availability) return `${availability.availableSlots} of ${availability.totalSlots} slots available`;
-                                            return 'Loading...';
-                                        };
-
-                                        return (
-                                            <button
-                                                key={date}
-                                                onClick={() => !isDisabled && setSelectedDate(date)}
-                                                disabled={isDisabled}
-                                                title={getTooltip()}
-                                                className={`flex flex-col items-center p-3 rounded-2xl border transition-all ${getColorClasses()}`}
-                                            >
-                                                <span className="text-[10px] font-bold uppercase opacity-60 mb-1">
-                                                    {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : i18n.language, { weekday: 'short' })}
-                                                </span>
-                                                <span className="text-lg font-extrabold">{d.getDate()}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                    return (
+                                        <button
+                                            key={date}
+                                            onClick={() => !isDisabled && setSelectedDate(date)}
+                                            disabled={isDisabled}
+                                            title={getTooltip()}
+                                            className={`flex flex-col items-center p-4 rounded-2xl border transition-all ${getColorClasses()}`}
+                                        >
+                                            <span className="text-[10px] font-bold uppercase opacity-60 mb-1">
+                                                {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : i18n.language, { weekday: 'short' })}
+                                            </span>
+                                            <span className="text-lg font-extrabold">{d.getDate()}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             <button

@@ -14,20 +14,22 @@ const s3Client = new S3Client({
 
 /**
  * Uploads a JSON chat session log to S3
+ * Organized by user: chat-logs/<userId>/<sessionId>.json
  */
-export const uploadSessionToS3 = async (sessionId: string, data: any) => {
+export const uploadSessionToS3 = async (sessionId: string, data: any, userId?: string) => {
   try {
+    const folder = userId ? `chat-logs/${userId}` : 'chat-logs/anonymous';
     const params = {
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `chat-logs/${sessionId}.json`, 
+      Key: `${folder}/${sessionId}.json`,
       Body: JSON.stringify(data, null, 2),
       ContentType: 'application/json',
     };
 
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
-    
-    console.log(`✅ [AWS] Session ${sessionId} backed up to S3.`);
+
+    console.log(`✅ [AWS] Session ${sessionId} backed up to S3 (${folder}).`);
     return true;
   } catch (error) {
     console.error(`❌ [AWS] Upload failed for session ${sessionId}:`, error);
@@ -36,11 +38,40 @@ export const uploadSessionToS3 = async (sessionId: string, data: any) => {
 };
 
 /**
+ * Uploads a user profile backup to S3
+ * Key: users/<userId>.json
+ */
+export const uploadUserBackup = async (user: any) => {
+  try {
+    // Sanitize: Remove password/salt if present
+    const userObj = JSON.parse(JSON.stringify(user));
+    delete userObj.password;
+    delete userObj.__v;
+
+    const params = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `users/${userObj._id}.json`,
+      Body: JSON.stringify(userObj, null, 2),
+      ContentType: 'application/json',
+    };
+
+    const command = new PutObjectCommand(params);
+    await s3Client.send(command);
+
+    console.log(`✅ [AWS] User backup uploaded for ${userObj._id}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ [AWS] User backup failed:`, error);
+    return false;
+  }
+};
+
+/**
  * Uploads a raw file (PDF, Image) to S3 and returns the URL
  */
 export const uploadFileToS3 = async (
-  filePath: string, 
-  fileName: string, 
+  filePath: string,
+  fileName: string,
   mimeType: string
 ): Promise<string | null> => {
   try {
