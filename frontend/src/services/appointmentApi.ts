@@ -73,4 +73,16 @@ export const appointmentApi = {
         }
         return response.json();
     },
+
+    checkAvailability: async (doctorId: string, appointmentDate: string): Promise<{
+        totalSlots: number;
+        bookedSlots: number;
+        availableSlots: number;
+        isFull: boolean;
+    }> => {
+        const response = await fetch(`${BASE_PATH}/check-availability?doctorId=${doctorId}&appointmentDate=${appointmentDate}`);
+        if (!response.ok) throw new Error('Failed to check availability');
+        return response.json();
+    },
 };
+

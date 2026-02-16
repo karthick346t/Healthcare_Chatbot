@@ -28,6 +28,40 @@ router.get('/hospitals/:id/doctors', async (req: Request, res: Response) => {
     }
 });
 
+// GET /api/appointments/check-availability
+router.get('/check-availability', async (req: Request, res: Response) => {
+    try {
+        const { doctorId, appointmentDate } = req.query;
+
+        if (!doctorId || !appointmentDate) {
+            return res.status(400).json({ message: 'doctorId and appointmentDate are required' });
+        }
+
+        // Normalize date to beginning of day
+        const date = new Date(appointmentDate as string);
+        date.setHours(0, 0, 0, 0);
+
+        // Count existing appointments for this doctor on this day
+        const count = await Appointment.countDocuments({
+            doctorId: new mongoose.Types.ObjectId(doctorId as string),
+            appointmentDate: date,
+            status: 'confirmed'
+        });
+
+        const maxSlots = 5;
+        const availableSlots = maxSlots - count;
+
+        res.json({
+            totalSlots: maxSlots,
+            bookedSlots: count,
+            availableSlots: availableSlots,
+            isFull: count >= maxSlots
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // POST /api/appointments/book
 router.post('/book', async (req: Request, res: Response) => {
     const {

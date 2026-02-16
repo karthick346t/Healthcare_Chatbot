@@ -36,7 +36,7 @@ const Appointments = () => {
     const [selectedDistrict, setSelectedDistrict] = useState<string>("");
     const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-    const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState<string>("");
 
     // Patient Details Form
     const [patientForm, setPatientForm] = useState({
@@ -48,6 +48,15 @@ const Appointments = () => {
     });
 
     const [bookingResult, setBookingResult] = useState<Appointment | null>(null);
+    
+    // Availability map for all 7 dates
+    const [availabilityMap, setAvailabilityMap] = useState<Record<string, {
+        totalSlots: number;
+        bookedSlots: number;
+        availableSlots: number;
+        isFull: boolean;
+    }>>({});
+    const [loadingAvailability, setLoadingAvailability] = useState(false);
 
     // Fetch Hospitals when district is selected
     useEffect(() => {
@@ -84,6 +93,50 @@ const Appointments = () => {
             fetchDoctors();
         }
     }, [selectedHospital]);
+
+    // Generate next 7 days array
+    const next7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        return d.toISOString().split('T')[0];
+    });
+
+    // Check availability for all 7 dates when doctor is selected
+    useEffect(() => {
+        if (selectedDoctor) {
+            const fetchAllAvailability = async () => {
+                setLoadingAvailability(true);
+                try {
+                    // Fetch availability for all 7 dates in parallel
+                    const availabilityPromises = next7Days.map(date =>
+                        appointmentApi.checkAvailability(selectedDoctor._id, date)
+                            .then(data => ({ date, data }))
+                            .catch(err => {
+                                console.error(`Failed to check availability for ${date}:`, err);
+                                return null;
+                            })
+                    );
+
+                    const results = await Promise.all(availabilityPromises);
+                    
+                    // Build availability map
+                    const newAvailabilityMap: Record<string, any> = {};
+                    results.forEach(result => {
+                        if (result) {
+                            newAvailabilityMap[result.date] = result.data;
+                        }
+                    });
+                    
+                    setAvailabilityMap(newAvailabilityMap);
+                } catch (err: any) {
+                    console.error('Failed to check availability:', err);
+                } finally {
+                    setLoadingAvailability(false);
+                }
+            };
+            fetchAllAvailability();
+        }
+    }, [selectedDoctor]);
 
     const handleBook = async () => {
         if (!selectedHospital || !selectedDoctor) return;
@@ -160,16 +213,12 @@ const Appointments = () => {
         doc.save(`Appointment_Token_${bookingResult.tokenNumber}.pdf`);
     };
 
+
     const filteredHospitals = hospitals.filter(h =>
         h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         h.location.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const next7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        return d.toISOString().split('T')[0];
-    });
 
     return (
         <div className="flex w-full min-h-screen bg-[#eef2f6] relative overflow-x-hidden font-sans text-neutral-dark">
@@ -382,19 +431,76 @@ const Appointments = () => {
                                 </div>
                             </div>
 
-                            <div className="mb-10">
+                            <div className="mb-6">
                                 <label className="text-sm font-bold text-neutral-400 uppercase tracking-widest mb-4 block">{t("select_preferred_date")}</label>
                                 <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                                    {next7Days.map(date => {
+                                    {next7Days.map((date: string) => {
                                         const d = new Date(date);
                                         const isSelected = selectedDate === date;
+                                        const availability = availabilityMap[date];
+                                        const isLoading = loadingAvailability && !availability;
+                                        const isSunday = d.getDay() === 0; // 0 = Sunday
+                                        
+                                        // Determine availability status
+                                        let availabilityStatus: 'available' | 'limited' | 'full' | 'loading' | 'closed' = 'loading';
+                                        
+                                        if (isSunday) {
+                                            availabilityStatus = 'closed';
+                                        } else if (availability) {
+                                            if (availability.isFull) {
+                                                availabilityStatus = 'full';
+                                            } else if (availability.availableSlots <= 2) {
+                                                availabilityStatus = 'limited';
+                                            } else {
+                                                availabilityStatus = 'available';
+                                            }
+                                        }
+
+                                        // Color classes based on status
+                                        const getColorClasses = () => {
+                                            if (isSelected && !isSunday) {
+                                                return "bg-primary border-primary text-white shadow-lg shadow-primary/30";
+                                            }
+                                            
+                                            if (isSunday) {
+                                                return "bg-gray-100 border-gray-300 text-gray-400 opacity-50 cursor-not-allowed";
+                                            }
+                                            
+                                            if (isLoading) {
+                                                return "bg-white/30 border-white/60 text-neutral-400 animate-pulse";
+                                            }
+
+                                            switch (availabilityStatus) {
+                                                case 'available':
+                                                    return "bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100";
+                                                case 'limited':
+                                                    return "bg-amber-50 border-amber-400 text-amber-700 hover:bg-amber-100";
+                                                case 'full':
+                                                    return "bg-red-50 border-red-300 text-red-400 opacity-60 cursor-not-allowed";
+                                                default:
+                                                    return "bg-white/50 border-white/80 text-neutral-600";
+                                            }
+                                        };
+
+                                        const isDisabled = availabilityStatus === 'full' || isLoading || isSunday;
+                                        
+                                        const getTooltip = () => {
+                                            if (isSunday) return t("Closed - Sunday");
+                                            if (availability) return `${availability.availableSlots} of ${availability.totalSlots} slots available`;
+                                            return 'Loading...';
+                                        };
+
                                         return (
                                             <button
                                                 key={date}
-                                                onClick={() => setSelectedDate(date)}
-                                                className={`flex flex-col items-center p-3 rounded-2xl border transition-all ${isSelected ? "bg-primary border-primary text-white shadow-lg shadow-primary/30" : "bg-white/50 border-white/80 hover:bg-white text-neutral-600"}`}
+                                                onClick={() => !isDisabled && setSelectedDate(date)}
+                                                disabled={isDisabled}
+                                                title={getTooltip()}
+                                                className={`flex flex-col items-center p-3 rounded-2xl border transition-all ${getColorClasses()}`}
                                             >
-                                                <span className="text-[10px] font-bold uppercase opacity-60 mb-1">{d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : i18n.language, { weekday: 'short' })}</span>
+                                                <span className="text-[10px] font-bold uppercase opacity-60 mb-1">
+                                                    {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : i18n.language, { weekday: 'short' })}
+                                                </span>
                                                 <span className="text-lg font-extrabold">{d.getDate()}</span>
                                             </button>
                                         );
@@ -404,7 +510,9 @@ const Appointments = () => {
 
                             <button
                                 onClick={() => setStep(3.5)}
-                                className="w-full py-5 rounded-[1.5rem] bg-primary-600 hover:bg-primary-700 text-white font-extrabold tracking-wide shadow-xl active:scale-[0.98] transition-all"
+                                disabled={!selectedDate || availabilityMap[selectedDate]?.isFull}
+                                className="w-full py-5 rounded-[1.5rem] bg-primary-600 hover:bg-primary-700 text-white font-extrabold tracking-wide shadow-xl active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+
                             >
                                 {t("confirm_booking")}
                             </button>
