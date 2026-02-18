@@ -6,6 +6,13 @@ import Appointments from "./pages/Appointments";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRoute from "./components/AdminRoute";
+import AdminLayout from "./components/AdminLayout";
+import AdminAppointments from "./pages/admin/AdminAppointments";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminDoctors from "./pages/admin/AdminDoctors";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 function InnerApp() {
   return (
@@ -63,6 +70,22 @@ function InnerApp() {
               <ProtectedRoute>
                 <Appointments />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <Routes>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="appointments" element={<AdminAppointments />} />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route path="doctors" element={<AdminDoctors />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                  </Routes>
+                </AdminLayout>
+              </AdminRoute>
             }
           />
         </Routes>

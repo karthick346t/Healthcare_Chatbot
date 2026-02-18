@@ -102,7 +102,7 @@ router.post('/book', async (req: Request, res: Response) => {
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
             tokenNumber: count + 1,
-            status: 'confirmed'
+            status: 'pending'
         });
 
         await newAppointment.save();

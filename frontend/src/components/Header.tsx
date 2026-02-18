@@ -167,6 +167,15 @@ export default function Header() {
                     
                     <div className="p-2">
                         {/* Future menu items can go here */}
+                         {user.role === 'admin' && (
+                             <a
+                                href="/admin"
+                                className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 hover:bg-neutral-50 hover:text-cyan-600 flex items-center gap-3 transition-colors font-medium"
+                             >
+                                <HiUserCircle className="text-lg" />
+                                <span>{t("Admin Dashboard")}</span>
+                             </a>
+                         )}
                          <button
                             onClick={handleLogout}
                             className="w-full text-left px-4 py-3 text-sm rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 flex items-center gap-3 transition-colors font-medium"

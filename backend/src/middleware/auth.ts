@@ -40,3 +40,32 @@ export default function authMiddleware(
         return;
     }
 }
+
+/**
+ * Admin Middleware
+ * Checks if the authenticated user has 'admin' role.
+ * Must be placed AFTER authMiddleware.
+ */
+export const adminMiddleware = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        if (!req.user || !req.user.userId) {
+            res.status(401).json({ error: 'Access denied. Not authenticated.' });
+            return;
+        }
+
+        const user = await import('../models/User').then(m => m.default.findById(req.user!.userId));
+
+        if (!user || user.role !== 'admin') {
+            res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+            return;
+        }
+
+        next();
+    } catch (error) {
+        res.status(500).json({ error: 'Server error checking admin privileges.' });
+    }
+};

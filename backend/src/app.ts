@@ -12,6 +12,7 @@ import uploadRouter from './routes/upload';
 import ragRouter from './routes/rag';
 import appointmentRouter from './routes/appointments';
 import authRouter from './routes/auth';
+import adminRouter from './routes/admin';
 import localizationMiddleware from './middleware/localization';
 
 import path from 'path';
@@ -25,6 +26,7 @@ app.use(helmet({
 }));
 
 // CORS
+// app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(cors({ origin: true, credentials: true }));
 
 // Rate Limiting
@@ -52,6 +54,7 @@ app.use('/api/upload', uploadRouter);
 app.use('/api/rag', ragRouter);
 app.use('/api/appointments', appointmentRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRouter);
 
 // --- SERVE FRONTEND (Single Port Deployment) ---
 // The frontend build files will be moved to backend/public during deployment
