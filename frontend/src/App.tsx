@@ -6,6 +6,8 @@ import Appointments from "./pages/Appointments";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import Telemedicine from "./pages/Telemedicine";
+import Payment from "./pages/Payment";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
@@ -38,6 +40,22 @@ function InnerApp() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/telemedicine"
+            element={
+              <ProtectedRoute>
+                <Telemedicine />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <Payment />
               </ProtectedRoute>
             }
           />

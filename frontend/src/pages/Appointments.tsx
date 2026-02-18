@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     MdArrowBack, MdLocationOn, MdCalendarToday, MdCheckCircle, MdSearch,
     MdDescription, MdPerson, MdHome, MdOutlineQuestionAnswer, MdDownload,
@@ -36,6 +36,17 @@ const Appointments = () => {
     const [selectedDistrict, setSelectedDistrict] = useState<string>("");
     const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+    const location = useLocation();
+
+    // Check for payment success return
+    useEffect(() => {
+        if (location.state && location.state.step === 4 && location.state.bookingResult) {
+            setBookingResult(location.state.bookingResult);
+            setStep(4);
+            // Clear state so refresh doesn't re-trigger? Optional.
+        }
+    }, [location]);
     const [selectedDate, setSelectedDate] = useState<string>("");
 
     // Patient Details Form
@@ -150,18 +161,22 @@ const Appointments = () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await appointmentApi.bookAppointment({
-                patientName: patientForm.name,
-                patientAge: parseInt(patientForm.age),
-                patientGender: patientForm.gender,
-                patientAddress: patientForm.address,
-                problem: patientForm.problem,
-                hospitalId: selectedHospital._id,
-                doctorId: selectedDoctor._id,
-                appointmentDate: selectedDate
+            // Redirect to Payment Gateway with booking details
+            // We pass all necessary data to the payment page to finalize booking there
+            navigate('/payment', { 
+                state: { 
+                    appointmentDetails: {
+                        district: selectedDistrict,
+                        hospital: selectedHospital,
+                        doctor: selectedDoctor,
+                        date: selectedDate,
+                        timeSlot: selectedTimeSlot,
+                        patientDetails: patientForm
+                    }
+                } 
             });
-            setBookingResult(result);
-            setStep(4);
+            // setBookingResult(result);
+            // setStep(4);
         } catch (err: any) {
             setError(err.message);
         } finally {
