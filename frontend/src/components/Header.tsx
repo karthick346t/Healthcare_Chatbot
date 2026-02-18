@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.png";
 import NexaLogo from "../assets/NEXA.png"; // your NEXA wordmark
 
-import { HiOutlineInformationCircle, HiMenu, HiUserCircle, HiLogout } from "react-icons/hi";
+import { HiOutlineInformationCircle, HiMenu, HiUserCircle, HiLogout, HiShieldCheck } from "react-icons/hi";
 import { TbLanguage } from "react-icons/tb";
 
 import languages from "../locales/languages.json";
@@ -11,10 +11,13 @@ import { LanguageContext } from "../context/LanguageContext";
 import { useAuth } from "../hooks/useAuth";
 import i18n from "../utils/i18n";
 
+import { useNavigate } from "react-router-dom";
+
 export default function Header() {
   const { t } = useTranslation();
   const { selectedLanguage, setLanguage } = useContext(LanguageContext);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [showMenu, setShowMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -165,16 +168,32 @@ export default function Header() {
                         </div>
                     </div>
                     
-                    <div className="p-2">
+                        <div className="p-2">
                         {/* Future menu items can go here */}
+                             {user.role === 'patient' && (
+                                 <button
+                                    onClick={() => {
+                                        navigate('/profile');
+                                        setShowUserMenu(false);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 hover:bg-neutral-50 hover:text-cyan-600 flex items-center gap-3 transition-colors font-medium"
+                                 >
+                                    <HiUserCircle className="text-lg" />
+                                    <span>{t("My Profile")}</span>
+                                 </button>
+                             )}
+
                          {user.role === 'admin' && (
-                             <a
-                                href="/admin"
+                             <button
+                                onClick={() => {
+                                    navigate('/admin');
+                                    setShowUserMenu(false);
+                                }}
                                 className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 hover:bg-neutral-50 hover:text-cyan-600 flex items-center gap-3 transition-colors font-medium"
                              >
-                                <HiUserCircle className="text-lg" />
+                                <HiShieldCheck className="text-lg" />
                                 <span>{t("Admin Dashboard")}</span>
-                             </a>
+                             </button>
                          )}
                          <button
                             onClick={handleLogout}

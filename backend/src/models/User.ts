@@ -8,6 +8,18 @@ export interface IUser extends Document {
     googleId?: string;
     avatar?: string;
     role: 'patient' | 'admin';
+    phone?: string;
+    gender?: 'Male' | 'Female' | 'Other';
+    dateOfBirth?: Date;
+    bloodGroup?: string;
+    address?: string;
+    allergies?: string[];
+    chronicConditions?: string[];
+    emergencyContact?: {
+        name: string;
+        phone: string;
+        relation: string;
+    };
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -44,6 +56,18 @@ const userSchema = new Schema<IUser>(
             type: String,
             enum: ['patient', 'admin'],
             default: 'patient',
+        },
+        phone: { type: String, trim: true },
+        gender: { type: String, enum: ['Male', 'Female', 'Other'] },
+        dateOfBirth: { type: Date },
+        bloodGroup: { type: String },
+        address: { type: String },
+        allergies: { type: [String], default: [] },
+        chronicConditions: { type: [String], default: [] },
+        emergencyContact: {
+            name: String,
+            phone: String,
+            relation: String
         },
     },
     {

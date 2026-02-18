@@ -1,12 +1,10 @@
-import { Router, type Request, type Response } from 'express';
-import { body, validationResult } from 'express-validator';
+import { Router, Request, Response } from 'express';
+import { check, body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
-import {
-    registerUser,
-    loginUser,
-    googleLogin,
-    getUserById,
-} from '../services/authService';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import { registerUser, loginUser, googleLogin } from '../services/authService';
 import authMiddleware from '../middleware/auth';
 
 const router = Router();
@@ -102,16 +100,58 @@ router.post(
 /**
  * GET /api/auth/me
  */
-router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.get('/me', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const user = await getUserById(req.user!.userId);
+        const user = await User.findById(req.user!.userId);
         if (!user) {
-            res.status(404).json({ error: 'User not found' });
-            return;
+            return res.status(404).json({ error: 'User not found' });
         }
-        res.json({ user });
-    } catch (err: unknown) {
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+            // Return full profile
+            phone: user.phone,
+            gender: user.gender,
+            dateOfBirth: user.dateOfBirth,
+            bloodGroup: user.bloodGroup,
+            address: user.address,
+            allergies: user.allergies,
+            chronicConditions: user.chronicConditions,
+            emergencyContact: user.emergencyContact
+        });
+    } catch (error) {
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+/**
+ * PUT /api/auth/profile
+ */
+router.put('/profile', authMiddleware, async (req: Request, res: Response) => {
+    try {
+        const updates = req.body;
+        // Prevent updating sensitive fields
+        delete updates.password;
+        delete updates.role;
+        delete updates.email; // Usually separate flow for email change
+        delete updates.googleId;
+
+        const user = await User.findByIdAndUpdate(
+            req.user!.userId,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
     }
 });
 

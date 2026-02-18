@@ -1,12 +1,23 @@
 import { createContext } from "react";
 
 export interface AuthUser {
-  _id: string;
+  userId: string;
   name: string;
   email: string;
   avatar?: string;
-  role: string;
-  googleId?: string;
+  role: 'patient' | 'admin';
+  phone?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  bloodGroup?: string;
+  address?: string;
+  allergies?: string[];
+  chronicConditions?: string[];
+  emergencyContact?: {
+      name: string;
+      phone: string;
+      relation: string;
+  };
 }
 
 export interface AuthContextType {
