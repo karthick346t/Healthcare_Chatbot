@@ -10,6 +10,8 @@ import Telemedicine from "./pages/Telemedicine";
 import Payment from "./pages/Payment";
 import MedicalRecords from './pages/MedicalRecords';
 import MyAppointments from "./pages/MyAppointments";
+import LabReports from "./pages/LabReports";
+import Medications from "./pages/Medications";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
@@ -93,7 +95,7 @@ import MyAppointments from "./pages/MyAppointments"; // Top of file
             path="/labs"
             element={
               <ProtectedRoute>
-                <WorkInProgress title="Lab Reports" />
+                <LabReports />
               </ProtectedRoute>
             }
           />
@@ -101,7 +103,7 @@ import MyAppointments from "./pages/MyAppointments"; // Top of file
             path="/medications"
             element={
               <ProtectedRoute>
-                <WorkInProgress title="Medication Tracker" />
+                <Medications />
               </ProtectedRoute>
             }
           />
