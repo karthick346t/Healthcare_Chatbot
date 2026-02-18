@@ -4,6 +4,7 @@ import Doctor from '../models/Doctor';
 import Appointment from '../models/Appointment';
 import { notificationService } from '../services/notificationService';
 import mongoose from 'mongoose';
+import User from '../models/User';
 
 const router = Router();
 
@@ -85,16 +86,55 @@ router.get('/my-appointments', async (req: Request, res: Response) => {
 // PUT /api/appointments/:id/cancel
 router.put('/:id/cancel', async (req: Request, res: Response) => {
     try {
+        const { userId } = req.body;
         const appointment = await Appointment.findById(req.params.id);
+
         if (!appointment) {
             return res.status(404).json({ message: "Appointment not found" });
         }
 
-        // Optional: Check if the user requesting cancellation owns this appointment
-        // For now, we assume the frontend sends the correct request or we trust the authenticated user (if we had middleware here)
+        // Check ownership if appointment is linked to a user
+        if (appointment.userId && userId) {
+            if (appointment.userId.toString() !== userId) {
+                return res.status(403).json({ message: "Unauthorized to cancel this appointment" });
+            }
+        }
+
+        // If appointment has a user but no userId provided in request, we might want to block it
+        // strictly speaking, but for now we'll allow if logic permits or if we assume guest handling elsewhere.
+        // However, to be safe:
+        if (appointment.userId && !userId) {
+            return res.status(401).json({ message: "Authentication required to cancel this appointment" });
+        }
 
         appointment.status = 'cancelled';
         await appointment.save();
+
+        // Send Cancellation Email
+        let email = "";
+
+        // Try to find email from User model if userId is present
+        if (appointment.userId) {
+            const user = await User.findById(appointment.userId);
+            if (user && user.email) {
+                email = user.email;
+            }
+        } else if (req.body.email) {
+            // Fallback if email is passed in body for guest users (if supported)
+            email = req.body.email;
+        }
+
+        if (email) {
+            const doctor = await Doctor.findById(appointment.doctorId);
+            const hospital = await Hospital.findById(appointment.hospitalId);
+
+            await notificationService.sendAppointmentCancellation(email, {
+                patientName: appointment.patientName,
+                doctorName: doctor ? doctor.name : "Unknown Doctor",
+                appointmentDate: appointment.appointmentDate,
+                hospitalName: hospital ? hospital.name : "Unknown Hospital"
+            });
+        }
 
         res.json({ message: "Appointment cancelled successfully", appointment });
     } catch (error: any) {
