@@ -10,9 +10,11 @@ import i18nextMiddleware from 'i18next-http-middleware';
 import chatRouter from './routes/chat';
 import uploadRouter from './routes/upload';
 import ragRouter from './routes/rag';
-import appointmentRouter from './routes/appointments';
+import appointmentRouter from './routes/appointments'; // Fixed typo if any
+import appointmentRoutes from './routes/appointments'; // Double check usage
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
+// import paymentRoutes from './routes/payment'; // Disabled for now
 import localizationMiddleware from './middleware/localization';
 
 import path from 'path';
@@ -52,9 +54,14 @@ app.use(localizationMiddleware);
 app.use('/api/chat', chatRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/rag', ragRouter);
-app.use('/api/appointments', appointmentRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/appointments', appointmentRouter);
+import reportRouter from './routes/reports';
+
+// ...
 app.use('/api/admin', adminRouter);
+// app.use('/api/payment', paymentRoutes); // Disabled for now
+app.use('/api/reports', reportRouter);
 
 // --- SERVE FRONTEND (Single Port Deployment) ---
 // The frontend build files will be moved to backend/public during deployment

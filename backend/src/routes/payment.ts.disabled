@@ -1,0 +1,41 @@
+import express from 'express';
+import Stripe from 'stripe';
+
+const router = express.Router();
+
+// Initialize Stripe with a placeholder or env variable
+// ULTRA CAUTIOUS: We default to an empty string to prevent accidental Real mode usage if env is missing
+// The user MUST provide a valid SK_TEST key in .env
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2024-06-20', // Use latest API version
+});
+
+router.post('/create-payment-intent', async (req, res) => {
+    try {
+        const { amount, currency = 'usd' } = req.body;
+
+        if (!process.env.STRIPE_SECRET_KEY) {
+            return res.status(500).json({
+                error: "Stripe Secret Key is missing. Please add STRIPE_SECRET_KEY to backend .env file."
+            });
+        }
+
+        // Create a PaymentIntent with the order amount and currency
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount * 100, // Stripe expects amounts in cents
+            currency: currency,
+            automatic_payment_methods: {
+                enabled: true,
+            },
+        });
+
+        res.send({
+            clientSecret: paymentIntent.client_secret,
+        });
+    } catch (error: any) {
+        console.error("Stripe Error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

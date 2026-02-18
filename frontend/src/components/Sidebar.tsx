@@ -1,5 +1,7 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from 'react-router-dom';
+import { HiHome, HiCalendar, HiUser, HiCog, HiVideoCamera, HiDocumentText } from 'react-icons/hi';
+import { useAuth } from '../context/AuthContext';
 import { 
   MdDashboard, 
   MdVideoCameraFront, 
@@ -7,7 +9,8 @@ import {
   MdHistory, 
   MdLocalPharmacy, 
   MdPsychology, 
-  MdSettings 
+  MdSettings,
+  MdDateRange 
 } from "react-icons/md";
 
 import logo from "../assets/logo.png";
@@ -15,11 +18,12 @@ import NexaLogo from "../assets/NEXA.png";
 
 const menuItems = [
   { icon: MdDashboard, label: "Dashboard", path: "/" },
-  { icon: MdVideoCameraFront, label: "Telemedicine Video", path: "/telemedicine" },
+  { icon: HiVideoCamera, label: 'Telemedicine', path: '/telemedicine' },
+  { icon: HiDocumentText, label: 'Medical Records', path: '/records' },
   { icon: MdFavorite, label: "My Vitals", path: "/vitals" },
   { icon: MdHistory, label: "Lab History", path: "/labs" },
   { icon: MdLocalPharmacy, label: "Pharmacy", path: "/medications" },
-  { icon: MdPsychology, label: "Mental Wellness", path: "/wellness" },
+  { icon: MdDateRange, label: "My Appointments", path: "/my-appointments" },
   { icon: MdSettings, label: "Settings", path: "/settings" },
 ];
 

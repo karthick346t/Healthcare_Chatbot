@@ -10,6 +10,8 @@ import type { Hospital, Doctor, Appointment } from "../services/appointmentApi";
 import jsPDF from "jspdf";
 import { useTranslation } from "react-i18next";
 import { LanguageContext } from "../context/LanguageContext";
+import { useAuth } from "../context/AuthContext";
+import QRCode from 'qrcode';
 import i18n from "../utils/i18n";
 import languages from "../locales/languages.json";
 
@@ -23,7 +25,11 @@ const Appointments = () => {
     const currentLang = languages.find((l) => l.code === selectedLanguage) || languages[0];
 
     const navigate = useNavigate();
-    const [step, setStep] = useState(0); // 0: District, 1: Hospital, 2: Doctor, 3: Date, 3.5: Form, 4: Success
+    const location = useLocation();
+    const savedState = location.state;
+
+    // 0: District, 1: Hospital, 2: Doctor, 3: Date, 3.5: Form, 4: Success
+    const [step, setStep] = useState(savedState?.step || 0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -34,31 +40,57 @@ const Appointments = () => {
 
     // Selections
     const [selectedDistrict, setSelectedDistrict] = useState<string>("");
-    const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
-    const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-    const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-    const location = useLocation();
+    
+    // Initialize from saved state if returning from payment
+    const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(savedState?.appointmentDetails?.hospital || null);
+    const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(savedState?.appointmentDetails?.doctor || null);
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(savedState?.appointmentDetails?.timeSlot || null);
+    const [selectedDate, setSelectedDate] = useState<string>(savedState?.appointmentDetails?.date || "");
 
-    // Check for payment success return
-    useEffect(() => {
-        if (location.state && location.state.step === 4 && location.state.bookingResult) {
-            setBookingResult(location.state.bookingResult);
-            setStep(4);
-            // Clear state so refresh doesn't re-trigger? Optional.
-        }
-    }, [location]);
-    const [selectedDate, setSelectedDate] = useState<string>("");
+    const { user } = useAuth();
+    const [bookingFor, setBookingFor] = useState<'self' | 'other'>('self');
 
     // Patient Details Form
-    const [patientForm, setPatientForm] = useState({
+    const [patientForm, setPatientForm] = useState(savedState?.appointmentDetails?.patientDetails || {
         name: "",
+        email: "",
         age: "",
         gender: "Male",
         address: "",
         problem: ""
     });
 
-    const [bookingResult, setBookingResult] = useState<Appointment | null>(null);
+    // Auto-fill for self booking
+    // Auto-fill for self booking
+    useEffect(() => {
+        // Prevent auto-fill if we are in the success step (restoring data)
+        if (step === 4) return;
+
+        if (bookingFor === 'self' && user) {
+            setPatientForm(prev => ({
+                ...prev,
+                name: user.name || "",
+                email: user.email || "",
+                // We can also try to fill other details if available in user object
+                gender: user.gender || "Male",
+                age: user.dateOfBirth ? (new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()).toString() : "",
+                address: user.address || ""
+            }));
+        } else if (bookingFor === 'other') {
+            // Clear fields for fresh entry (optional, or keep generic defaults)
+             setPatientForm(prev => ({
+                ...prev,
+                name: "",
+                email: "", // User must provide email for 'other'
+                age: "",
+                gender: "Male",
+                address: "",
+                problem: ""
+            }));
+        }
+    }, [bookingFor, user, step]);
+
+    const [bookingResult, setBookingResult] = useState<Appointment | null>(savedState?.bookingResult || null);
     
     // Availability map for all 7 dates
     const [availabilityMap, setAvailabilityMap] = useState<Record<string, {
@@ -153,7 +185,7 @@ const Appointments = () => {
         if (!selectedHospital || !selectedDoctor) return;
 
         // Basic Validation
-        if (!patientForm.name || !patientForm.age || !patientForm.address || !patientForm.problem) {
+        if (!patientForm.name || !patientForm.email || !patientForm.age || !patientForm.address || !patientForm.problem) {
             setError(t("Please fill in all patient details.") || "Please fill in all patient details.");
             return;
         }
@@ -171,7 +203,8 @@ const Appointments = () => {
                         doctor: selectedDoctor,
                         date: selectedDate,
                         timeSlot: selectedTimeSlot,
-                        patientDetails: patientForm
+                        patientDetails: patientForm,
+                        userId: user?.userId || (user as any)?._id // Fallback just in case
                     }
                 } 
             });
@@ -184,48 +217,198 @@ const Appointments = () => {
         }
     };
 
-    const generatePDF = () => {
+    const generatePDF = async () => {
         if (!bookingResult || !selectedDoctor || !selectedHospital) return;
 
         const doc = new jsPDF();
+        
+        // Brand Colors (Premium Medical Theme)
+        const primaryDark = [15, 23, 42] as [number, number, number]; // Slate-900
+        const accentBlue = [37, 99, 235] as [number, number, number]; // Blue-600
+        const textGray = [100, 116, 139] as [number, number, number]; // Slate-500
+        const textDark = [30, 41, 59] as [number, number, number]; // Slate-800
+        const lightBg = [248, 250, 252] as [number, number, number]; // Slate-50
+        const successGreen = [22, 163, 74] as [number, number, number]; // Green-600
 
-        // Styling
-        doc.setFillColor(33, 150, 243); // Primary Blue
-        doc.rect(0, 0, 210, 40, 'F');
-
+        // --- Left Sidebar (Dark Branding) ---
+        doc.setFillColor(...primaryDark);
+        doc.rect(0, 0, 70, 297, 'F');
+        
+        // Logo / Brand
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.text(t("appointment_confirmation"), 105, 25, { align: "center" });
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(26);
+        doc.text("NEXA", 35, 40, { align: "center" });
+        
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(148, 163, 184); // Slate-400
+        doc.text("HEALTHCARE SYSTEMS", 35, 48, { align: "center", charSpace: 2 });
 
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(14);
-        doc.text(t("booking_token_label", { token: bookingResult.tokenNumber }), 105, 55, { align: "center" });
+        // Sidebar Divider
+        doc.setDrawColor(51, 65, 85); // Slate-700
+        doc.line(15, 60, 55, 60);
 
-        // Patient Info
-        doc.setFontSize(12);
-        doc.text("--------------------------------------------------", 20, 70);
-        doc.text(t("patient_details_header"), 20, 80);
-        doc.text(`${t("full_name")}: ${patientForm.name}`, 20, 90);
-        doc.text(`${t("age")}: ${patientForm.age}`, 20, 100);
-        doc.text(`${t("gender")}: ${t(patientForm.gender.toLowerCase())}`, 20, 110);
-        doc.text(`${t("address")}: ${patientForm.address}`, 20, 120);
-        doc.text(`${t("health_problem")}: ${patientForm.problem}`, 20, 130);
+        // Sidebar Details
+        const sidebarY = 240;
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        
+        const contactInfo = [
+            "PATIENT SUPPORT",
+            "+1 (800) 555-0199",
+            "support@nexa.health",
+            "",
+            "EMERGENCY",
+            "Dial 911 immediately",
+            "",
+            "WEBSITE",
+            "www.nexahealth.com"
+        ];
 
-        // Appointment Info
-        doc.text("--------------------------------------------------", 20, 150);
-        doc.text(t("appointment_details_header"), 20, 160);
-        doc.text(`${t("doctor")}: ${selectedDoctor.name}`, 20, 170);
-        doc.text(`${t("hospital")}: ${selectedHospital.name}`, 20, 180);
-        doc.text(`${t("location")}: ${selectedHospital.location}`, 20, 190);
-        doc.text(`${t("date")}: ${new Date(bookingResult.appointmentDate).toLocaleDateString()}`, 20, 200);
+        let contactY = sidebarY;
+        contactInfo.forEach(line => {
+            if (line === "PATIENT SUPPORT" || line === "EMERGENCY" || line === "WEBSITE") {
+                 doc.setFont("helvetica", "bold");
+                 doc.setTextColor(255, 255, 255);
+            } else {
+                 doc.setFont("helvetica", "normal");
+                 doc.setTextColor(148, 163, 184);
+            }
+            doc.text(line, 35, contactY, { align: "center" });
+            contactY += 5;
+        });
 
-        doc.text("--------------------------------------------------", 20, 220);
+
+        // --- Main Content Area ---
+        const startX = 85; 
+        
+        // Header
+        doc.setTextColor(...accentBlue);
         doc.setFontSize(10);
-        doc.setTextColor(150, 150, 150);
-        doc.text(t("arrival_reminder"), 105, 240, { align: "center" });
-        doc.text(t("generated_by"), 105, 250, { align: "center" });
+        doc.setFont("helvetica", "bold");
+        doc.text("OFFICIAL APPOINTMENT RECEIPT", startX, 40, { charSpace: 0.5 });
+        
+        doc.setTextColor(...textDark);
+        doc.setFontSize(32);
+        doc.text("Confirmation", startX, 52);
 
-        doc.save(`Appointment_Token_${bookingResult.tokenNumber}.pdf`);
+        // Status Badge
+        doc.setFillColor(220, 252, 231); // Green-100
+        doc.roundedRect(startX + 85, 43, 30, 10, 2, 2, 'F');
+        doc.setTextColor(...successGreen);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("CONFIRMED", startX + 100, 49, { align: "center" });
+
+        // Booking Reference Box
+        doc.setDrawColor(226, 232, 240); // Slate-200
+        doc.setFillColor(...lightBg);
+        doc.roundedRect(startX, 70, 110, 28, 2, 2, 'FD');
+        
+        doc.setTextColor(...textGray);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.text("BOOKING REFERENCE", startX + 6, 80);
+        doc.text("DATE", startX + 60, 80);
+        
+        doc.setTextColor(...textDark);
+        doc.setFontSize(14);
+        doc.text(`# ${bookingResult.tokenNumber}`, startX + 6, 88);
+        doc.text(new Date(bookingResult.appointmentDate).toISOString().split('T')[0], startX + 60, 88);
+
+        // Doctor Section
+        let y = 120;
+        doc.setTextColor(...textGray);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("MEDICAL SPECIALIST", startX, y);
+        y += 8;
+        
+        doc.setTextColor(...textDark);
+        doc.setFontSize(18);
+        doc.text(selectedDoctor.name, startX, y);
+        y += 6;
+        
+        doc.setTextColor(...accentBlue);
+        doc.setFontSize(10);
+        doc.text(selectedDoctor.specialty.toUpperCase(), startX, y);
+        y += 12;
+        
+        // Hospital Section
+        doc.setTextColor(...textDark);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(selectedHospital.name, startX, y);
+        y += 5;
+        
+        doc.setTextColor(...textGray);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(selectedHospital.location, startX, y, { maxWidth: 90 });
+
+        // Line Separator
+        y += 15;
+        doc.setDrawColor(226, 232, 240);
+        doc.line(startX, y, 195, y);
+
+        // Patient Section
+        y += 15;
+        doc.setTextColor(...textGray);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("PATIENT INFORMATION", startX, y);
+        y += 8;
+
+        doc.setTextColor(...textDark);
+        doc.setFontSize(12);
+        doc.text(patientForm.name, startX, y);
+        y += 5;
+        
+        doc.setTextColor(...textGray);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${patientForm.age} Years • ${patientForm.gender}`, startX, y);
+        y += 5;
+        doc.text(patientForm.email, startX, y);
+
+
+        // Real QR Code Generation
+        try {
+            // Professional Receipt Format (Clean Text)
+            // The ID is essential for system verification, but we format it nicely.
+            const qrData = `NEXA HEALTHCARE - APPOINTMENT
+--------------------------------
+Patient: ${patientForm.name}
+Doctor:  ${selectedDoctor.name}
+Date:    ${new Date(bookingResult.appointmentDate).toLocaleDateString()}
+Time:    ${selectedTimeSlot || "Confirmed Slot"}
+Token:   #${bookingResult.tokenNumber}
+--------------------------------
+Ref ID:  ${bookingResult._id || "N/A"}`;
+
+            const qrDataUrl = await QRCode.toDataURL(qrData, { margin: 1, width: 100, color: { dark: '#0f172a', light: '#ffffff' } });
+            
+            // Footer QR Section
+            const qrY = 230;
+            doc.addImage(qrDataUrl, 'PNG', startX, qrY, 25, 25);
+            
+            doc.setFontSize(8);
+            doc.setTextColor(...textDark);
+            doc.setFont("helvetica", "bold");
+            doc.text("SCAN FOR DETAILS", startX + 30, qrY + 8);
+            
+            doc.setFontSize(7);
+            doc.setTextColor(...textGray);
+            doc.setFont("helvetica", "normal");
+            doc.text("Present this QR code at reception", startX + 30, qrY + 13);
+            doc.text("or self-service kiosk.", startX + 30, qrY + 17);
+
+        } catch (err) {
+            console.error("QR Gen Error", err);
+        }
+
+        doc.save(`NEXA_Appt_${bookingResult.tokenNumber}.pdf`);
     };
 
 
@@ -543,6 +726,25 @@ const Appointments = () => {
                         <p className="text-neutral-500 mb-10 font-medium">{t("patient_details_desc")}</p>
 
                         <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[3rem] p-10 shadow-2xl">
+                            
+                            {/* Booking For Toggle */}
+                            <div className="mb-8 flex justify-center">
+                                <div className="bg-white/50 p-1 rounded-xl flex gap-2 border border-white/60">
+                                    <button
+                                        onClick={() => setBookingFor('self')}
+                                        className={`px-6 py-2 rounded-lg font-bold transition-all ${bookingFor === 'self' ? 'bg-primary text-white shadow-lg' : 'text-neutral-500 hover:bg-white/50'}`}
+                                    >
+                                        {t("For Me")}
+                                    </button>
+                                    <button
+                                        onClick={() => setBookingFor('other')}
+                                        className={`px-6 py-2 rounded-lg font-bold transition-all ${bookingFor === 'other' ? 'bg-primary text-white shadow-lg' : 'text-neutral-500 hover:bg-white/50'}`}
+                                    >
+                                        {t("For Someone Else")}
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"><MdPerson /> {t("full_name")}</label>
@@ -552,6 +754,17 @@ const Appointments = () => {
                                         placeholder={t("full_name") || "Full Name"}
                                         value={patientForm.name}
                                         onChange={(e) => setPatientForm({ ...patientForm, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"> Email Address {bookingFor === 'self' && <span className="text-xs font-normal opacity-50">(Auto-filled)</span>}</label>
+                                    <input
+                                        type="email"
+                                        className={`w-full p-4 rounded-2xl border outline-none transition-all ${bookingFor === 'self' ? 'bg-gray-100 text-gray-500 border-transparent cursor-not-allowed' : 'bg-white/60 border-white/80 focus:ring-2 focus:ring-primary'}`}
+                                        placeholder="email@example.com"
+                                        value={patientForm.email}
+                                        readOnly={bookingFor === 'self'}
+                                        onChange={(e) => setBookingFor('other') && setPatientForm({ ...patientForm, email: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">

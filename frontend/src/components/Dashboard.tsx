@@ -107,7 +107,7 @@ export default function Dashboard() {
 
   // <--- 3. DEFINE CARDS WITH PATHS
   const quickActions = [
-    { title: "Symptom Checker", path: "/symptoms", desc: "Check your symptoms", color: "from-blue-400 to-cyan-300", shadow: "shadow-blue-500/30", icon: "🩺" },
+    { title: "My Appointments", path: "/my-appointments", desc: "Manage visits", color: "from-blue-400 to-cyan-300", shadow: "shadow-blue-500/30", icon: "📅" },
     { title: "Lab Reports", path: "/labs", desc: "Analyze reports", color: "from-purple-400 to-indigo-400", shadow: "shadow-purple-500/30", icon: "🧪" },
     { title: "Medication", path: "/medications", desc: "Track your meds", color: "from-orange-400 to-red-400", shadow: "shadow-orange-500/30", icon: "💊" },
     { title: "Book Appointment", path: "/appointments", desc: "Schedule a visit", color: "from-emerald-400 to-teal-400", shadow: "shadow-emerald-500/30", icon: "📅" },

@@ -8,6 +8,8 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Telemedicine from "./pages/Telemedicine";
 import Payment from "./pages/Payment";
+import MedicalRecords from './pages/MedicalRecords';
+import MyAppointments from "./pages/MyAppointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
@@ -60,6 +62,14 @@ function InnerApp() {
             }
           />
           <Route
+            path="/records"
+            element={
+              <ProtectedRoute>
+                <MedicalRecords />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/chat"
             element={
               <ProtectedRoute>
@@ -67,11 +77,15 @@ function InnerApp() {
               </ProtectedRoute>
             }
           />
+import MyAppointments from "./pages/MyAppointments"; // Top of file
+
+// ... inside Routes ...
+
           <Route
-            path="/symptoms"
+            path="/my-appointments"
             element={
               <ProtectedRoute>
-                <WorkInProgress title="Symptom Checker" />
+                <MyAppointments />
               </ProtectedRoute>
             }
           />

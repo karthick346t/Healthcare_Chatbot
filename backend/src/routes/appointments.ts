@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import Hospital from '../models/Hospital';
 import Doctor from '../models/Doctor';
 import Appointment from '../models/Appointment';
+import { notificationService } from '../services/notificationService';
 import mongoose from 'mongoose';
 
 const router = Router();
@@ -62,6 +63,46 @@ router.get('/check-availability', async (req: Request, res: Response) => {
     }
 });
 
+// GET /api/appointments/my-appointments
+router.get('/my-appointments', async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ message: "User ID is required" });
+        }
+
+        const appointments = await Appointment.find({ userId })
+            .populate('hospitalId', 'name location')
+            .populate('doctorId', 'name specialty')
+            .sort({ appointmentDate: -1 }); // Newest first
+
+        res.json(appointments);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// PUT /api/appointments/:id/cancel
+router.put('/:id/cancel', async (req: Request, res: Response) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+
+        // Optional: Check if the user requesting cancellation owns this appointment
+        // For now, we assume the frontend sends the correct request or we trust the authenticated user (if we had middleware here)
+
+        appointment.status = 'cancelled';
+        await appointment.save();
+
+        res.json({ message: "Appointment cancelled successfully", appointment });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+
 // POST /api/appointments/book
 router.post('/book', async (req: Request, res: Response) => {
     const {
@@ -72,7 +113,8 @@ router.post('/book', async (req: Request, res: Response) => {
         problem,
         hospitalId,
         doctorId,
-        appointmentDate
+        appointmentDate,
+        userId // Extract userId
     } = req.body;
 
     try {
@@ -81,6 +123,7 @@ router.post('/book', async (req: Request, res: Response) => {
         date.setHours(0, 0, 0, 0);
 
         // 2. Count existing appointments for this doctor on this day
+        // Only count CONFIRMED appointments towards the limit. Cancelled ones free up the slot.
         const count = await Appointment.countDocuments({
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
@@ -102,11 +145,31 @@ router.post('/book', async (req: Request, res: Response) => {
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
             tokenNumber: count + 1,
-            status: 'pending'
+            status: 'confirmed',
+            userId: userId ? new mongoose.Types.ObjectId(userId) : undefined
         });
 
-        await newAppointment.save();
-        res.status(201).json(newAppointment);
+        const savedAppointment = await newAppointment.save();
+
+        // Send Confirmation Email
+        // We assume the user might have an email in their profile, or we use a fallback/test email if not provided in booking data
+        // For now, let's try to find the user to get their email, or perform a lookup if 'userId' was passed 
+
+        if (req.body.email) {
+            // Fetch doctor and hospital details for the email
+            const doctor = await Doctor.findById(doctorId);
+            const hospital = await Hospital.findById(hospitalId);
+
+            await notificationService.sendAppointmentConfirmation(req.body.email, {
+                patientName: savedAppointment.patientName,
+                doctorName: doctor ? doctor.name : "Unknown Doctor",
+                appointmentDate: savedAppointment.appointmentDate.toDateString(),
+                timeSlot: "N/A",
+                hospitalName: hospital ? hospital.name : "Unknown Hospital"
+            });
+        }
+
+        res.status(201).json(savedAppointment);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

@@ -287,6 +287,10 @@ export default function Profile() {
                     </div>
                 </div>
 
+
+
+
+
                 {isEditing && (
                     <div className="flex justify-end gap-4">
                         <button 
@@ -309,3 +313,5 @@ export default function Profile() {
         </div>
     );
 }
+
+

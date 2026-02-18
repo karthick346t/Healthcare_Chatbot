@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 
 export interface AuthUser {
   userId: string;
@@ -41,3 +41,5 @@ export const AuthContext = createContext<AuthContextType>({
   googleLogin: async () => {},
   logout: () => {},
 });
+
+export const useAuth = () => useContext(AuthContext);

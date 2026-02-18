@@ -54,6 +54,7 @@ export const appointmentApi = {
 
     bookAppointment: async (data: {
         patientName: string;
+        email: string;
         patientAge: number;
         patientGender: string;
         patientAddress: string;
@@ -61,6 +62,7 @@ export const appointmentApi = {
         hospitalId: string;
         doctorId: string;
         appointmentDate: string;
+        userId?: string;
     }): Promise<Appointment> => {
         const response = await fetch(`${BASE_PATH}/book`, {
             method: 'POST',

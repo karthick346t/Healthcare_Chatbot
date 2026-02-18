@@ -11,6 +11,7 @@ export interface IAppointment extends Document {
     appointmentDate: Date;
     tokenNumber: number;
     status: 'pending' | 'confirmed' | 'cancelled';
+    userId?: mongoose.Types.ObjectId; // Link to User model
 }
 
 const AppointmentSchema: Schema = new Schema({
@@ -23,7 +24,8 @@ const AppointmentSchema: Schema = new Schema({
     doctorId: { type: Schema.Types.ObjectId, ref: 'Doctor', required: true },
     appointmentDate: { type: Date, required: true },
     tokenNumber: { type: Number, required: true },
-    status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'confirmed' }
+    status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'confirmed' },
+    userId: { type: Schema.Types.ObjectId, ref: 'User' } // Optional for guest bookings, but we'll use it for logged-in users
 }, { timestamps: true });
 
 // Ensure a patient can't take multiple tokens for same doctor on same day (optional, but good for demo)

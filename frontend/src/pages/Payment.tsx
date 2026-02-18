@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { HiLockClosed, HiShieldCheck, HiCreditCard, HiCalendar } from 'react-icons/hi';
+import { MdPayment } from 'react-icons/md';
 import { appointmentApi } from '../services/appointmentApi';
 
 export default function Payment() {
@@ -22,7 +26,7 @@ export default function Payment() {
 
     const handlePayment = async () => {
         if (!cardNumber || !expiry || !cvv) {
-            alert("Please fill in card details (Test data is fine)");
+            alert("Please fill in basic card details (Any mock data works)");
             return;
         }
 
@@ -36,6 +40,7 @@ export default function Payment() {
             // 2. Payment "Success" -> Now actually book the appointment in Backend
             const bookingData = {
                 patientName: appointmentDetails.patientDetails.name,
+                email: appointmentDetails.patientDetails.email,
                 patientAge: parseInt(appointmentDetails.patientDetails.age),
                 patientGender: appointmentDetails.patientDetails.gender,
                 patientAddress: appointmentDetails.patientDetails.address,
@@ -43,7 +48,7 @@ export default function Payment() {
                 hospitalId: appointmentDetails.hospital._id,
                 doctorId: appointmentDetails.doctor._id,
                 appointmentDate: appointmentDetails.date,
-                // Add default or selected time if available
+                userId: appointmentDetails.userId // Pass the user ID for linking
             };
 
             const result = await appointmentApi.bookAppointment(bookingData);
@@ -52,7 +57,8 @@ export default function Payment() {
             navigate('/appointments', { 
                 state: { 
                     step: 4, 
-                    bookingResult: result 
+                    bookingResult: result,
+                    appointmentDetails: appointmentDetails
                 } 
             });
 
@@ -251,6 +257,7 @@ export default function Payment() {
                 .preserve-3d { transform-style: preserve-3d; }
                 .backface-hidden { backface-visibility: hidden; }
                 .rotate-y-180 { transform: rotateY(180deg); }
+                .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
             `}</style>
         </div>
     );
