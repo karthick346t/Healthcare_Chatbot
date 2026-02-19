@@ -17,6 +17,15 @@ import languages from "../locales/languages.json";
 
 const districts = ["Erode", "Coimbatore", "Salem", "Theni", "Chennai", "Hyderabad", "Banglore"];
 
+interface PatientDetails {
+    name: string;
+    email: string;
+    age: string;
+    gender: string;
+    address: string;
+    problem: string;
+}
+
 const Appointments = () => {
     const { t } = useTranslation();
     const { selectedLanguage, setLanguage } = useContext(LanguageContext);
@@ -51,7 +60,7 @@ const Appointments = () => {
     const [bookingFor, setBookingFor] = useState<'self' | 'other'>('self');
 
     // Patient Details Form
-    const [patientForm, setPatientForm] = useState(savedState?.appointmentDetails?.patientDetails || {
+    const [patientForm, setPatientForm] = useState<PatientDetails>(savedState?.appointmentDetails?.patientDetails || {
         name: "",
         email: "",
         age: "",
@@ -764,7 +773,10 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                         placeholder="email@example.com"
                                         value={patientForm.email}
                                         readOnly={bookingFor === 'self'}
-                                        onChange={(e) => setBookingFor('other') && setPatientForm({ ...patientForm, email: e.target.value })}
+                                                                                onChange={(e) => {
+                                            setBookingFor('other');
+                                            setPatientForm({ ...patientForm, email: e.target.value });
+                                        }}
                                     />
                                 </div>
                                 <div className="space-y-2">

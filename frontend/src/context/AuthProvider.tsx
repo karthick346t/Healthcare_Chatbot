@@ -4,6 +4,11 @@ import { apiLogin, apiRegister, apiGoogleLogin, apiGetMe } from "../services/aut
 
 const TOKEN_KEY = "healthbot_token";
 
+const adaptUser = (apiUser: any): AuthUser => ({
+  ...apiUser,
+  userId: apiUser._id,
+});
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -15,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedToken) {
       apiGetMe(savedToken)
         .then((data) => {
-          setUser(data.user);
+          setUser(adaptUser(data.user));
           setToken(savedToken);
         })
         .catch(() => {
@@ -29,21 +34,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await apiLogin(email, password);
-    setUser(data.user);
+    setUser(adaptUser(data.user));
     setToken(data.token);
     localStorage.setItem(TOKEN_KEY, data.token);
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     const data = await apiRegister(name, email, password);
-    setUser(data.user);
+    setUser(adaptUser(data.user));
     setToken(data.token);
     localStorage.setItem(TOKEN_KEY, data.token);
   }, []);
 
   const googleLogin = useCallback(async (idToken: string) => {
     const data = await apiGoogleLogin(idToken);
-    setUser(data.user);
+    setUser(adaptUser(data.user));
     setToken(data.token);
     localStorage.setItem(TOKEN_KEY, data.token);
   }, []);

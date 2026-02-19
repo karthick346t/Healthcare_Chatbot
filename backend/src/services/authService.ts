@@ -104,15 +104,26 @@ export async function googleLogin(
         const { sub: googleId, email, name, picture } = payload;
 
         console.log(`✅ Google Token Verified for ${email} (${googleId})`);
+        console.log(`   - Name: ${name}`);
+        console.log(`   - Picture URL: ${picture ? 'Present' : 'Missing'}`); // Don't log full URL to keep logs clean, just presence
 
         let user = await User.findOne({
             $or: [{ googleId }, { email }],
         });
 
         if (user) {
+            let updates = false;
             if (!user.googleId) {
                 user.googleId = googleId;
-                user.avatar = picture || user.avatar;
+                updates = true;
+            }
+            // Always update avatar if provided by Google to keep it fresh
+            if (picture && user.avatar !== picture) {
+                user.avatar = picture;
+                updates = true;
+            }
+
+            if (updates) {
                 await user.save();
             }
         } else {

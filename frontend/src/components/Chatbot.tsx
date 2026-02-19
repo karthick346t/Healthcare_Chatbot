@@ -231,7 +231,7 @@ export default function Chatbot() {
 
       {/* --- SIDEBAR --- */}
       <div
-        className={`absolute inset-0 z-10 flex transition-transform duration-300 ease-in-out ${showHistory ? "translate-x-0" : "-translate-x-full"}`}
+        className={`absolute inset-0 z-40 flex transition-transform duration-300 ease-in-out ${showHistory ? "translate-x-0" : "-translate-x-full"}`}
         style={{ marginTop: '72px' }}
       >
         <div className="w-64 h-full bg-gray-50 border-r border-gray-200 shadow-lg flex flex-col bg-white">

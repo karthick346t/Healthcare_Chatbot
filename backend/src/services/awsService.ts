@@ -72,12 +72,15 @@ export const uploadUserBackup = async (user: any) => {
 export const uploadFileToS3 = async (
   filePath: string,
   fileName: string,
-  mimeType: string
+  mimeType: string,
+  userId?: string // ✅ New optional User ID
 ): Promise<string | null> => {
   try {
     const fileStream = fs.createReadStream(filePath);
-    // Create a unique key: uploads/timestamp-filename
-    const key = `uploads/${Date.now()}-${fileName}`;
+
+    // Create a unique key: uploads/<userId?>/timestamp-filename
+    const folder = userId ? `uploads/${userId}` : 'uploads/anonymous';
+    const key = `${folder}/${Date.now()}-${fileName}`;
 
     const params = {
       Bucket: process.env.AWS_BUCKET_NAME,

@@ -22,6 +22,12 @@ export default function Header() {
   const [showMenu, setShowMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Reset image error when user changes
+  useEffect(() => {
+      setImageError(false);
+  }, [user]);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -137,11 +143,13 @@ export default function Header() {
                     <span className="text-xs font-bold text-neutral-700 leading-none">{user.name}</span>
                     <span className="text-[10px] text-neutral-500 leading-none mt-0.5">Patient</span>
                 </div>
-                {user.avatar ? (
+                {user.avatar && !imageError ? (
                   <img
                     src={user.avatar}
                     alt={user.name}
                     className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                    referrerPolicy="no-referrer"
+                    onError={() => setImageError(true)}
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center border-2 border-white shadow-md text-white">
@@ -154,8 +162,14 @@ export default function Header() {
                   <div className="absolute right-0 top-full mt-2 w-72 bg-white/90 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl z-[100] overflow-hidden ring-1 ring-black/5 animate-fadeIn">
                     <div className="p-5 border-b border-gray-100 bg-white/50">
                         <div className="flex items-center gap-4">
-                            {user.avatar ? (
-                                <img src={user.avatar} alt={user.name} className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" />
+                            {user.avatar && !imageError ? (
+                                <img 
+                                    src={user.avatar} 
+                                    alt={user.name} 
+                                    className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm" 
+                                    referrerPolicy="no-referrer"
+                                    onError={() => setImageError(true)}
+                                />
                             ) : (
                                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow-sm">
                                     {user.name?.charAt(0).toUpperCase()}

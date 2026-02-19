@@ -9,6 +9,7 @@ export default function Profile() {
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     const [formData, setFormData] = useState({
         phone: '',
@@ -92,8 +93,18 @@ export default function Profile() {
             {/* Header */}
             <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold">
-                        {user?.name?.charAt(0)}
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
+                        {user?.avatar && !imageError ? (
+                            <img 
+                                src={user.avatar} 
+                                alt={user.name} 
+                                className="w-full h-full object-cover" 
+                                referrerPolicy="no-referrer"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            user?.name?.charAt(0).toUpperCase()
+                        )}
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-neutral-800">{user?.name}</h1>

@@ -15,6 +15,9 @@ export type ChatSessionSummary = {
   date: string;
 };
 
+// Helper to get token
+const getToken = () => localStorage.getItem('healthbot_token');
+
 /* ---------- CHAT & UPLOAD FUNCTIONS ---------- */
 
 export async function sendChatMessage({
@@ -29,11 +32,15 @@ export async function sendChatMessage({
   sessionId: string;
 }): Promise<string> {
   try {
+    const token = getToken();
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         message,
         conversationHistory,
@@ -73,8 +80,13 @@ export async function uploadFile({
   formData.append("sessionId", sessionId);
 
   try {
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
     const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: "POST",
+      headers,
       body: formData,
     });
 
@@ -99,9 +111,17 @@ export async function uploadFile({
 // 1. Fetch the list of past conversations (for the sidebar)
 export async function getChatSessions(): Promise<ChatSessionSummary[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/chat/sessions`);
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/sessions`, { headers });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        console.warn("Unauthorized to fetch sessions");
+        return []; // Return empty if not logged in
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Failed to load history: ${response.statusText}`);
     }
@@ -116,7 +136,11 @@ export async function getChatSessions(): Promise<ChatSessionSummary[]> {
 // 2. Fetch the specific messages for one session (when clicking a history item)
 export async function getSessionHistory(sessionId: string): Promise<Message[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`);
+    const token = getToken();
+    const headers: HeadersInit = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`, { headers });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -128,4 +152,16 @@ export async function getSessionHistory(sessionId: string): Promise<Message[]> {
     console.error("Get History Error:", error);
     throw error;
   }
+}
+
+// 3. Delete a chat session
+export async function deleteChatSession(sessionId: string): Promise<void> {
+  const token = getToken();
+  const headers: HeadersInit = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`, {
+    method: "DELETE",
+    headers
+  });
 }

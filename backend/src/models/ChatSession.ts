@@ -17,13 +17,13 @@ export interface IChatSession extends Document {
 
 const ChatSessionSchema: Schema = new Schema({
   sessionId: { type: String, required: true, unique: true },
-  userId: { type: String },
+  userId: { type: String, required: true, index: true }, // ✅ Required & Indexed
   messages: [
     {
       role: { type: String, enum: ['user', 'assistant'], required: true },
       content: { type: String, required: true },
       timestamp: { type: Date, default: Date.now },
-      attachmentUrl: { type: String } // ✅ Added to schema
+      attachmentUrl: { type: String }
     },
   ],
   lastUpdated: { type: Date, default: Date.now },

@@ -6,6 +6,7 @@ import { promises as fsPromises } from 'fs';
 import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../services/aiAnalysis';
 import { uploadFileToS3 } from '../services/awsService';
 import ChatSession from '../models/ChatSession';
+import authMiddleware from '../middleware/auth'; // ✅ Corrected import
 
 // ✅ Standard import for version 1.1.1
 const pdfParse = require('pdf-parse');
@@ -84,7 +85,7 @@ async function extractDocxText(docxPath: string): Promise<string> {
   }
 }
 
-router.post('/', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/', authMiddleware, upload.single('file'), async (req: Request, res: Response) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
@@ -93,6 +94,8 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
 
   try {
     const { locale = 'en', sessionId, conversationHistory } = req.body;
+    const userId = req.user!.userId; // ✅ Authenticated User
+
     let history = [];
     if (conversationHistory) {
       history = typeof conversationHistory === 'string'
@@ -100,7 +103,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
         : conversationHistory;
     }
 
-    console.log(`Processing: ${file.originalname} (${file.size} bytes)`);
+    console.log(`Processing: ${file.originalname} (${file.size} bytes) for User: ${userId}`);
 
     // --- 1. AI ANALYSIS ---
     let responseMessage = '';
@@ -152,11 +155,12 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
       responseMessage = `File type ${file.mimetype} is not supported.`;
     }
 
-    // --- 2. UPLOAD TO S3 ---
+    // --- 2. UPLOAD TO S3 (User Scoped) ---
     let s3Url: string | null = null;
     try {
       console.log("Uploading original file to S3...");
-      s3Url = await uploadFileToS3(file.path, file.originalname, file.mimetype);
+      // ✅ Pass userId for isolated folder
+      s3Url = await uploadFileToS3(file.path, file.originalname, file.mimetype, userId);
     } catch (uploadErr) {
       console.error("Failed to backup file to S3, but continuing...", uploadErr);
     }
@@ -166,7 +170,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
       await ChatSession.findOneAndUpdate(
         { sessionId },
         {
-          $setOnInsert: { locale: locale },
+          $setOnInsert: { locale, userId }, // ✅ Ensure userId is set
           $push: {
             messages: [
               {
@@ -202,7 +206,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     console.error('Upload error:', error);
     res.status(500).json({
       error: 'Processing failed',
-      message: 'Sorry, I encountered an error processing your file.',
+      message: 'Sorry, I encountered an error. Please try again.',
       isHealthRelated: false
     });
 

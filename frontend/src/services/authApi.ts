@@ -58,5 +58,6 @@ export async function apiGetMe(token: string): Promise<{ user: AuthResponse["use
     const res = await fetch(`${API_BASE}/me`, {
         headers: { Authorization: `Bearer ${token}` },
     });
-    return handleResponse(res);
+    const user = await handleResponse(res);
+    return { user };
 }

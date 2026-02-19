@@ -17,6 +17,6 @@ export function cleanModelText(text: string): string {
     .replace(/<\/?s>/gi, "")
     // Unicode invisible characters or tokens
     .replace(/\p{Cf}/gu, "")
-    .replace(/\s+/g, " ")
+    // .replace(/\s+/g, " ") // REMOVED: broken markdown structure by removing newlines
     .trim();
 }
