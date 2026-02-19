@@ -1,16 +1,46 @@
 import React, { useState } from 'react';
 import { 
-    HiOutlineClipboardList, HiPlus, HiCheck, HiX, HiClock, HiCalendar, HiBell, HiFilter 
+    HiPlus, HiCheck, HiX, HiClock, HiBell, 
+    HiPencil, HiTrash, HiCheckCircle
 } from 'react-icons/hi';
-import { MdMedication, MdLocalPharmacy, MdHistory, MdAccessTimeFilled } from 'react-icons/md';
+import { MdMedication, MdLocalPharmacy, MdAccessTimeFilled } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Define types 
+interface Medication {
+    id: number;
+    name: string;
+    dosage: string;
+    frequency: string;
+    times: string[];
+    stock: number;
+    color: string;
+    icon: string;
+}
+
+interface Dose {
+    id: number;
+    medId: number;
+    time: string;
+    taken: boolean;
+}
 
 export default function Medications() {
     const [activeTab, setActiveTab] = useState<'schedule' | 'list'>('schedule');
     const [showAddModal, setShowAddModal] = useState(false);
+    
+    // Form State
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [formData, setFormData] = useState<Partial<Medication>>({
+        name: '',
+        dosage: '',
+        stock: 0,
+        frequency: '1x Daily',
+        times: ['09:00'] 
+    });
 
-    // Mock Data
-    const [medications, setMedications] = useState([
+    // Mock Data - Initial State
+    const [medications, setMedications] = useState<Medication[]>([
         { 
             id: 1, 
             name: "Amoxicillin", 
@@ -18,7 +48,7 @@ export default function Medications() {
             frequency: "3x Daily", 
             times: ["08:00", "14:00", "20:00"], 
             stock: 12, 
-            color: "bg-blue-100 text-blue-600",
+            color: "text-blue-500",
             icon: "💊"
         },
         { 
@@ -28,7 +58,7 @@ export default function Medications() {
             frequency: "1x Daily", 
             times: ["09:00"], 
             stock: 45, 
-            color: "bg-yellow-100 text-yellow-600",
+            color: "text-yellow-500",
             icon: "☀️"
         },
         { 
@@ -38,12 +68,12 @@ export default function Medications() {
             frequency: "1x Daily", 
             times: ["08:00"], 
             stock: 28, 
-            color: "bg-red-100 text-red-600",
+            color: "text-red-500",
             icon: "❤️"
         }
     ]);
 
-    const [todaysDoses, setTodaysDoses] = useState([
+    const [todaysDoses, setTodaysDoses] = useState<Dose[]>([
         { id: 101, medId: 1, time: "08:00", taken: true },
         { id: 102, medId: 3, time: "08:00", taken: true },
         { id: 103, medId: 2, time: "09:00", taken: false }, // Missed/Pending
@@ -55,26 +85,86 @@ export default function Medications() {
         setTodaysDoses(prev => prev.map(d => d.id === doseId ? { ...d, taken: !d.taken } : d));
     };
 
+    // --- CRUD Handlers ---
+
+    const handleAddNew = () => {
+        setEditingId(null);
+        setFormData({
+            name: '',
+            dosage: '',
+            stock: 30,
+            frequency: '1x Daily',
+            times: ['09:00']
+        });
+        setShowAddModal(true);
+    };
+
+    const handleEdit = (med: Medication) => {
+        setEditingId(med.id);
+        setFormData({ ...med });
+        setShowAddModal(true);
+    };
+
+    const handleDelete = (id: number) => {
+        if (window.confirm("Are you sure you want to delete this medication?")) {
+            setMedications(prev => prev.filter(m => m.id !== id));
+            setTodaysDoses(prev => prev.filter(d => d.medId !== id));
+        }
+    };
+
+    const handleRefill = (id: number) => {
+        setMedications(prev => prev.map(m => 
+            m.id === id ? { ...m, stock: m.stock + 30 } : m
+        ));
+    };
+
+    const handleSave = () => {
+        if (!formData.name || !formData.dosage) return;
+
+        if (editingId) {
+            setMedications(prev => prev.map(m => 
+                m.id === editingId ? { ...m, ...formData } as Medication : m
+            ));
+        } else {
+            const newMed: Medication = {
+                id: Date.now(),
+                name: formData.name!,
+                dosage: formData.dosage!,
+                stock: Number(formData.stock) || 0,
+                frequency: formData.frequency || '1x Daily',
+                times: formData.times || ['09:00'],
+                color: "text-purple-500",
+                icon: "💊"
+            };
+            setMedications(prev => [...prev, newMed]);
+            setTodaysDoses(prev => [
+                ...prev, 
+                { id: Date.now() + 100, medId: newMed.id, time: "09:00", taken: false }
+            ]);
+        }
+        setShowAddModal(false);
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50/50 p-6 font-sans text-neutral-800">
+        <div className="min-h-screen bg-[#eef2f5] p-6 font-sans text-neutral-800">
             <div className="max-w-6xl mx-auto">
                 
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                {/* Neumorphic Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                     <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <span className="p-3 bg-orange-100 rounded-2xl text-orange-600 shadow-sm">
-                                <MdMedication />
+                        <h1 className="text-3xl font-black text-neutral-700 flex items-center gap-3 tracking-tight">
+                            <span className="w-12 h-12 rounded-xl flex items-center justify-center text-cyan-600 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]">
+                                <MdMedication className="text-2xl" />
                             </span>
                             Medication Tracker
                         </h1>
-                        <p className="text-neutral-500 mt-2 ml-16">Manage your prescriptions and track adherence.</p>
+                        <p className="text-neutral-500 mt-2 ml-16 font-medium">Manage your prescriptions and track adherence.</p>
                     </div>
                     <button 
-                        onClick={() => setShowAddModal(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-neutral-900 text-white rounded-xl hover:bg-black transition-all shadow-lg hover:shadow-xl active:scale-95 font-bold"
+                        onClick={handleAddNew}
+                        className="neu-btn px-6 py-3 text-cyan-700 hover:text-cyan-800"
                     >
-                        <HiPlus className="text-xl" /> Add Medication
+                        <HiPlus className="text-xl mr-2" /> Add Medication
                     </button>
                 </div>
 
@@ -84,57 +174,48 @@ export default function Medications() {
                     {/* Left Column: Schedule */}
                     <div className="lg:col-span-2 space-y-8">
                         
-                        {/* Progress Card */}
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-green-400/20 to-emerald-300/20 rounded-bl-full -mr-8 -mt-8"></div>
-                            
-                            <div className="flex-1 z-10">
-                                <h3 className="text-lg font-bold text-neutral-700 mb-1">Today's Progress</h3>
-                                <p className="text-sm text-neutral-400 mb-4">You have taken {todaysDoses.filter(d => d.taken).length} out of {todaysDoses.length} doses.</p>
-                                <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                        {/* Embossed Progress Card */}
+                        <div className="neu-card p-8 relative overflow-hidden">
+                            <div className="flex-1 z-10 relative">
+                                <h3 className="text-lg font-bold text-neutral-600 mb-1">Today's Progress</h3>
+                                
+                                <div className="flex items-end justify-between mb-2">
+                                     <p className="text-sm text-neutral-400 font-medium">You have taken {todaysDoses.filter(d => d.taken).length} out of {todaysDoses.length} doses.</p>
+                                     <span className="text-3xl font-black text-cyan-600">{Math.round((todaysDoses.filter(d => d.taken).length / todaysDoses.length) * 100) || 0}%</span>
+                                </div>
+
+                                {/* Embossed Progress Bar Track */}
+                                <div className="h-4 w-full rounded-full shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] bg-[#eef2f5] overflow-hidden p-[2px]">
+                                    {/* Popped out Progress Bar Fill */}
                                     <div 
-                                        className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-1000 ease-out"
-                                        style={{ width: `${(todaysDoses.filter(d => d.taken).length / todaysDoses.length) * 100}%` }}
+                                        className="h-full rounded-full bg-cyan-500 shadow-[2px_2px_4px_#b8e0e0] transition-all duration-1000 ease-out"
+                                        style={{ width: `${todaysDoses.length > 0 ? (todaysDoses.filter(d => d.taken).length / todaysDoses.length) * 100 : 0}%` }}
                                     ></div>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-4 z-10 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 shadow-sm">
-                                <div className="text-center">
-                                    <div className="text-2xl font-black text-neutral-800">{todaysDoses.filter(d => d.taken).length}</div>
-                                    <div className="text-xs font-bold text-green-600 uppercase">Taken</div>
-                                </div>
-                                <div className="w-px h-8 bg-gray-200"></div>
-                                <div className="text-center">
-                                    <div className="text-2xl font-black text-neutral-800">{todaysDoses.length - todaysDoses.filter(d => d.taken).length}</div>
-                                    <div className="text-xs font-bold text-orange-500 uppercase">Pending</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="flex gap-4 border-b border-gray-200">
+                        {/* Neumorphic Tabs */}
+                        <div className="flex p-1.5 bg-[#eef2f5] rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] w-fit">
                             <button
                                 onClick={() => setActiveTab('schedule')}
-                                className={`pb-4 px-4 font-bold text-sm transition-all relative ${
-                                    activeTab === 'schedule' ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600'
+                                className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                                    activeTab === 'schedule' 
+                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]' 
+                                    : 'text-gray-400 hover:text-gray-600'
                                 }`}
                             >
                                 Today's Schedule
-                                {activeTab === 'schedule' && (
-                                    <motion.div layoutId="underline_meds" className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-600" />
-                                )}
                             </button>
                             <button
                                 onClick={() => setActiveTab('list')}
-                                className={`pb-4 px-4 font-bold text-sm transition-all relative ${
-                                    activeTab === 'list' ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600'
+                                className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                                    activeTab === 'list' 
+                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]' 
+                                    : 'text-gray-400 hover:text-gray-600'
                                 }`}
                             >
                                 All Medications
-                                {activeTab === 'list' && (
-                                    <motion.div layoutId="underline_meds" className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-600" />
-                                )}
                             </button>
                         </div>
 
@@ -146,55 +227,63 @@ export default function Medications() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
-                                    className="space-y-4"
+                                    className="space-y-6"
                                 >
-                                    {todaysDoses.map((dose) => {
-                                        const med = medications.find(m => m.id === dose.medId);
-                                        if (!med) return null;
-                                        
-                                        const now = new Date();
-                                        const [hours, mins] = dose.time.split(':').map(Number);
-                                        const doseTime = new Date();
-                                        doseTime.setHours(hours, mins, 0, 0);
-                                        const isPast = doseTime < now && !dose.taken;
+                                    {todaysDoses.length === 0 ? (
+                                        <div className="neu-card p-10 text-center text-gray-400 italic">No doses scheduled.</div>
+                                    ) : (
+                                        todaysDoses.map((dose) => {
+                                            const med = medications.find(m => m.id === dose.medId);
+                                            if (!med) return null;
+                                            
+                                            // Check time logic...
+                                            const now = new Date();
+                                            const [hours, mins] = dose.time.split(':').map(Number);
+                                            const doseTime = new Date();
+                                            doseTime.setHours(hours, mins, 0, 0);
+                                            const isPast = doseTime < now && !dose.taken;
 
-                                        return (
-                                            <div 
-                                                key={dose.id} 
-                                                className={`p-4 rounded-2xl border transition-all flex items-center gap-4 group ${
-                                                    dose.taken ? 'bg-green-50/50 border-green-100 opacity-75 grayscale-[0.3]' : 
-                                                    isPast ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-100 hover:shadow-md'
-                                                }`}
-                                            >
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${med.color}`}>
-                                                    {med.icon}
-                                                </div>
-                                                
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-start">
-                                                        <h4 className={`font-bold text-lg ${dose.taken ? 'line-through text-gray-400' : 'text-neutral-800'}`}>{med.name}</h4>
-                                                        <span className={`text-sm font-bold flex items-center gap-1 ${
-                                                            dose.taken ? 'text-green-600' : isPast ? 'text-red-500' : 'text-neutral-500'
-                                                        }`}>
-                                                            <MdAccessTimeFilled /> {dose.time}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-sm text-neutral-400 font-medium">{med.dosage} • {isPast ? 'Missed Dose' : 'Take with food'}</p>
-                                                </div>
-
-                                                <button 
-                                                    onClick={() => toggleTaken(dose.id)}
-                                                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                            return (
+                                                <div 
+                                                    key={dose.id} 
+                                                    className={`p-6 rounded-2xl transition-all flex items-center gap-6 group ${
                                                         dose.taken 
-                                                            ? 'bg-green-500 text-white shadow-green-200' 
-                                                            : 'bg-gray-100 text-gray-300 hover:bg-green-100 hover:text-green-500'
+                                                        ? 'shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] opacity-60' // Pressed in when taken
+                                                        : 'neu-card hover:-translate-y-1' // Popped out when active
                                                     }`}
                                                 >
-                                                    <HiCheck className="text-xl" />
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
+                                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0 ${
+                                                        dose.taken ? 'bg-[#eef2f5]' : 'bg-[#eef2f5] shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
+                                                    } ${med.color}`}>
+                                                        {med.icon}
+                                                    </div>
+                                                    
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-start">
+                                                            <h4 className={`font-bold text-lg ${dose.taken ? 'line-through text-gray-400' : 'text-neutral-700'}`}>{med.name}</h4>
+                                                            <span className={`text-sm font-bold flex items-center gap-1 ${
+                                                                dose.taken ? 'text-green-600' : isPast ? 'text-red-500' : 'text-neutral-400 shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] px-2 py-1 rounded-lg'
+                                                            }`}>
+                                                                <MdAccessTimeFilled /> {dose.time}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm text-neutral-400 font-medium mt-1">{med.dosage} • {isPast ? 'Missed Dose' : 'Take with food'}</p>
+                                                    </div>
+
+                                                    <button 
+                                                        onClick={() => toggleTaken(dose.id)}
+                                                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                                                            dose.taken 
+                                                                ? 'text-green-500 shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] bg-[#eef2f5]' 
+                                                                : 'text-gray-300 hover:text-green-500 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] bg-[#eef2f5]'
+                                                        }`}
+                                                    >
+                                                        {dose.taken ? <HiCheckCircle className="text-2xl" /> : <HiCheck className="text-xl" />}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </motion.div>
                             ) : (
                                 <motion.div 
@@ -202,37 +291,45 @@ export default function Medications() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
-                                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
                                 >
                                     {medications.map(med => (
-                                        <div key={med.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                                        <div key={med.id} className="neu-card p-6 flex flex-col justify-between group h-full">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${med.color}`}>
+                                                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] ${med.color}`}>
                                                     {med.icon}
                                                 </div>
-                                                <button className="text-gray-300 hover:text-neutral-600 transition-colors">
-                                                    <HiOutlineClipboardList className="text-xl" />
-                                                </button>
+                                                <div className="flex gap-3">
+                                                    <button 
+                                                        onClick={() => handleEdit(med)}
+                                                        className="neu-icon-btn w-10 h-10 text-gray-400 hover:text-blue-500"
+                                                    >
+                                                        <HiPencil className="text-lg" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDelete(med.id)}
+                                                        className="neu-icon-btn w-10 h-10 text-gray-400 hover:text-red-500"
+                                                    >
+                                                        <HiTrash className="text-lg" />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <h4 className="font-bold text-lg text-neutral-800 mb-1">{med.name}</h4>
-                                            <p className="text-sm text-orange-500 font-bold mb-4">{med.dosage}</p>
                                             
-                                            <div className="space-y-2 text-sm text-neutral-500">
-                                                <div className="flex items-center gap-2">
-                                                    <HiClock className="text-gray-400" />
-                                                    <span>{med.frequency}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <MdLocalPharmacy className="text-gray-400" />
-                                                    <span>{med.stock} pills remaining</span>
+                                            <div>
+                                                <h4 className="font-bold text-xl text-neutral-700 mb-1">{med.name}</h4>
+                                                <p className="text-sm text-cyan-600 font-bold mb-4">{med.dosage}</p>
+                                                
+                                                <div className="space-y-3 text-sm text-neutral-500">
+                                                    <div className="flex items-center gap-3 p-2 rounded-xl">
+                                                        <HiClock className="text-xl text-neutral-400" />
+                                                        <span className="font-medium">{med.frequency}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 p-2 rounded-xl">
+                                                        <MdLocalPharmacy className="text-xl text-neutral-400" />
+                                                        <span className="font-medium">{med.stock} pills left</span>
+                                                    </div>
                                                 </div>
                                             </div>
-
-                                            {med.stock <= 15 && (
-                                                <div className="mt-4 p-2 bg-red-50 text-red-600 text-xs font-bold rounded-lg text-center animate-pulse">
-                                                    Low Stock - Refill Soon
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </motion.div>
@@ -241,37 +338,35 @@ export default function Medications() {
 
                     </div>
 
-                    {/* Right Column: Refills & Stats */}
-                    <div className="space-y-6">
+                    {/* Right Column: Refills */}
+                    <div className="space-y-8">
                         
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-neutral-700 mb-4 flex items-center gap-2">
-                                <HiBell className="text-orange-500" /> Refill Alerts
+                        <div className="neu-card p-8">
+                            <h3 className="font-bold text-neutral-700 mb-6 flex items-center gap-3">
+                                <span className="p-2 rounded-lg shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] text-orange-500"><HiBell /></span>
+                                Refill Alerts
                             </h3>
                             <div className="space-y-4">
-                                {medications.filter(m => m.stock < 20).map(med => (
-                                    <div key={med.id} className="flex items-center gap-4 p-3 bg-red-50 rounded-xl border border-red-100">
-                                        <div className="text-2xl">{med.icon}</div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-sm text-neutral-800">{med.name}</h4>
-                                            <p className="text-xs text-red-500 font-bold">{med.stock} left</p>
+                                {medications.filter(m => m.stock < 20).length === 0 ? (
+                                     <p className="text-sm text-gray-400 text-center py-4">All stocked up!</p>
+                                ) : (
+                                    medications.filter(m => m.stock < 20).map(med => (
+                                        <div key={med.id} className="flex items-center gap-4 p-4 rounded-2xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]">
+                                            <div className="text-2xl">{med.icon}</div>
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-sm text-neutral-700">{med.name}</h4>
+                                                <p className="text-xs text-red-500 font-bold">{med.stock} left</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleRefill(med.id)}
+                                                className="neu-btn px-4 py-2 text-xs text-red-500 hover:text-red-600"
+                                            >
+                                                Refill
+                                            </button>
                                         </div>
-                                        <button className="text-xs bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg font-bold hover:bg-red-600 hover:text-white transition-colors">
-                                            Refill
-                                        </button>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
-                        </div>
-
-                         <div className="bg-gradient-to-br from-indigo-600 to-violet-600 p-6 rounded-3xl shadow-xl shadow-indigo-500/20 text-white relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                            <h3 className="font-bold text-lg mb-2 relative z-10">Adherence Score</h3>
-                            <div className="flex items-baseline gap-1 relative z-10">
-                                <span className="text-5xl font-black tracking-tight">92</span>
-                                <span className="text-xl font-medium opacity-80">%</span>
-                            </div>
-                            <p className="text-indigo-100 text-sm mt-2 relative z-10">You're doing great! Keep taking your meds on time to maintain your streak.</p>
                         </div>
 
                     </div>
@@ -279,42 +374,88 @@ export default function Medications() {
 
             </div>
 
-             {/* Add Modal (Mock) */}
+             {/* Add/Edit Modal (Glassmorphism for contrast) */}
              <AnimatePresence>
                 {showAddModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#eef2f5]/80 backdrop-blur-sm">
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl"
+                            className="neu-card w-full max-w-md p-8 relative"
                         >
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <HiPlus className="bg-black text-white rounded-full p-1" /> Add Medication
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-2xl font-black text-neutral-700">
+                                    {editingId ? 'Edit Medication' : 'Add Medication'}
                                 </h2>
-                                <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                    <HiX className="text-xl text-gray-500" />
+                                <button onClick={() => setShowAddModal(false)} className="neu-icon-btn w-10 h-10 text-gray-400 hover:text-red-500">
+                                    <HiX className="text-lg" />
                                 </button>
                             </div>
                             
-                            <div className="space-y-4">
-                                <input type="text" placeholder="Medication Name" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500 outline-none font-medium" />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input type="text" placeholder="Dosage (e.g. 500mg)" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500 outline-none font-medium" />
-                                    <input type="number" placeholder="Total Stock" className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500 outline-none font-medium" />
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="text-xs font-bold text-neutral-400 ml-2 uppercase">Medication Name</label>
+                                    <input 
+                                        type="text" 
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                        className="neu-input mt-2"
+                                        placeholder="e.g. Amoxicillin" 
+                                    />
                                 </div>
-                                <select className="w-full px-4 py-3 bg-gray-50 rounded-xl border-none focus:ring-2 focus:ring-orange-500 outline-none font-medium text-gray-500">
-                                    <option>Frequency</option>
-                                    <option>Once Daily</option>
-                                    <option>Twice Daily</option>
-                                    <option>Three Times Daily</option>
-                                </select>
+                                
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="text-xs font-bold text-neutral-400 ml-2 uppercase">Dosage</label>
+                                        <input 
+                                            type="text" 
+                                            value={formData.dosage}
+                                            onChange={(e) => setFormData({...formData, dosage: e.target.value})}
+                                            className="neu-input mt-2"
+                                            placeholder="500mg" 
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-neutral-400 ml-2 uppercase">Stock</label>
+                                        <input 
+                                            type="number" 
+                                            value={formData.stock}
+                                            onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
+                                            className="neu-input mt-2"
+                                            placeholder="30" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-bold text-neutral-400 ml-2 uppercase">Frequency</label>
+                                    <div className="grid grid-cols-3 gap-3 mt-2">
+                                        {['1x Daily', '2x Daily', '3x Daily'].map((freq) => (
+                                            <button
+                                                key={freq}
+                                                onClick={() => setFormData({...formData, frequency: freq})}
+                                                className={`py-3 rounded-xl text-sm font-bold transition-all ${
+                                                    formData.frequency === freq
+                                                    ? 'neu-pressed text-cyan-600 shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]'
+                                                    : 'neu-flat text-neutral-400 hover:text-neutral-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
+                                                }`}
+                                            >
+                                                {freq.split(' ')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div className="mt-8 flex gap-3">
-                                <button onClick={() => setShowAddModal(false)} className="flex-1 py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition-colors">Cancel</button>
-                                <button onClick={() => setShowAddModal(false)} className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all active:scale-95">Save Details</button>
+                            <div className="mt-10 flex gap-4">
+                                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 font-bold text-neutral-400 hover:text-neutral-600 transition-colors">Cancel</button>
+                                <button 
+                                    onClick={handleSave}
+                                    className="flex-1 py-4 neu-btn bg-cyan-500 text-white shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:bg-cyan-600"
+                                >
+                                    {editingId ? 'Update' : 'Save Details'}
+                                </button>
                             </div>
                         </motion.div>
                     </div>

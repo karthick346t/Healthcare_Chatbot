@@ -12,6 +12,7 @@ import MedicalRecords from './pages/MedicalRecords';
 import MyAppointments from "./pages/MyAppointments";
 import LabReports from "./pages/LabReports";
 import Medications from "./pages/Medications";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
@@ -79,10 +80,6 @@ function InnerApp() {
               </ProtectedRoute>
             }
           />
-import MyAppointments from "./pages/MyAppointments"; // Top of file
-
-// ... inside Routes ...
-
           <Route
             path="/my-appointments"
             element={
@@ -112,6 +109,14 @@ import MyAppointments from "./pages/MyAppointments"; // Top of file
             element={
               <ProtectedRoute>
                 <Appointments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

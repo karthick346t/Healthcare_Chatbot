@@ -43,6 +43,18 @@
   --gradient-health: linear-gradient(135deg, #008080 0%, #06D6A0 100%);
   --gradient-background: linear-gradient(135deg, #E6F5F5 0%, #CCF0F0 100%);
 
+  /* NEUMORPHIC THEME VARIABLES */
+  --bg-neu: #eef2f5;
+  --shadow-neu-out:
+    6px 6px 12px #c8d0e7,
+    -6px -6px 12px #ffffff;
+  --shadow-neu-in:
+    inset 4px 4px 8px #c8d0e7,
+    inset -4px -4px 8px #ffffff;
+  --shadow-neu-flat:
+    0px 0px 0px #c8d0e7,
+    0px 0px 0px #ffffff;
+
   font-family: 'Inter', 'Noto Sans', 'Open Sans', Arial, sans-serif;
 }
 
@@ -60,7 +72,7 @@ html {
 
 body {
   font-family: 'Inter', 'Noto Sans', 'Open Sans', Arial, sans-serif;
-  background: linear-gradient(135deg, #E6F5F5 0%, #F5F5F5 100%);
+  background-color: var(--bg-neu);
   color: var(--neutral-dark);
   min-height: 100vh;
   position: relative;
@@ -80,6 +92,84 @@ body::before {
     radial-gradient(circle at 40% 20%, rgba(0, 102, 102, 0.04) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
+}
+
+/* ============================================
+   NEUMORPHIC UTILITIES
+   ============================================ */
+
+.neu-card {
+  background: var(--bg-neu);
+  box-shadow: var(--shadow-neu-out);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.neu-btn {
+  background: var(--bg-neu);
+  box-shadow: var(--shadow-neu-out);
+  border-radius: 12px;
+  color: var(--neutral-dark);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.neu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    8px 8px 16px #c8d0e7,
+    -8px -8px 16px #ffffff;
+}
+
+.neu-btn:active,
+.neu-btn.active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-neu-in);
+}
+
+.neu-input {
+  background: var(--bg-neu);
+  box-shadow: var(--shadow-neu-in);
+  border-radius: 15px;
+  border: none;
+  padding: 1rem;
+  width: 100%;
+  color: var(--neutral-dark);
+}
+
+.neu-input:focus {
+  outline: none;
+  box-shadow:
+    inset 6px 6px 12px #c8d0e7,
+    inset -6px -6px 12px #ffffff,
+    0 0 0 2px var(--primary);
+}
+
+.neu-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-neu);
+  box-shadow: var(--shadow-neu-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neutral-medium);
+  transition: all 0.2s ease;
+}
+
+.neu-icon-btn:hover {
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.neu-icon-btn:active {
+  box-shadow: var(--shadow-neu-in);
+  transform: scale(0.95);
 }
 
 /* ============================================
@@ -467,6 +557,7 @@ textarea {
     opacity: 0;
     transform: translateY(30px) scale(0.96);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -483,6 +574,7 @@ textarea {
     opacity: 0;
     transform: translateY(12px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -496,9 +588,22 @@ textarea {
 
 /* Shake animation for errors */
 @keyframes loginShake {
-  0%, 100% { transform: translateX(0); }
-  10%, 50%, 90% { transform: translateX(-6px); }
-  30%, 70% { transform: translateX(6px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  50%,
+  90% {
+    transform: translateX(-6px);
+  }
+
+  30%,
+  70% {
+    transform: translateX(6px);
+  }
 }
 
 .login-shake {
@@ -511,6 +616,7 @@ textarea {
     opacity: 0;
     transform: translateX(-20px);
   }
+
   100% {
     opacity: 1;
     transform: translateX(0);
@@ -524,10 +630,13 @@ textarea {
 
 /* Slow pulse for branding logo */
 @keyframes loginPulseSlow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2);
   }
+
   50% {
     transform: scale(1.05);
     box-shadow: 0 0 24px 8px rgba(255, 255, 255, 0.15);
@@ -540,21 +649,51 @@ textarea {
 
 /* Floating decorative shapes */
 @keyframes loginFloat1 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(30px, -40px) rotate(5deg); }
-  50% { transform: translate(-20px, -60px) rotate(-3deg); }
-  75% { transform: translate(15px, -25px) rotate(3deg); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(30px, -40px) rotate(5deg);
+  }
+
+  50% {
+    transform: translate(-20px, -60px) rotate(-3deg);
+  }
+
+  75% {
+    transform: translate(15px, -25px) rotate(3deg);
+  }
 }
 
 @keyframes loginFloat2 {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(-40px, 30px) rotate(-5deg); }
-  66% { transform: translate(20px, -30px) rotate(5deg); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  33% {
+    transform: translate(-40px, 30px) rotate(-5deg);
+  }
+
+  66% {
+    transform: translate(20px, -30px) rotate(5deg);
+  }
 }
 
 @keyframes loginFloat3 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-25px, 40px); }
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-25px, 40px);
+  }
 }
 
 .login-float-shape {

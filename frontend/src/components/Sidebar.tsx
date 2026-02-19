@@ -1,29 +1,18 @@
 import React from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HiHome, HiCalendar, HiUser, HiCog, HiVideoCamera, HiDocumentText } from 'react-icons/hi';
-import { useAuth } from '../context/AuthContext';
+import { HiVideoCamera, HiDocumentText } from 'react-icons/hi';
 import { 
-  MdDashboard, 
-  MdVideoCameraFront, 
   MdFavorite, 
-  MdHistory, 
-  MdLocalPharmacy, 
-  MdPsychology, 
-  MdSettings,
-  MdDateRange 
+  MdSettings
 } from "react-icons/md";
 
 import logo from "../assets/logo.png";
 import NexaLogo from "../assets/NEXA.png";
 
 const menuItems = [
-  { icon: MdDashboard, label: "Dashboard", path: "/" },
   { icon: HiVideoCamera, label: 'Telemedicine', path: '/telemedicine' },
   { icon: HiDocumentText, label: 'Medical Records', path: '/records' },
   { icon: MdFavorite, label: "My Vitals", path: "/vitals" },
-  { icon: MdHistory, label: "Lab History", path: "/labs" },
-  { icon: MdLocalPharmacy, label: "Pharmacy", path: "/medications" },
-  { icon: MdDateRange, label: "My Appointments", path: "/my-appointments" },
   { icon: MdSettings, label: "Settings", path: "/settings" },
 ];
 
@@ -32,34 +21,33 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <div className="h-full flex flex-col py-6 pr-2 z-20 w-64 hidden lg:flex">
-      {/* Brand Name with Gradient */}
-      <div className="flex items-center gap-3 px-6 mb-10 cursor-pointer select-none group" onClick={() => navigate('/')}>
+    <div className="h-full flex flex-col py-6 pr-4 z-20 w-64 hidden lg:flex shadow-none">
+      {/* Brand Name */}
+      <div className="flex items-center gap-4 px-6 mb-10 cursor-pointer select-none group" onClick={() => navigate('/')}>
         <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-cyan-400/20 blur-xl opacity-40 group-hover:opacity-60 transition-opacity" />
-            <div className="relative h-11 w-11 rounded-xl overflow-hidden border border-white/60 shadow-lg shadow-cyan-500/10 bg-white/80 flex items-center justify-center">
-              <img
+            <div className="w-12 h-12 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex items-center justify-center text-cyan-600">
+               <img
                 src={logo}
                 alt="NEXA icon"
-                className="h-full w-full object-contain p-1.5"
+                className="h-8 w-8 object-contain"
               />
             </div>
-          </div>
+        </div>
 
           <div className="flex flex-col">
             <img
               src={NexaLogo}
               alt="NEXA"
-              className="h-6 w-auto drop-shadow-sm pointer-events-none select-none opacity-90"
+              className="h-6 w-auto opacity-80"
             />
-            <p className="text-[10px] text-neutral-500 -mt-1 font-medium whitespace-nowrap">
-              Your wellness companion
+            <p className="text-[10px] text-neutral-400 font-bold tracking-wider">
+              WELLNESS
             </p>
           </div>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 space-y-3 px-4">
+      <nav className="flex-1 space-y-3 px-4 overflow-y-auto no-scrollbar py-2">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           
@@ -69,13 +57,13 @@ export default function Sidebar() {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
                 isActive
-                  ? "bg-white/80 shadow-lg shadow-cyan-500/10 border border-white/60 backdrop-blur-md text-cyan-700 font-bold"
-                  : "text-neutral-500 hover:bg-white/40 hover:text-cyan-600 hover:pl-5 font-medium"
+                  ? "bg-[#eef2f5] text-cyan-600 font-bold shadow-[inset_5px_5px_10px_rgba(163,177,198,0.6),inset_-5px_-5px_10px_rgba(255,255,255,0.8)]"
+                  : "hover:bg-[#eef2f5] text-neutral-500 hover:text-cyan-600 font-medium hover:shadow-[5px_5px_10px_rgba(163,177,198,0.4),-5px_-5px_10px_rgba(255,255,255,0.8)] hover:-translate-y-0.5"
               }`}
             >
               <item.icon 
                 className={`text-xl transition-colors ${
-                  isActive ? "text-cyan-500" : "text-neutral-400 group-hover:text-cyan-500"
+                  isActive ? "text-cyan-600" : "text-neutral-400 group-hover:text-cyan-500"
                 }`} 
               />
               <span className="text-sm tracking-wide">{item.label}</span>
@@ -86,8 +74,8 @@ export default function Sidebar() {
 
       {/* Footer Links */}
       <div className="mt-auto px-8 py-4 text-[10px] text-neutral-400 font-bold flex gap-4 uppercase tracking-wider opacity-60">
-        <span>Trust Badges</span>
-        <span>Security</span>
+        <span>v2.0.0</span>
+        <span>Secure</span>
       </div>
     </div>
   );
