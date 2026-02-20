@@ -138,9 +138,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload, quickRep
     <div className="w-full max-w-3xl mx-auto px-4">
       <form
         onSubmit={handleSubmit}
-        className={`relative flex items-end gap-2 px-4 py-3 rounded-3xl bg-white 
-                   border transition-all duration-200 shadow-sm hover:shadow-md
-                   ${isListening ? "border-red-400 ring-1 ring-red-400" : "border-gray-200"}`}
+        className={`relative flex items-end gap-2 px-4 py-3 rounded-3xl bg-[#eef2f5] transition-all duration-200 border-none shadow-[inset_6px_6px_12px_#c8d0e7,inset_-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] ${isListening ? "ring-2 ring-red-400" : ""}`}
       >
         {/* Left side buttons */}
         <div className="flex items-center gap-1 pb-1">
@@ -196,7 +194,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload, quickRep
 
         {/* Quick Replies inside the bar */}
         {quickReplies.length > 0 && input.length === 0 && (
-          <div className="flex items-center absolute right-[44px] sm:right-[52px] top-[7px] sm:top-[9px] z-10 animate-fadeIn max-w-[50%] sm:max-w-none overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center absolute right-[44px] sm:right-[52px] top-1/2 -translate-y-1/2 z-10 animate-fadeIn max-w-[50%] sm:max-w-none overflow-x-auto no-scrollbar py-0.5">
             <QuickReplies options={quickReplies} onSelect={onSend} />
           </div>
         )}

@@ -135,7 +135,7 @@ export default function Dashboard() {
     <div className="flex w-full h-screen overflow-hidden bg-transparent text-neutral-dark font-sans relative selection:bg-primary/20">
       <Sidebar />
 
-      <main className="flex-1 flex flex-col relative z-10 overflow-y-auto pl-2 pr-6 py-6">
+      <main className="flex-1 flex flex-col relative z-10 overflow-y-auto px-6 py-6">
 
         <Header />
 
@@ -158,7 +158,7 @@ export default function Dashboard() {
 
             <div className="flex-[2] flex flex-col gap-6">
 
-              <div className="relative bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-xl shadow-slate-200/50 flex flex-col justify-center min-h-[280px] group transition-all hover:bg-white/50 overflow-hidden">
+              <div className="relative bg-[#eef2f5] border-none rounded-3xl p-10 shadow-[8px_8px_16px_#c8d0e7,-8px_-8px_16px_#ffffff] flex flex-col justify-center min-h-[280px] group transition-all overflow-hidden">
                 <div className="absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute top-8 right-10 animate-bounce" style={{ animationDuration: '3s' }}>
                   <div className="w-24 h-24 bg-gradient-to-b from-white to-blue-50 rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/80 transform rotate-6 hover:rotate-0 transition-all duration-500">
@@ -171,7 +171,7 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-3xl text-neutral-800 mb-8 font-semibold max-w-md leading-tight">{t("greeting")}</h3>
 
-                <div onClick={() => navigate("/chat")} className="bg-white border border-white/50 hover:border-cyan-500/30 rounded-2xl p-2 pl-6 flex items-center justify-between shadow-lg shadow-blue-900/5 cursor-text transition-all duration-300 group/input">
+                <div onClick={() => navigate("/chat")} className="bg-[#eef2f5] border-none rounded-2xl p-2 pl-6 flex items-center justify-between shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] cursor-text transition-all duration-300 group/input">
                   <div className="flex items-center gap-6 text-neutral-400 text-sm font-medium w-full">
                     <span className="group-hover/input:text-neutral-600 transition-colors min-w-[200px]">
                       <TypewriterText />
@@ -189,7 +189,7 @@ export default function Dashboard() {
                   <button
                     key={idx}
                     onClick={() => navigate(card.path)} // <--- 4. NAVIGATE ON CLICK
-                    className="bg-white/60 border border-white/60 backdrop-blur-lg p-5 rounded-[1.5rem] text-left hover:bg-white/90 transition-all hover:-translate-y-1 hover:shadow-xl shadow-sm flex flex-col justify-between h-44 group"
+                    className="bg-[#eef2f5] border-none p-5 rounded-3xl text-left transition-all hover:-translate-y-1 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex flex-col justify-between h-44 group"
                   >
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center text-2xl text-white mb-2 ${card.shadow} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                       {card.icon}
@@ -204,7 +204,7 @@ export default function Dashboard() {
             </div>
 
             <div className="flex-1 xl:max-w-[320px] flex flex-col gap-5">
-              <div className="bg-white/50 border border-white/60 backdrop-blur-xl p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+              <div className="bg-[#eef2f5] border-none p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-shadow relative overflow-hidden">
                 <div className="flex justify-between items-center mb-6 relative z-10">
                   <span className="font-bold text-neutral-700 text-sm">Heart Rate</span>
                   <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500"><span className="text-xs">❤️</span></div>
@@ -216,7 +216,7 @@ export default function Dashboard() {
                 <HeartRateGraph />
               </div>
 
-              <div className="bg-white/50 border border-white/60 backdrop-blur-xl p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+              <div className="bg-[#eef2f5] border-none p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-shadow relative overflow-hidden">
                 <div className="flex justify-between items-center mb-6 relative z-10">
                   <span className="font-bold text-neutral-700 text-sm">Blood Oxygen</span>
                   <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-500"><span className="text-xs">💧</span></div>

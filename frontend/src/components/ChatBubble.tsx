@@ -131,10 +131,10 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
         {/* MESSAGE BUBBLE */}
         <div
           className={clsx(
-            "relative px-5 py-3.5 rounded-2xl shadow-sm text-[15px] leading-relaxed break-words border",
+            "relative px-6 py-4 rounded-3xl text-[15px] leading-relaxed break-words border-none",
             isUser 
-              ? "bg-[#4C5BD8] text-white rounded-br-sm border-[#4C5BD8]" 
-              : "bg-white text-neutral-800 rounded-bl-sm border-neutral-100"
+              ? "bg-[#4C5BD8] text-white rounded-br-[4px] shadow-sm" 
+              : "bg-[#eef2f5] text-neutral-800 rounded-bl-[4px] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]"
           )}
         >
            {/* ⚠️ Non-health warning */}

@@ -175,14 +175,14 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col w-full h-full bg-[#eef2f6] text-neutral-dark overflow-hidden selection:bg-primary/20 z-50">
+    <div className="fixed inset-0 flex flex-col w-full h-full bg-[#eef2f5] text-neutral-dark overflow-hidden selection:bg-primary/20 z-50">
 
       {/* Background Gradients */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none" />
 
       {/* HEADER */}
-      <div className="flex items-center justify-between px-5 py-3 bg-white/80 backdrop-blur-xl border-b border-primary/10 z-20 shrink-0">
+      <div className="flex items-center justify-between px-5 py-3 bg-transparent border-none z-20 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
@@ -234,14 +234,14 @@ export default function Chatbot() {
         className={`absolute inset-0 z-40 flex transition-transform duration-300 ease-in-out ${showHistory ? "translate-x-0" : "-translate-x-full"}`}
         style={{ marginTop: '72px' }}
       >
-        <div className="w-64 h-full bg-gray-50 border-r border-gray-200 shadow-lg flex flex-col bg-white">
-          <div className="p-4 border-b border-gray-200">
+        <div className="w-64 h-full border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex flex-col bg-[#eef2f5]">
+          <div className="p-4 border-b border-neutral-200">
             <button
               onClick={() => { handleNewChat(); setShowHistory(false); }}
-              className="w-full flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
+              className="w-full flex items-center gap-2 bg-[#eef2f5] text-primary px-4 py-3 rounded-xl hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-all border-none justify-center"
             >
-              <MdAdd />
-              <span className="text-sm font-medium">{t("New Chat")}</span>
+              <MdAdd className="text-xl" />
+              <span className="text-sm font-bold tracking-wide">{t("New Chat")}</span>
             </button>
           </div>
 
@@ -261,8 +261,8 @@ export default function Chatbot() {
                 key={session.sessionId}
                 onClick={() => switchChat(session.sessionId)}
                 className={`w-full text-left px-3 py-3 rounded-lg flex items-start gap-3 transition-colors ${sessionId === session.sessionId
-                  ? 'bg-white border border-primary/30 shadow-sm'
-                  : 'hover:bg-gray-200 border border-transparent'
+                  ? 'bg-[#eef2f5] shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] border-none'
+                  : 'hover:shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] border-none'
                   }`}
               >
                 <MdChatBubbleOutline className={`mt-0.5 shrink-0 ${sessionId === session.sessionId ? 'text-primary' : 'text-gray-500'}`} />
@@ -293,7 +293,7 @@ export default function Chatbot() {
       </div>
 
       {/* INPUT AREA */}
-      <div className="border-t border-primary/5 bg-white/80 backdrop-blur-xl px-4 py-3 shrink-0 shadow-[0_-4px_20px_-5px_rgba(0,128,128,0.05)]">
+      <div className="bg-transparent px-4 py-4 shrink-0 shadow-none pb-6">
         <MessageInput
           onSend={handleUserMessage}
           onFileUpload={handleFileUpload}

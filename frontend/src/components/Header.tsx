@@ -88,7 +88,7 @@ export default function Header() {
           {/* Info button */}
           <button
             onClick={handleHelp}
-            className="p-2 rounded-xl bg-white/60 border border-white/80 hover:border-cyan-400/50 hover:bg-white/90 transition-all duration-200 shadow-sm hover:shadow-cyan-500/20"
+            className="p-3 rounded-xl bg-[#eef2f5] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-200"
             aria-label={t("Help & Privacy")}
           >
             <HiOutlineInformationCircle className="text-neutral-500 hover:text-cyan-600 text-xl transition-colors" />
@@ -101,7 +101,7 @@ export default function Header() {
                 e.stopPropagation();
                 setShowLangMenu((prev) => !prev);
               }}
-              className="flex items-center gap-2 px-3 h-10 rounded-xl bg-white/60 border border-white/80 hover:border-cyan-400/50 hover:bg-white/90 transition-all duration-200 shadow-sm hover:shadow-cyan-500/20 text-neutral-600 text-sm font-semibold"
+              className="flex items-center gap-2 px-4 h-11 rounded-xl bg-[#eef2f5] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-200 text-neutral-600 text-sm font-semibold"
               aria-label={t("Change language")}
             >
               <TbLanguage className="text-lg text-neutral-500" />
@@ -135,7 +135,7 @@ export default function Header() {
                   console.log("Avatar clicked!", showUserMenu); 
                   setShowUserMenu((prev) => !prev);
                 }}
-                className="flex items-center gap-2 p-1 pl-2 rounded-full hover:bg-white/50 transition-all duration-200 border border-transparent hover:border-white/60"
+                className="flex items-center gap-3 p-1 pl-4 rounded-xl bg-[#eef2f5] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-200"
                 aria-label="User Menu"
                 type="button"
               >
@@ -147,12 +147,12 @@ export default function Header() {
                   <img
                     src={user.avatar}
                     alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                    className="w-10 h-10 rounded-lg object-cover border-2 border-white shadow-md"
                     referrerPolicy="no-referrer"
                     onError={() => setImageError(true)}
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center border-2 border-white shadow-md text-white">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center border-2 border-white shadow-md text-white">
                      <span className="text-sm font-bold">{user.name?.charAt(0).toUpperCase()}</span>
                   </div>
                 )}

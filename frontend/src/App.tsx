@@ -127,6 +127,14 @@ function InnerApp() {
             }
           />
           <Route
+            path="/vitals"
+            element={
+              <ProtectedRoute>
+                <WorkInProgress title="My Vitals" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/*"
             element={
               <AdminRoute>
