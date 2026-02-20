@@ -15,7 +15,7 @@ interface Stats {
     hospitals: number;
 }
 
-const API_BASE = "http://localhost:4000/api/admin";
+const API_BASE = "/api/admin";
 
 export default function AdminDashboard() {
     const { user, token } = useAuth();
@@ -35,11 +35,11 @@ export default function AdminDashboard() {
 
     const fetchData = async () => {
         try {
-            const headers = { 
+            const headers = {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}` 
+                "Authorization": `Bearer ${token}`
             };
-            
+
             const statsRes = await fetch(`${API_BASE}/stats`, { headers });
             const usersRes = await fetch(`${API_BASE}/users`, { headers });
             const apptsRes = await fetch(`${API_BASE}/appointments?limit=5`, { headers });
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
             const apptsData = await apptsRes.json();
 
             setStats(statsData);
-            
+
             // Sort by date descending and take top 5
             setRecentUsers(usersData.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
             setRecentAppointments(apptsData.appointments || apptsData); // Handle paginated response if wrapped
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
 
     // Calculate "Confirmed Today" (Mocked logic based on appointments array if full list was fetched, otherwise placeholder)
     // Calculate "New Users (This Week)" (Mocked for now as we only fetch top 5)
-    
+
     // Combine and sort activities for the feed
     const activities = [
         ...recentUsers.map(u => ({ type: 'user', title: 'New Registration', desc: `${u.name} joined the platform.`, date: new Date(u.createdAt || Date.now()), icon: '👤', color: 'bg-blue-100 text-blue-600' })),
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
 
             {/* Main Content Area: Charts & Feeds */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
                 {/* Left Column: Charts & Quick Links (Span 2) */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Simple Visualization: Appointment Status */}
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
                             <h3 className="font-bold text-neutral-800">Appointment Status Distribution</h3>
                             <span className="text-xs font-semibold text-neutral-500 bg-gray-100 px-3 py-1 rounded-full">All Time</span>
                         </div>
-                        
+
                         <div className="flex h-12 rounded-xl overflow-hidden shadow-inner mb-4">
                             {stats?.appointments.total ? (
                                 <>
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
                                 <div className="w-full bg-gray-100 flex items-center justify-center text-xs text-neutral-400 font-medium">No Data</div>
                             )}
                         </div>
-                        
+
                         <div className="flex items-center justify-center gap-6">
                             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-xs text-neutral-600 font-medium">Confirmed ({stats?.appointments.confirmed || 0})</span></div>
                             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-xs text-neutral-600 font-medium">Pending ({stats?.appointments.pending || 0})</span></div>
@@ -142,12 +142,12 @@ export default function AdminDashboard() {
 
                         <div className="bg-[#eef2f5] rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] p-6 text-neutral-800 relative overflow-hidden flex flex-col justify-between">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none"></div>
-                            
+
                             <div>
                                 <h3 className="font-bold text-lg mb-1 relative z-10 text-cyan-700">Quick Actions</h3>
                                 <p className="text-neutral-500 text-xs mb-4 relative z-10 font-medium">Common management tasks.</p>
                             </div>
-                            
+
                             <div className="flex flex-col gap-3 relative z-10 block mt-2">
                                 <button onClick={() => navigate('/admin/doctors')} className="w-full text-left px-4 py-3 bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] rounded-xl transition-all text-sm font-bold text-neutral-700 flex items-center justify-between group block !text-left">
                                     <span>Add New Doctor</span>
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
                         <h3 className="font-bold text-neutral-800">Recent Activity</h3>
                         <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" title="Live updates active"></div>
                     </div>
-                    
+
                     <div className="overflow-y-auto flex-1 p-2">
                         {activities.length > 0 ? (
                             <div className="space-y-1">
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold text-neutral-800 truncate">{act.title}</p>
                                             <p className="text-xs text-neutral-500 truncate mt-0.5">{act.desc}</p>
-                                            <p className="text-[10px] text-neutral-400 font-medium mt-1">{act.date.toLocaleDateString()} at {act.date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                            <p className="text-[10px] text-neutral-400 font-medium mt-1">{act.date.toLocaleDateString()} at {act.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     </div>
                                 ))}

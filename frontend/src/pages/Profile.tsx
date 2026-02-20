@@ -67,7 +67,7 @@ export default function Profile() {
                 }
             };
 
-            const res = await fetch('http://localhost:4000/api/auth/profile', {
+            const res = await fetch('/api/auth/profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export default function Profile() {
             });
 
             if (!res.ok) throw new Error('Failed to update profile');
-            
+
             setSuccess('Profile updated successfully! Refresh to see changes.');
             setIsEditing(false);
             // Optionally trigger a user re-fetch here if context supports it
@@ -95,10 +95,10 @@ export default function Profile() {
                 <div className="flex items-center gap-6">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
                         {user?.avatar && !imageError ? (
-                            <img 
-                                src={user.avatar} 
-                                alt={user.name} 
-                                className="w-full h-full object-cover" 
+                            <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="w-full h-full object-cover"
                                 referrerPolicy="no-referrer"
                                 onError={() => setImageError(true)}
                             />
@@ -115,7 +115,7 @@ export default function Profile() {
                     </div>
                 </div>
                 {!isEditing && (
-                    <button 
+                    <button
                         onClick={() => setIsEditing(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-neutral-800 text-white rounded-xl hover:bg-neutral-900 transition-all font-medium"
                     >
@@ -136,12 +136,12 @@ export default function Profile() {
                         <HiUser className="text-blue-500" /> Personal Information
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div>
+                        <div>
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Phone Number</label>
                             <div className="relative">
                                 <HiPhone className="absolute left-3 top-3 text-gray-400" />
-                                <input 
-                                    type="tel" 
+                                <input
+                                    type="tel"
                                     name="phone"
                                     disabled={!isEditing}
                                     value={formData.phone}
@@ -153,7 +153,7 @@ export default function Profile() {
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Gender</label>
-                            <select 
+                            <select
                                 name="gender"
                                 disabled={!isEditing}
                                 value={formData.gender}
@@ -169,8 +169,8 @@ export default function Profile() {
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Date of Birth</label>
                             <div className="relative">
                                 <HiCalendar className="absolute left-3 top-3 text-gray-400" />
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     name="dateOfBirth"
                                     disabled={!isEditing}
                                     value={formData.dateOfBirth}
@@ -183,7 +183,7 @@ export default function Profile() {
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Blood Group</label>
                             <div className="relative">
                                 <MdBloodtype className="absolute left-3 top-3 text-gray-400" />
-                                <select 
+                                <select
                                     name="bloodGroup"
                                     disabled={!isEditing}
                                     value={formData.bloodGroup}
@@ -201,8 +201,8 @@ export default function Profile() {
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Address</label>
                             <div className="relative">
                                 <HiLocationMarker className="absolute left-3 top-3 text-gray-400" />
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     name="address"
                                     disabled={!isEditing}
                                     value={formData.address}
@@ -226,8 +226,8 @@ export default function Profile() {
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Allergies (Comma separated)</label>
                             <div className="relative">
                                 <MdWarning className="absolute left-3 top-3 text-gray-400" />
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     name="allergies"
                                     disabled={!isEditing}
                                     value={formData.allergies}
@@ -239,8 +239,8 @@ export default function Profile() {
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Chronic Conditions</label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 name="chronicConditions"
                                 disabled={!isEditing}
                                 value={formData.chronicConditions}
@@ -252,8 +252,8 @@ export default function Profile() {
                     </div>
                 </div>
 
-                 {/* Emergency Contact */}
-                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                {/* Emergency Contact */}
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-2 h-full bg-orange-500"></div>
                     <h2 className="text-xl font-bold text-neutral-800 mb-6 flex items-center gap-2">
                         <MdEmergency className="text-orange-500" /> Emergency Contact
@@ -261,8 +261,8 @@ export default function Profile() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Name</label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 name="emergencyContactName"
                                 disabled={!isEditing}
                                 value={formData.emergencyContactName}
@@ -271,10 +271,10 @@ export default function Profile() {
                                 placeholder="Contact Name"
                             />
                         </div>
-                         <div>
+                        <div>
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Phone</label>
-                            <input 
-                                type="tel" 
+                            <input
+                                type="tel"
                                 name="emergencyContactPhone"
                                 disabled={!isEditing}
                                 value={formData.emergencyContactPhone}
@@ -283,10 +283,10 @@ export default function Profile() {
                                 placeholder="Contact Phone"
                             />
                         </div>
-                         <div>
+                        <div>
                             <label className="block text-sm font-bold text-neutral-500 mb-2">Relation</label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 name="emergencyContactRelation"
                                 disabled={!isEditing}
                                 value={formData.emergencyContactRelation}
@@ -304,15 +304,15 @@ export default function Profile() {
 
                 {isEditing && (
                     <div className="flex justify-end gap-4">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={() => setIsEditing(false)}
                             className="px-6 py-3 rounded-xl border border-gray-300 font-bold text-gray-500 hover:bg-gray-50 transition-all"
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={loading}
                             className="px-8 py-3 rounded-xl bg-neutral-800 text-white font-bold hover:bg-neutral-900 shadow-lg shadow-neutral-500/20 active:scale-95 transition-all flex items-center gap-2"
                         >

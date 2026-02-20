@@ -10,7 +10,7 @@ export default function AdminUsers() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/admin/users', {
+            const res = await fetch('/api/admin/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -29,7 +29,7 @@ export default function AdminUsers() {
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
         try {
-            await fetch(`http://localhost:4000/api/admin/users/${id}`, {
+            await fetch(`/api/admin/users/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -39,7 +39,7 @@ export default function AdminUsers() {
         }
     };
 
-    const filteredUsers = users.filter(user => 
+    const filteredUsers = users.filter(user =>
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -52,10 +52,10 @@ export default function AdminUsers() {
             </div>
 
             <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] border-none overflow-hidden">
-                 <div className="p-4 mb-4">
+                <div className="p-4 mb-4">
                     <div className="relative max-w-md">
                         <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search users by name or email..."
                             value={searchTerm}
@@ -102,7 +102,7 @@ export default function AdminUsers() {
                                             {new Date(user.createdAt || Date.now()).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button 
+                                            <button
                                                 onClick={() => handleDelete(user._id, user.name)}
                                                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Delete User"

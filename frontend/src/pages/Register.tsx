@@ -259,18 +259,16 @@ export default function Register() {
                       {[1, 2, 3, 4].map((level) => (
                         <div
                           key={level}
-                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                            level <= strength.score ? strength.color : "bg-gray-200"
-                          }`}
+                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${level <= strength.score ? strength.color : "bg-gray-200"
+                            }`}
                         />
                       ))}
                     </div>
-                    <p className={`text-xs font-medium ${
-                      strength.score <= 1 ? "text-red-500" :
-                      strength.score === 2 ? "text-yellow-500" :
-                      strength.score === 3 ? "text-blue-500" :
-                      "text-green-500"
-                    }`}>
+                    <p className={`text-xs font-medium ${strength.score <= 1 ? "text-red-500" :
+                        strength.score === 2 ? "text-yellow-500" :
+                          strength.score === 3 ? "text-blue-500" :
+                            "text-green-500"
+                      }`}>
                       {strength.label}
                     </p>
                   </div>
@@ -293,13 +291,12 @@ export default function Register() {
                     required
                     autoComplete="new-password"
                     aria-label="Confirm password"
-                    className={`w-full pl-11 pr-12 py-3 rounded-xl border bg-white/80 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none text-sm ${
-                      passwordsMismatch
+                    className={`w-full pl-11 pr-12 py-3 rounded-xl border bg-white/80 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none text-sm ${passwordsMismatch
                         ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
                         : passwordsMatch
-                        ? "border-green-300 focus:border-green-500 focus:ring-green-500/20"
-                        : "border-gray-200 focus:border-primary-500 focus:ring-primary-500/20"
-                    }`}
+                          ? "border-green-300 focus:border-green-500 focus:ring-green-500/20"
+                          : "border-gray-200 focus:border-primary-500 focus:ring-primary-500/20"
+                      }`}
                   />
                   <button
                     type="button"
@@ -363,7 +360,6 @@ export default function Register() {
                 onError={() => setError("Google Sign-In failed. Please try again.")}
                 shape="pill"
                 size="large"
-                width="100%"
                 text="signup_with"
                 theme="outline"
               />

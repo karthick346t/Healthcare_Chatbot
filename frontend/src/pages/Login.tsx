@@ -287,7 +287,6 @@ export default function Login() {
                 onError={() => setError("Google Sign-In failed. Please try again.")}
                 shape="pill"
                 size="large"
-                width="100%"
                 text="signin_with"
                 theme="outline"
               />

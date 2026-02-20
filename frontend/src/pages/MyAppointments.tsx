@@ -19,7 +19,7 @@ export default function MyAppointments() {
     const fetchAppointments = async () => {
         try {
             const userId = user?.userId || (user as any)?._id;
-            const res = await fetch(`http://localhost:4000/api/appointments/my-appointments?userId=${userId}`, {
+            const res = await fetch(`/api/appointments/my-appointments?userId=${userId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -35,10 +35,10 @@ export default function MyAppointments() {
 
     const handleCancel = async (id: string) => {
         if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
-        
+
         setActionLoading(id);
         try {
-            const res = await fetch(`http://localhost:4000/api/appointments/${id}/cancel`, {
+            const res = await fetch(`/api/appointments/${id}/cancel`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -79,9 +79,8 @@ export default function MyAppointments() {
                 <div className="flex gap-4 mb-8 border-b border-gray-200">
                     <button
                         onClick={() => setActiveTab('upcoming')}
-                        className={`pb-4 px-4 font-bold text-sm transition-all relative ${
-                            activeTab === 'upcoming' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-                        }`}
+                        className={`pb-4 px-4 font-bold text-sm transition-all relative ${activeTab === 'upcoming' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                            }`}
                     >
                         Upcoming
                         <span className="ml-2 bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-xs">
@@ -93,9 +92,8 @@ export default function MyAppointments() {
                     </button>
                     <button
                         onClick={() => setActiveTab('past')}
-                        className={`pb-4 px-4 font-bold text-sm transition-all relative ${
-                            activeTab === 'past' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
-                        }`}
+                        className={`pb-4 px-4 font-bold text-sm transition-all relative ${activeTab === 'past' ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                            }`}
                     >
                         History & Cancelled
                         {activeTab === 'past' && (
@@ -143,11 +141,10 @@ export default function MyAppointments() {
                                                 <h3 className="text-xl font-bold text-neutral-800">{appt.doctorName || appt.doctorId?.name}</h3>
                                                 <p className="text-indigo-500 text-sm font-medium">{appt.doctorId?.specialty || "Specialist"}</p>
                                             </div>
-                                            <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-1 ${
-                                                appt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                                appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                'bg-orange-100 text-orange-700'
-                                            }`}>
+                                            <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-1 ${appt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                                    appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                        'bg-orange-100 text-orange-700'
+                                                }`}>
                                                 {appt.status === 'confirmed' && <HiCheckCircle />}
                                                 {appt.status === 'cancelled' && <HiX />}
                                                 {appt.status}
