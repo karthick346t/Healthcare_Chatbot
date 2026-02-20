@@ -45,14 +45,14 @@ export default function AdminUsers() {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 max-w-7xl mx-auto text-neutral-800 p-6">
             <div>
                 <h1 className="text-2xl font-bold text-neutral-800">User Management</h1>
-                <p className="text-neutral-500 text-sm mt-1">Manage registered patients.</p>
+                <p className="text-neutral-500 text-sm mt-1">Manage registered users.</p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                 <div className="p-4 border-b border-gray-100">
+            <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] border-none overflow-hidden">
+                 <div className="p-4 mb-4">
                     <div className="relative max-w-md">
                         <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
@@ -60,14 +60,14 @@ export default function AdminUsers() {
                             placeholder="Search users by name or email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all text-sm"
+                            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium text-sm text-neutral-700 placeholder:text-neutral-400"
                         />
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50/50">
+                        <thead className="bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] rounded-xl overflow-hidden">
                             <tr>
                                 <th className="px-6 py-4 text-xs font-bold text-neutral-500 uppercase tracking-wider">User</th>
                                 <th className="px-6 py-4 text-xs font-bold text-neutral-500 uppercase tracking-wider">Email</th>

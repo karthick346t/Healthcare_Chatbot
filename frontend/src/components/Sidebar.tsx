@@ -47,7 +47,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 space-y-3 px-4 overflow-y-auto no-scrollbar py-2">
+      <nav className="flex-1 space-y-3 px-4 overflow-y-auto no-scrollbar pt-4 pb-4">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           

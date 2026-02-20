@@ -49,21 +49,21 @@ export default function AdminAppointments() {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 max-w-7xl mx-auto text-neutral-800 p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-neutral-800">Appointment Management</h1>
-                    <p className="text-neutral-500 text-sm mt-1">View and manage all patient appointments.</p>
+                    <p className="text-neutral-500 text-sm mt-1">View and manage all appointments.</p>
                 </div>
-                <div className="flex items-center gap-3 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
+                <div className="flex items-center gap-3 bg-[#eef2f5] p-1.5 rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]">
                     {['all', 'pending', 'confirmed', 'cancelled'].map(status => (
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                                 filter === status 
-                                    ? 'bg-neutral-800 text-white shadow-md' 
-                                    : 'text-neutral-500 hover:bg-gray-50 hover:text-neutral-800'
+                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]' 
+                                    : 'text-neutral-400 hover:text-cyan-600'
                             }`}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -72,8 +72,8 @@ export default function AdminAppointments() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-100 flex items-center gap-4">
+            <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] border-none overflow-hidden">
+                <div className="p-4 mb-4 flex items-center gap-4">
                     <div className="relative flex-1 max-w-md">
                         <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input 
@@ -81,14 +81,14 @@ export default function AdminAppointments() {
                             placeholder="Search patients or doctors..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all text-sm"
+                            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium text-sm text-neutral-700 placeholder:text-neutral-400"
                         />
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50/50">
+                        <thead className="bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] rounded-xl overflow-hidden">
                             <tr>
                                 {['Patient', 'Doctor', 'Date', 'Type', 'Status', 'Actions'].map(h => (
                                     <th key={h} className="px-6 py-4 text-xs font-bold text-neutral-500 uppercase tracking-wider">{h}</th>

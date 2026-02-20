@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom"; // <--- 1. IMPORT THIS
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { useAuth } from "../hooks/useAuth";
 import {
   MdSearch,
   MdNotifications,
@@ -93,9 +94,16 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { selectedLanguage, setLanguage } = useContext(LanguageContext);
   const navigate = useNavigate(); // <--- 2. INITIALIZE HOOK
+  const { user } = useAuth();
 
   const [showLangMenu, setShowLangMenu] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, navigate]);
 
   const currentLang = languages.find((l) => l.code === selectedLanguage) || languages[0];
 
@@ -124,11 +132,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex w-full h-screen overflow-hidden bg-[#eef2f6] text-neutral-dark font-sans relative selection:bg-primary/20">
-
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none" />
-
+    <div className="flex w-full h-screen overflow-hidden bg-transparent text-neutral-dark font-sans relative selection:bg-primary/20">
       <Sidebar />
 
       <main className="flex-1 flex flex-col relative z-10 overflow-y-auto pl-2 pr-6 py-6">

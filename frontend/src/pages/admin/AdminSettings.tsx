@@ -11,9 +11,9 @@ export default function AdminSettings() {
                 <p className="text-neutral-500 text-sm mt-1">Configure platform preferences.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="font-bold text-lg text-neutral-800 mb-4">Platform Controls</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none">
+                    <h3 className="font-bold text-lg text-neutral-800 mb-6">Platform Controls</h3>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
@@ -38,10 +38,10 @@ export default function AdminSettings() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 opacity-50 pointer-events-none grayscale">
-                    <h3 className="font-bold text-lg text-neutral-800 mb-4">Notifications (Pro)</h3>
-                    <p className="text-sm text-neutral-500 mb-4">Email and SMS configuration requires a Pro license.</p>
-                    <button className="bg-neutral-100 text-neutral-400 px-4 py-2 rounded-lg text-sm font-medium w-full">Upgrade Plan</button>
+                <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none opacity-60 pointer-events-none grayscale">
+                    <h3 className="font-bold text-lg text-neutral-800 mb-6">Notifications (Pro)</h3>
+                    <p className="text-sm text-neutral-500 mb-6">Email and SMS configuration requires a Pro license.</p>
+                    <button className="bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] text-neutral-400 px-4 py-3 rounded-xl border-none text-sm font-bold w-full uppercase tracking-wider">Upgrade Plan</button>
                 </div>
             </div>
         </div>

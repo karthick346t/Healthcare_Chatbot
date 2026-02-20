@@ -21,12 +21,18 @@ import AdminAppointments from "./pages/admin/AdminAppointments";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDoctors from "./pages/admin/AdminDoctors";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminProfile from "./pages/admin/AdminProfile";
 
 function InnerApp() {
   return (
     <Router>
-      <div className="min-h-screen font-sans text-neutral-dark relative">
-        <Routes>
+      <div className="min-h-screen font-sans text-neutral-dark relative bg-[#eef2f5]">
+        {/* Universal Background Ambience */}
+        <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vh] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none z-0" />
+        <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none z-0" />
+        
+        <div className="relative z-10 w-full h-full">
+          <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -131,12 +137,14 @@ function InnerApp() {
                     <Route path="users" element={<AdminUsers />} />
                     <Route path="doctors" element={<AdminDoctors />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="profile" element={<AdminProfile />} />
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
             }
           />
-        </Routes>
+          </Routes>
+        </div>
       </div>
     </Router>
   );

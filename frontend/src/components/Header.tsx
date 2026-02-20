@@ -141,7 +141,7 @@ export default function Header() {
               >
                 <div className="hidden md:flex flex-col items-end mr-1">
                     <span className="text-xs font-bold text-neutral-700 leading-none">{user.name}</span>
-                    <span className="text-[10px] text-neutral-500 leading-none mt-0.5">Patient</span>
+                    <span className="text-[10px] text-neutral-500 leading-none mt-0.5 capitalize">{user.role}</span>
                 </div>
                 {user.avatar && !imageError ? (
                   <img
