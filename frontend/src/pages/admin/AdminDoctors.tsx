@@ -10,7 +10,7 @@ export default function AdminDoctors() {
 
     const fetchDoctors = async () => {
         try {
-            const res = await fetch('http://localhost:4000/api/admin/doctors', {
+            const res = await fetch('/api/admin/doctors', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -29,7 +29,7 @@ export default function AdminDoctors() {
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to dismiss Dr. ${name}?`)) return;
         try {
-            await fetch(`http://localhost:4000/api/admin/doctors/${id}`, {
+            await fetch(`/api/admin/doctors/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -39,7 +39,7 @@ export default function AdminDoctors() {
         }
     };
 
-    const filteredDoctors = doctors.filter(doc => 
+    const filteredDoctors = doctors.filter(doc =>
         doc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.specialty?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -61,7 +61,7 @@ export default function AdminDoctors() {
                 <div className="p-4 mb-4">
                     <div className="relative max-w-md">
                         <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search doctors by name or specialty..."
                             value={searchTerm}
@@ -85,7 +85,7 @@ export default function AdminDoctors() {
                                             <img src={doc.image || "https://ui-avatars.com/api/?name=" + doc.name} alt={doc.name} className="w-full h-full object-cover" />
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => handleDelete(doc._id, doc.name)}
                                         className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#eef2f5] shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] text-gray-400 hover:text-red-500 transition-colors active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] active:scale-95"
                                     >

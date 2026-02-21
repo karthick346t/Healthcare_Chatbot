@@ -11,7 +11,7 @@ export default function AdminAppointments() {
 
     const fetchAppointments = async () => {
         try {
-            const res = await fetch(`http://localhost:4000/api/admin/appointments?status=${filter}`, {
+            const res = await fetch(`/api/admin/appointments?status=${filter}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -29,11 +29,11 @@ export default function AdminAppointments() {
 
     const handleStatusUpdate = async (id: string, status: string) => {
         try {
-            await fetch(`http://localhost:4000/api/admin/appointments/${id}/status`, {
+            await fetch(`/api/admin/appointments/${id}/status`, {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}` 
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({ status })
             });
@@ -43,7 +43,7 @@ export default function AdminAppointments() {
         }
     };
 
-    const filteredAppointments = appointments.filter(appt => 
+    const filteredAppointments = appointments.filter(appt =>
         appt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appt.doctorId?.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -60,11 +60,10 @@ export default function AdminAppointments() {
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                filter === status 
-                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]' 
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === status
+                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
                                     : 'text-neutral-400 hover:text-cyan-600'
-                            }`}
+                                }`}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                         </button>
@@ -76,7 +75,7 @@ export default function AdminAppointments() {
                 <div className="p-4 mb-4 flex items-center gap-4">
                     <div className="relative flex-1 max-w-md">
                         <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input 
+                        <input
                             type="text"
                             placeholder="Search patients or doctors..."
                             value={searchTerm}
@@ -113,11 +112,10 @@ export default function AdminAppointments() {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-neutral-500 max-w-[150px] truncate">{appt.problem}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
-                                                appt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                appt.status === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                                'bg-red-50 text-red-700 border-red-200'
-                                            }`}>
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${appt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                    appt.status === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                        'bg-red-50 text-red-700 border-red-200'
+                                                }`}>
                                                 {appt.status}
                                             </span>
                                         </td>
