@@ -25,6 +25,7 @@ const app = express();
 // Adjust Helmet for local files
 app.use(helmet({
   contentSecurityPolicy: false,
+  crossOriginOpenerPolicy: false,
 }));
 
 // CORS
