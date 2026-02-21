@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs';
 import dotenv from 'dotenv';
 
@@ -104,3 +104,82 @@ export const uploadFileToS3 = async (
     return null;
   }
 };
+
+/**
+ * Uploads a single appointment backup to S3.
+ * Key: appointments/<userId>/<appointmentId>.json
+ * Called after every book / cancel action.
+ */
+export const uploadAppointmentBackup = async (appointment: any, userId: string): Promise<boolean> => {
+  try {
+    const appointmentId = appointment._id?.toString() || Date.now().toString();
+
+    const params = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: `appointments/${userId}/${appointmentId}.json`,
+      Body: JSON.stringify(appointment, null, 2),
+      ContentType: 'application/json',
+    };
+
+    const command = new PutObjectCommand(params);
+    await s3Client.send(command);
+
+    console.log(`✅ [AWS] Appointment ${appointmentId} backed up to S3 (appointments/${userId}/).`);
+    return true;
+  } catch (error) {
+    console.error(`❌ [AWS] Appointment backup failed:`, error);
+    return false;
+  }
+};
+
+/**
+ * Fetches all appointments for a user directly from S3.
+ * Key prefix: appointments/<userId>/
+ */
+export const fetchAppointmentsFromS3 = async (userId: string): Promise<any[]> => {
+  try {
+    const prefix = `appointments/${userId}/`;
+    const listParams = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Prefix: prefix,
+    };
+
+    const listCommand = new ListObjectsV2Command(listParams);
+    const listedObjects = await s3Client.send(listCommand);
+
+    if (!listedObjects.Contents || listedObjects.Contents.length === 0) {
+      return []; // No backups found
+    }
+
+    const appointments: any[] = [];
+
+    // Fetch and parse every JSON file
+    for (const item of listedObjects.Contents) {
+      if (item.Key?.endsWith('.json')) {
+        try {
+          const getCommand = new GetObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: item.Key,
+          });
+          const { Body } = await s3Client.send(getCommand);
+          if (Body) {
+            const strData = await Body.transformToString();
+            appointments.push(JSON.parse(strData));
+          }
+        } catch (err) {
+          console.error(`⚠️ Failed to parse appointment backup ${item.Key}:`, err);
+        }
+      }
+    }
+
+    // Sort newest first
+    appointments.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
+
+    console.log(`✅ [AWS] Fetched ${appointments.length} appointments from S3 for ${userId}`);
+    return appointments;
+  } catch (error) {
+    console.error(`❌ [AWS] Fetching appointments failed:`, error);
+    return [];
+  }
+};
+

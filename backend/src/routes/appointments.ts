@@ -3,6 +3,7 @@ import Hospital from '../models/Hospital';
 import Doctor from '../models/Doctor';
 import Appointment from '../models/Appointment';
 import { notificationService } from '../services/notificationService';
+import { uploadAppointmentBackup, fetchAppointmentsFromS3 } from '../services/awsService';
 import mongoose from 'mongoose';
 import User from '../models/User';
 
@@ -72,10 +73,8 @@ router.get('/my-appointments', async (req: Request, res: Response) => {
             return res.status(400).json({ message: "User ID is required" });
         }
 
-        const appointments = await Appointment.find({ userId })
-            .populate('hospitalId', 'name location')
-            .populate('doctorId', 'name specialty')
-            .sort({ appointmentDate: -1 }); // Newest first
+        // Fetch from S3 directly to ensure cross-device consistency
+        const appointments = await fetchAppointmentsFromS3(userId as string);
 
         res.json(appointments);
     } catch (error: any) {
@@ -109,6 +108,23 @@ router.put('/:id/cancel', async (req: Request, res: Response) => {
 
         appointment.status = 'cancelled';
         await appointment.save();
+
+        // Backup cancelled appointment to S3 with FULL details
+        if (appointment.userId) {
+            const populated = await Appointment.findById(appointment._id)
+                .populate('hospitalId', 'name location')
+                .populate('doctorId', 'name specialty')
+                .lean(); // Lean gets a raw JS object perfect for JSON backup
+
+            if (populated) {
+                // Ensure legacy frontends that expect doctorName/hospitalName flat handle it
+                (populated as any).doctorName = (populated.doctorId as any)?.name || 'Doctor';
+                (populated as any).hospitalName = (populated.hospitalId as any)?.name || 'Hospital';
+
+                uploadAppointmentBackup(populated, appointment.userId.toString())
+                    .catch(err => console.error('⚠️ S3 appointment backup failed on cancel:', err));
+            }
+        }
 
         // Send Cancellation Email
         let email = "";
@@ -190,6 +206,22 @@ router.post('/book', async (req: Request, res: Response) => {
         });
 
         const savedAppointment = await newAppointment.save();
+
+        // Backup new appointment to S3 with FULL details
+        if (userId) {
+            const populated = await Appointment.findById(savedAppointment._id)
+                .populate('hospitalId', 'name location')
+                .populate('doctorId', 'name specialty')
+                .lean();
+
+            if (populated) {
+                (populated as any).doctorName = (populated.doctorId as any)?.name || 'Doctor';
+                (populated as any).hospitalName = (populated.hospitalId as any)?.name || 'Hospital';
+
+                uploadAppointmentBackup(populated, userId)
+                    .catch(err => console.error('⚠️ S3 appointment backup failed on book:', err));
+            }
+        }
 
         // Send Confirmation Email
         // We assume the user might have an email in their profile, or we use a fallback/test email if not provided in booking data

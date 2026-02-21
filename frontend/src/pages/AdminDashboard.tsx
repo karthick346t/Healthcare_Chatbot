@@ -68,7 +68,17 @@ export default function AdminDashboard() {
     // Combine and sort activities for the feed
     const activities = [
         ...recentUsers.map(u => ({ type: 'user', title: 'New Registration', desc: `${u.name} joined the platform.`, date: new Date(u.createdAt || Date.now()), icon: '👤', color: 'bg-blue-100 text-blue-600' })),
-        ...recentAppointments.map(a => ({ type: 'appointment', title: 'Appointment Booked', desc: `${a.patientName} booked an appointment.`, date: new Date(a.createdAt || a.appointmentDate || Date.now()), icon: '📅', color: 'bg-purple-100 text-purple-600' }))
+        ...recentAppointments.map(a => {
+            const isCancelled = a.status === 'cancelled';
+            return {
+                type: 'appointment',
+                title: isCancelled ? 'Appointment Cancelled' : 'Appointment Booked',
+                desc: isCancelled ? `${a.patientName}'s appointment was cancelled.` : `${a.patientName} booked an appointment.`,
+                date: new Date(a.updatedAt || a.createdAt || a.appointmentDate || Date.now()),
+                icon: isCancelled ? '❌' : '📅',
+                color: isCancelled ? 'bg-red-100 text-red-600' : 'bg-purple-100 text-purple-600'
+            };
+        })
     ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 6);
 
     if (loading) return <div className="p-10 text-center">Loading Admin Dashboard...</div>;
