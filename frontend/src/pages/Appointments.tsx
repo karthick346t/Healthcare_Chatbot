@@ -150,7 +150,10 @@ const Appointments = () => {
     const next7Days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() + i);
-        return d.toISOString().split('T')[0];
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     });
 
     // Check availability for all 7 dates when doctor is selected
@@ -324,7 +327,7 @@ const Appointments = () => {
         doc.setTextColor(...textDark);
         doc.setFontSize(14);
         doc.text(`# ${bookingResult.tokenNumber}`, startX + 6, 88);
-        doc.text(new Date(bookingResult.appointmentDate).toISOString().split('T')[0], startX + 60, 88);
+        doc.text(new Date(bookingResult.appointmentDate).toLocaleDateString(), startX + 60, 88);
 
         // Doctor Section
         let y = 120;

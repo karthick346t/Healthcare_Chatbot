@@ -170,7 +170,8 @@ router.post('/book', async (req: Request, res: Response) => {
         hospitalId,
         doctorId,
         appointmentDate,
-        userId // Extract userId
+        userId, // Extract userId
+        status
     } = req.body;
 
     try {
@@ -190,6 +191,8 @@ router.post('/book', async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Token limit reached for this doctor on selected date (max 5).' });
         }
 
+        const appointmentStatus = status || 'confirmed';
+
         // 3. Create appointment with next token
         const newAppointment = new Appointment({
             patientName,
@@ -201,15 +204,88 @@ router.post('/book', async (req: Request, res: Response) => {
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
             tokenNumber: count + 1,
-            status: 'confirmed',
+            status: appointmentStatus,
             userId: userId ? new mongoose.Types.ObjectId(userId) : undefined
         });
 
         const savedAppointment = await newAppointment.save();
 
-        // Backup new appointment to S3 with FULL details
-        if (userId) {
-            const populated = await Appointment.findById(savedAppointment._id)
+        if (appointmentStatus === 'confirmed') {
+            // Backup new appointment to S3 with FULL details
+            if (userId) {
+                const populated = await Appointment.findById(savedAppointment._id)
+                    .populate('hospitalId', 'name location')
+                    .populate('doctorId', 'name specialty')
+                    .lean();
+
+                if (populated) {
+                    (populated as any).doctorName = (populated.doctorId as any)?.name || 'Doctor';
+                    (populated as any).hospitalName = (populated.hospitalId as any)?.name || 'Hospital';
+
+                    uploadAppointmentBackup(populated, userId)
+                        .catch(err => console.error('⚠️ S3 appointment backup failed on book:', err));
+                }
+            }
+
+            // Send Confirmation Email
+            if (req.body.email) {
+                // Fetch doctor and hospital details for the email
+                const doctor = await Doctor.findById(doctorId);
+                const hospital = await Hospital.findById(hospitalId);
+
+                await notificationService.sendAppointmentConfirmation(req.body.email, {
+                    patientName: savedAppointment.patientName,
+                    doctorName: doctor ? doctor.name : "Unknown Doctor",
+                    appointmentDate: savedAppointment.appointmentDate.toDateString(),
+                    timeSlot: "N/A",
+                    hospitalName: hospital ? hospital.name : "Unknown Hospital"
+                });
+            }
+        }
+
+        res.status(201).json(savedAppointment);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// GET /api/appointments/:id/status
+router.get('/:id/status', async (req: Request, res: Response) => {
+    try {
+        const appointment = await Appointment.findById(req.params.id);
+        if (!appointment) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+        res.json({ status: appointment.status });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// POST /api/appointments/webhook/upi-mock
+router.post('/webhook/upi-mock', async (req: Request, res: Response) => {
+    try {
+        const { appointmentId } = req.body;
+
+        if (!appointmentId) {
+            return res.status(400).json({ message: "appointmentId is required" });
+        }
+
+        const appointment = await Appointment.findById(appointmentId);
+        if (!appointment) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+
+        if (appointment.status === 'confirmed') {
+            return res.json({ message: "Already confirmed" });
+        }
+
+        appointment.status = 'confirmed';
+        await appointment.save();
+
+        // Perform deferred actions (S3 backup and Email)
+        if (appointment.userId) {
+            const populated = await Appointment.findById(appointment._id)
                 .populate('hospitalId', 'name location')
                 .populate('doctorId', 'name specialty')
                 .lean();
@@ -218,31 +294,36 @@ router.post('/book', async (req: Request, res: Response) => {
                 (populated as any).doctorName = (populated.doctorId as any)?.name || 'Doctor';
                 (populated as any).hospitalName = (populated.hospitalId as any)?.name || 'Hospital';
 
-                uploadAppointmentBackup(populated, userId)
-                    .catch(err => console.error('⚠️ S3 appointment backup failed on book:', err));
+                uploadAppointmentBackup(populated, appointment.userId.toString())
+                    .catch(err => console.error('⚠️ S3 appointment backup failed on upi mock:', err));
             }
         }
 
-        // Send Confirmation Email
-        // We assume the user might have an email in their profile, or we use a fallback/test email if not provided in booking data
-        // For now, let's try to find the user to get their email, or perform a lookup if 'userId' was passed 
+        // Send Email (We will try to fetch user's email if possible)
+        let email = "";
+        if (appointment.userId) {
+            const user = await User.findById(appointment.userId);
+            if (user && user.email) {
+                email = user.email;
+            }
+        }
 
-        if (req.body.email) {
-            // Fetch doctor and hospital details for the email
-            const doctor = await Doctor.findById(doctorId);
-            const hospital = await Hospital.findById(hospitalId);
+        if (email) {
+            const doctor = await Doctor.findById(appointment.doctorId);
+            const hospital = await Hospital.findById(appointment.hospitalId);
 
-            await notificationService.sendAppointmentConfirmation(req.body.email, {
-                patientName: savedAppointment.patientName,
+            await notificationService.sendAppointmentConfirmation(email, {
+                patientName: appointment.patientName,
                 doctorName: doctor ? doctor.name : "Unknown Doctor",
-                appointmentDate: savedAppointment.appointmentDate.toDateString(),
+                appointmentDate: appointment.appointmentDate.toDateString(),
                 timeSlot: "N/A",
                 hospitalName: hospital ? hospital.name : "Unknown Hospital"
             });
         }
 
-        res.status(201).json(savedAppointment);
+        res.json({ message: "Payment successful, appointment confirmed.", success: true });
     } catch (error: any) {
+        console.error("UPI Mock Webhook Error:", error);
         res.status(500).json({ message: error.message });
     }
 });

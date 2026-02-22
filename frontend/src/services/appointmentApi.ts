@@ -63,6 +63,7 @@ export const appointmentApi = {
         doctorId: string;
         appointmentDate: string;
         userId?: string;
+        status?: string;
     }): Promise<Appointment> => {
         const response = await fetch(`${BASE_PATH}/book`, {
             method: 'POST',
@@ -86,5 +87,21 @@ export const appointmentApi = {
         if (!response.ok) throw new Error('Failed to check availability');
         return response.json();
     },
+
+    checkAppointmentStatus: async (appointmentId: string): Promise<{ status: string }> => {
+        const response = await fetch(`${BASE_PATH}/${appointmentId}/status`);
+        if (!response.ok) throw new Error('Failed to fetch appointment status');
+        return response.json();
+    },
+
+    simulateUpiPayment: async (appointmentId: string): Promise<{ success: boolean; message: string }> => {
+        const response = await fetch(`${BASE_PATH}/webhook/upi-mock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ appointmentId }),
+        });
+        if (!response.ok) throw new Error('Failed to simulate UPI payment');
+        return response.json();
+    }
 };
 
