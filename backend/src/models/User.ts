@@ -54,7 +54,7 @@ const userSchema = new Schema<IUser>(
         },
         role: {
             type: String,
-            enum: ['patient', 'admin'],
+            enum: ['patient', 'admin', 'staff'],
             default: 'patient',
         },
         phone: { type: String, trim: true },

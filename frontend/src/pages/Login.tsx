@@ -18,7 +18,7 @@ import {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, googleLogin, isAuthenticated } = useAuth();
+  const { login, googleLogin, isAuthenticated, user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,8 +31,16 @@ export default function Login() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated) navigate("/", { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated && user) {
+      if (user.role === 'staff') {
+        navigate("/staff", { replace: true });
+      } else if (user.role === 'admin') {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   // Load remembered email
   useEffect(() => {
@@ -56,8 +64,8 @@ export default function Login() {
       }
 
       await login(email, password);
+      // Removed the fixed timeout navigation to `/` here because the `useEffect` above handles it once `isAuthenticated` and `user` state updates.
       setSuccess(true);
-      setTimeout(() => navigate("/", { replace: true }), 600);
     } catch (err: any) {
       setError(err.message || "Login failed");
       setShake(true);
@@ -73,7 +81,7 @@ export default function Login() {
     try {
       await googleLogin(credentialResponse.credential);
       setSuccess(true);
-      setTimeout(() => navigate("/", { replace: true }), 600);
+      // The `useEffect` above handles the routing once `isAuthenticated` and `user` state updates.
     } catch (err: any) {
       setError(err.message || "Google sign-in failed");
       setShake(true);

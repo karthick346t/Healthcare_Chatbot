@@ -82,7 +82,16 @@ const Appointments = () => {
                 email: user.email || "",
                 // We can also try to fill other details if available in user object
                 gender: user.gender || "Male",
-                age: user.dateOfBirth ? (new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()).toString() : "",
+                age: user.dateOfBirth ? (() => {
+                    const dob = new Date(user.dateOfBirth);
+                    const today = new Date();
+                    let calculatedAge = today.getFullYear() - dob.getFullYear();
+                    const m = today.getMonth() - dob.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                        calculatedAge--;
+                    }
+                    return calculatedAge.toString();
+                })() : "",
                 address: user.address || ""
             }));
         } else if (bookingFor === 'other') {

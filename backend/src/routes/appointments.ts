@@ -48,7 +48,7 @@ router.get('/check-availability', async (req: Request, res: Response) => {
         const count = await Appointment.countDocuments({
             doctorId: new mongoose.Types.ObjectId(doctorId as string),
             appointmentDate: date,
-            status: 'confirmed'
+            status: 'scheduled'
         });
 
         const maxSlots = 5;
@@ -180,18 +180,18 @@ router.post('/book', async (req: Request, res: Response) => {
         date.setHours(0, 0, 0, 0);
 
         // 2. Count existing appointments for this doctor on this day
-        // Only count CONFIRMED appointments towards the limit. Cancelled ones free up the slot.
+        // Only count SCHEDULED appointments towards the limit. Cancelled ones free up the slot.
         const count = await Appointment.countDocuments({
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
-            status: 'confirmed'
+            status: 'scheduled'
         });
 
         if (count >= 5) {
             return res.status(400).json({ message: 'Token limit reached for this doctor on selected date (max 5).' });
         }
 
-        const appointmentStatus = status || 'confirmed';
+        const appointmentStatus = status || 'scheduled';
 
         // 3. Create appointment with next token
         const newAppointment = new Appointment({
@@ -210,7 +210,7 @@ router.post('/book', async (req: Request, res: Response) => {
 
         const savedAppointment = await newAppointment.save();
 
-        if (appointmentStatus === 'confirmed') {
+        if (appointmentStatus === 'scheduled') {
             // Backup new appointment to S3 with FULL details
             if (userId) {
                 const populated = await Appointment.findById(savedAppointment._id)
@@ -262,6 +262,112 @@ router.get('/:id/status', async (req: Request, res: Response) => {
     }
 });
 
+// STAFF ROUTES
+
+// GET /api/appointments/today
+router.get('/today', async (req: Request, res: Response) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const appointments = await Appointment.find({
+            appointmentDate: {
+                $gte: today,
+                $lt: tomorrow
+            }
+        })
+            .populate('hospitalId', 'name')
+            .populate('doctorId', 'name')
+            .sort({ createdAt: 1 });
+
+        res.json(appointments);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// PUT /api/appointments/:id/status
+router.put('/:id/status', async (req: Request, res: Response) => {
+    try {
+        const { status } = req.body;
+        const appointment = await Appointment.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        );
+        if (!appointment) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+        res.json(appointment);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// PUT /api/appointments/:id/payment
+router.put('/:id/payment', async (req: Request, res: Response) => {
+    try {
+        const { paymentStatus } = req.body;
+        const appointment = await Appointment.findByIdAndUpdate(
+            req.params.id,
+            { paymentStatus },
+            { new: true }
+        );
+        if (!appointment) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+        res.json(appointment);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// POST /api/appointments/walk-in
+router.post('/walk-in', async (req: Request, res: Response) => {
+    const {
+        patientName,
+        patientAge,
+        patientGender,
+        patientAddress,
+        problem,
+        hospitalId,
+        doctorId
+    } = req.body;
+
+    try {
+        const date = new Date();
+        date.setHours(0, 0, 0, 0);
+
+        const count = await Appointment.countDocuments({
+            doctorId: new mongoose.Types.ObjectId(doctorId),
+            appointmentDate: date,
+            status: { $nin: ['cancelled', 'completed'] }
+        });
+
+        const newAppointment = new Appointment({
+            patientName,
+            patientAge,
+            patientGender,
+            patientAddress,
+            problem,
+            hospitalId: new mongoose.Types.ObjectId(hospitalId),
+            doctorId: new mongoose.Types.ObjectId(doctorId),
+            appointmentDate: date,
+            tokenNumber: count + 1,
+            status: 'checked_in', // walk-ins are automatically checked in
+            paymentStatus: 'pending',
+            // No userId needed for walk-in guest
+        });
+
+        const savedAppointment = await newAppointment.save();
+        res.status(201).json(savedAppointment);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // POST /api/appointments/webhook/upi-mock
 router.post('/webhook/upi-mock', async (req: Request, res: Response) => {
     try {
@@ -276,11 +382,12 @@ router.post('/webhook/upi-mock', async (req: Request, res: Response) => {
             return res.status(404).json({ message: "Appointment not found" });
         }
 
-        if (appointment.status === 'confirmed') {
-            return res.json({ message: "Already confirmed" });
+        if (appointment.status === 'scheduled') {
+            return res.json({ message: "Already scheduled" });
         }
 
-        appointment.status = 'confirmed';
+        appointment.status = 'scheduled';
+        appointment.paymentStatus = 'paid';
         await appointment.save();
 
         // Perform deferred actions (S3 backup and Email)
@@ -321,7 +428,7 @@ router.post('/webhook/upi-mock', async (req: Request, res: Response) => {
             });
         }
 
-        res.json({ message: "Payment successful, appointment confirmed.", success: true });
+        res.json({ message: "Payment successful, appointment scheduled.", success: true });
     } catch (error: any) {
         console.error("UPI Mock Webhook Error:", error);
         res.status(500).json({ message: error.message });

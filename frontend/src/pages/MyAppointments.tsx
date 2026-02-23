@@ -189,7 +189,7 @@ export default function MyAppointments() {
 
                                     {/* Action Buttons */}
                                     <div className="flex flex-col justify-center border-l border-gray-100 pl-6 gap-2 min-w-[140px]">
-                                        {appt.status === 'confirmed' && new Date(appt.appointmentDate) >= now ? (
+                                        {['pending', 'scheduled', 'confirmed'].includes(appt.status) && new Date(appt.appointmentDate) >= now ? (
                                             <button
                                                 onClick={() => setCancelAppt(appt)}
                                                 disabled={actionLoading === appt._id}
@@ -198,8 +198,8 @@ export default function MyAppointments() {
                                                 {actionLoading === appt._id ? 'Cancelling...' : 'Cancel Visit'}
                                             </button>
                                         ) : (
-                                            <button disabled className="px-4 py-2 rounded-xl bg-gray-50 text-gray-300 text-sm font-bold cursor-not-allowed">
-                                                {appt.status === 'cancelled' ? 'Cancelled' : 'Completed'}
+                                            <button disabled className="px-4 py-2 rounded-xl bg-gray-50 text-gray-300 text-sm font-bold cursor-not-allowed uppercase">
+                                                {appt.status}
                                             </button>
                                         )}
                                         <button

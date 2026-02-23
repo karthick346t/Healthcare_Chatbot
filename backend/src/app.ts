@@ -14,6 +14,7 @@ import appointmentRouter from './routes/appointments'; // Fixed typo if any
 import appointmentRoutes from './routes/appointments'; // Double check usage
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
+import doctorRouter from './routes/doctors';
 // import paymentRoutes from './routes/payment'; // Disabled for now
 import localizationMiddleware from './middleware/localization';
 
@@ -57,6 +58,7 @@ app.use('/api/upload', uploadRouter);
 app.use('/api/rag', ragRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/appointments', appointmentRouter);
+app.use('/api/doctors', doctorRouter);
 import reportRouter from './routes/reports';
 
 // ...

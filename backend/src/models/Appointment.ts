@@ -10,7 +10,8 @@ export interface IAppointment extends Document {
     doctorId: mongoose.Types.ObjectId;
     appointmentDate: Date;
     tokenNumber: number;
-    status: 'pending' | 'confirmed' | 'cancelled';
+    status: 'pending' | 'scheduled' | 'checked_in' | 'in_consultation' | 'completed' | 'cancelled';
+    paymentStatus: 'pending' | 'paid' | 'refunded';
     userId?: mongoose.Types.ObjectId; // Link to User model
 }
 
@@ -24,7 +25,8 @@ const AppointmentSchema: Schema = new Schema({
     doctorId: { type: Schema.Types.ObjectId, ref: 'Doctor', required: true },
     appointmentDate: { type: Date, required: true },
     tokenNumber: { type: Number, required: true },
-    status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'confirmed' },
+    status: { type: String, enum: ['pending', 'scheduled', 'checked_in', 'in_consultation', 'completed', 'cancelled'], default: 'pending' },
+    paymentStatus: { type: String, enum: ['pending', 'paid', 'refunded'], default: 'pending' },
     userId: { type: Schema.Types.ObjectId, ref: 'User' } // Optional for guest bookings, but we'll use it for logged-in users
 }, { timestamps: true });
 

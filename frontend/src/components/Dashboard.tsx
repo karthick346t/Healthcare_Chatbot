@@ -102,6 +102,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (user?.role === 'admin') {
       navigate('/admin', { replace: true });
+    } else if (user?.role === 'staff') {
+      navigate('/staff', { replace: true });
     }
   }, [user, navigate]);
 

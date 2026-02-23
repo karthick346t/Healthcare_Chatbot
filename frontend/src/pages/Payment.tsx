@@ -10,6 +10,7 @@ export default function Payment() {
     const { appointmentDetails } = location.state || {};
     
     const [appointmentId, setAppointmentId] = useState<string | null>(null);
+    const [initialResult, setInitialResult] = useState<any>(null);
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
     const [status, setStatus] = useState<'pending' | 'confirmed' | 'failed' | 'processing'>('processing');
     const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export default function Payment() {
                 const result = await appointmentApi.bookAppointment(bookingData);
                 const orderId = result._id;
                 setAppointmentId(orderId);
+                setInitialResult(result);
 
                 // 2. Generate UPI QR Code data
                 // In production, user VPA and actual dynamic logic applies
@@ -109,8 +111,28 @@ export default function Payment() {
         if (!appointmentId) return;
         try {
             await appointmentApi.simulateUpiPayment(appointmentId);
-            // Polling will pick up the 'confirmed' status naturally, 
-            // but we could also manually trigger it here if desired.
+            // Explicitly force the success UI immediately instead of waiting for the next polling tick
+            if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+            setStatus('confirmed');
+            
+            try {
+                const audio = new Audio('/src/assets/payment_success.mp3');
+                audio.play().catch(e => console.error("Audio playback failed:", e));
+            } catch (e) {
+                console.error("Audio error:", e);
+            }
+
+            setTimeout(() => {
+                navigate('/appointments', { 
+                    state: { 
+                        step: 4, 
+                        // Fetch the minimal needed result format to pass to success page
+                        bookingResult: initialResult || { _id: appointmentId, appointmentDate: appointmentDetails?.date, tokenNumber: 1 },
+                        appointmentDetails: appointmentDetails
+                    } 
+                });
+            }, 1500);
+
         } catch (err: any) {
              setError("Simulation failed: " + err.message);
         }

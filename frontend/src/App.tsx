@@ -23,6 +23,14 @@ import AdminDoctors from "./pages/admin/AdminDoctors";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminProfile from "./pages/admin/AdminProfile";
 
+// Staff Imports
+import StaffRoute from "./components/StaffRoute";
+import StaffLayout from "./components/StaffLayout";
+import StaffDashboard from "./pages/staff/StaffDashboard";
+import StaffAppointments from "./pages/staff/StaffAppointments";
+import StaffDoctors from "./pages/staff/StaffDoctors";
+import WalkInBooking from "./pages/staff/WalkInBooking";
+
 function InnerApp() {
   return (
     <Router>
@@ -149,6 +157,21 @@ function InnerApp() {
                   </Routes>
                 </AdminLayout>
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/staff/*"
+            element={
+              <StaffRoute>
+                <StaffLayout>
+                  <Routes>
+                    <Route index element={<StaffDashboard />} />
+                    <Route path="appointments" element={<StaffAppointments />} />
+                    <Route path="walk-in" element={<WalkInBooking />} />
+                    <Route path="doctors" element={<StaffDoctors />} />
+                  </Routes>
+                </StaffLayout>
+              </StaffRoute>
             }
           />
           </Routes>
