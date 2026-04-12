@@ -3,15 +3,22 @@ import config from "../config";
 import { cleanModelText } from "../utils/cleanText";
 import { retrieveContext, vectorStore } from "./ragService";
 import ragContextManager from "./ragContextManager";
+import Doctor from "../models/Doctor";
+import Hospital from "../models/Hospital";
+import Appointment from "../models/Appointment";
+import User from "../models/User";
+import mongoose from "mongoose";
+import { uploadAppointmentBackup } from "./awsService";
+import { notificationService } from "./notificationService";
 
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// Primary model → DeepSeek
-const PRIMARY_MODEL_ID = "openai/gpt-oss-20b:free";
-// Backup model → LLaMA 3.3
-const BACKUP_MODEL_ID = "google/gemma-3n-e4b-it:free";
-// Second backup model → Mistral (neutral, often lenient moderation)
-const BACKUP_MODEL_ID_2 = "mistralai/mistral-7b-instruct:free";
+// Primary model
+const PRIMARY_MODEL_ID = "openai/gpt-oss-120b";
+// Backup model 
+const BACKUP_MODEL_ID = "llama-3.3-70b-versatile";
+// Second backup model 
+const BACKUP_MODEL_ID_2 = "llama-3.1-8b-instant";
 
 const AXIOS_TIMEOUT = 25_000; // 25 seconds
 
@@ -60,17 +67,62 @@ function compactRagContext(ragContext?: string, maxLen = 1500): string | undefin
 // 🔹 Helper: Common header builder
 // ----------------------------------------
 function buildHeaders() {
-  const apiKey = config.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
+  const apiKey = config.GROQ_API_KEY || process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("❌ OPENROUTER_API_KEY missing. Set it in your .env file.");
+    throw new Error("❌ GROQ_API_KEY missing. Set it in your .env file.");
   }
 
   return {
     Authorization: `Bearer ${apiKey}`,
-    "HTTP-Referer": "http://localhost:3000",
-    "X-Title": "Healthcare Chatbot",
     "Content-Type": "application/json",
   };
+}
+
+// ----------------------------------------
+// 🔹 Helper: Build Available Doctors Context
+// ----------------------------------------
+async function buildDoctorContext(): Promise<string> {
+  try {
+    const doctors = await Doctor.find().populate("hospitalId", "name location").lean();
+    if (!doctors || doctors.length === 0) return "No doctors are currently available in the database.";
+
+    let docStr = `### 📋 Available Doctors in Database\n\n`;
+    doctors.forEach((doc: any) => {
+      const hospitalName = doc.hospitalId?.name || "Unknown Hospital";
+      const location = doc.hospitalId?.location || "Unknown Location";
+      const hospitalId = doc.hospitalId?._id || "Unknown_Hospital_ID";
+      docStr += `- Dr. ${doc.name} (Specialty: ${doc.specialty}) at ${hospitalName} (${location}).\n  Doctor ID: ${doc._id}\n  Hospital ID: ${hospitalId}\n\n`;
+    });
+    return docStr;
+  } catch (error) {
+    console.error("Failed to fetch doctors for chatbot context:", error);
+    return "Error fetching doctor list.";
+  }
+}
+
+// ----------------------------------------
+// 🔹 Helper: Build User Context
+// ----------------------------------------
+async function buildUserContext(userId?: string): Promise<string> {
+  if (!userId) {
+    return `### 👤 User Profile\nNo user is currently logged in. You MUST ask for the patient's full name, age, gender, address, email, and specific problem.`;
+  }
+
+  try {
+    const user = await User.findById(userId).lean();
+    if (!user) return `### 👤 User Profile\nUser profile not found.`;
+
+    return `### 👤 User Profile
+- Name: ${user.name}
+- Email: ${user.email}
+- Age/DOB: ${user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'Unknown Age'}
+- Gender: ${user.gender || 'Unknown Gender'}
+- Address: ${user.address || 'Unknown Address'}
+- Medical Profile: Allergies (${user.allergies?.join(', ') || 'None'}), Conditions (${user.chronicConditions?.join(', ') || 'None'})`;
+  } catch (err) {
+    console.error("Failed to fetch user context", err);
+    return "Error fetching user profile.";
+  }
 }
 
 // ----------------------------------------
@@ -133,13 +185,44 @@ You are **not** a replacement for a licensed healthcare provider. Your role is t
 
 ---
 
+### 📅 NEW CAPABILITY: APPOINTMENT BOOKING MODE
+You are now also equipped to handle medical appointment bookings.
+
+Trigger: If the user expresses any intent to book, schedule, or arrange an appointment (e.g., "I need to see a doctor," "Book an appointment," "Schedule a visit"), immediately pause health-related Q&A and transition into Appointment Booking Mode.
+
+Rules for Booking Mode:
+
+1. Conversational Information Gathering: Do not ask for all information at once. Ask 1-2 questions at a time in a polite, conversational manner to collect the following required details:
+   - First, ask: "Are you booking this appointment for yourself or someone else?"
+   - If for **themselves**, silently use the data from the "User Profile" provided below (Name, Age, Gender, Address, Email) and just ask what their specific medical problem is. Note: DO NOT make them repeat data that is already in their profile, just ask for missing info like their current symptom.
+   - If for **someone else**, you MUST ask for that person's: Full Name, Age, Gender, Address, Email, and the specific Medical Problem.
+   - Preferred Date (formatted as YYYY-MM-DD for final booking, though discuss naturally).
+   - Specific Doctor's Name and Hospital.
+
+2. Handling Unknown Doctors & Hallucination Prevention: 
+   - You MUST ONLY recommend doctors exactly as they appear in the "Available Doctors in Database" section provided below.
+   - DO NOT invent, guess, or hallucinate doctors that do not exist in the list.
+   - If the patient does not know a doctor, ask their symptoms and suggest a relevant specialist ONLY from the list below.
+
+3. Handling Date Constraints Priority: The patient's requested date is the highest priority.
+   - If their specifically requested doctor is unavailable on that date, suggest alternative doctors of the same medical specialty from the provided list.
+
+4. Confirmation Phase: Once all required information is gathered, summarize the appointment details and ask the patient for final confirmation to lock in the booking.
+
+5. Booking Action (CRITICAL): Once the patient explicitly confirms the summary, you MUST append a hidden JSON block exactly matching this format to the VERY END of your response message. This allows the system to save the appointment to the database:
+   <booking_json>{"patientName":"[Name]", "patientAge":[Age as integer], "patientGender":"[Gender]", "patientAddress":"[Address]", "email":"[Email]", "problem":"[Specific Medical Problem]", "doctorId":"[MongoDB ID of the chosen doctor]", "hospitalId":"[MongoDB ID of the hospital]", "date":"[YYYY-MM-DD]"}</booking_json>
+   Example response: "Your appointment is confirmed!... <booking_json>{\"patientName\":\"John Doe\", \"patientAge\":34, \"patientGender\":\"Male\", \"patientAddress\":\"123 Main St\", \"email\":\"john@example.com\", \"problem\":\"Migraine\", \"doctorId\":\"60d5ecb8b392\", \"hospitalId\":\"60d5ecb8b393\", \"date\":\"2026-03-15\"}</booking_json>"
+
+6. Return to Normal Mode: Once the booking is confirmed, gracefully conclude the transaction.
+
+---
+
 ### 💬 Communication Style
 - Speak with warmth, empathy, and professionalism.  
 - Use clear and concise language.  
 - Always reassure the user while remaining factual.  
 - Encourage healthy habits and responsible self-care.  
 - End conversations with positive encouragement.
-- **Remember previous conversation context** and refer back to it when relevant.
 - **Remember previous conversation context** and refer back to it when relevant.
 
 ---
@@ -149,7 +232,7 @@ You are a digital health companion built to help people feel informed, understoo
 
   return {
     role: "system",
-    content: ragContext ? basePrompt + ragContext : basePrompt,
+    content: (ragContext ? basePrompt + ragContext : basePrompt) + "\n\n" + (global as any).userContext + "\n\n" + (global as any).doctorContext,
   };
 }
 
@@ -202,23 +285,13 @@ async function callModel(
     temperature: 0.7,
   };
 
-  // If this is the DeepSeek reasoning model, enable reasoning but hide it
-  if (modelId === PRIMARY_MODEL_ID) {
-    payload.reasoning = {
-      enabled: true,   // allow internal reasoning
-      effort: "medium", // you can tweak: "low" | "medium" | "high"
-      exclude: true,   // 🔴 do NOT include reasoning in the visible response
-    };
-  }
-
   const headers = buildHeaders();
 
   try {
-    const response = await axios.post<OpenRouterResponse>(OPENROUTER_API_URL, payload, {
+    const response = await axios.post<OpenRouterResponse>(GROQ_API_URL, payload, {
       headers,
       timeout: AXIOS_TIMEOUT,
     });
-
 
     let text: string =
       response.data?.choices?.[0]?.message?.content ||
@@ -237,7 +310,88 @@ async function callModel(
       ).trim();
     }
 
-    // 3) Run existing cleaner
+    // 3) Process actual appointment saving if <booking_json> is present
+    const bookingMatch = text.match(/<booking_json>([\s\S]*?)<\/booking_json>/);
+    if (bookingMatch && bookingMatch[1]) {
+      try {
+        const bookingData = JSON.parse(bookingMatch[1].trim());
+
+        // Count bookings for token number
+        const dateObj = new Date(bookingData.date);
+        dateObj.setHours(0, 0, 0, 0);
+
+        const count = await Appointment.countDocuments({
+          doctorId: new mongoose.Types.ObjectId(bookingData.doctorId),
+          appointmentDate: dateObj,
+          status: 'scheduled'
+        });
+
+        // The session userId should be extracted if we bind it, 
+        // but since chatbotService doesn't have req.user easily, we extract if passed, or save as guest (null userId)
+        // A better approach is passing userId from the frontend to handleMessage.
+        // For now, we save without userId or we can extract it if we modify handleMessage signature.
+
+        const newAppt = new Appointment({
+          patientName: bookingData.patientName,
+          patientAge: bookingData.patientAge,
+          patientGender: bookingData.patientGender || "Not Specified",
+          patientAddress: bookingData.patientAddress || "Not Specified",
+          problem: bookingData.problem || "Chatbot Booking",
+          hospitalId: new mongoose.Types.ObjectId(bookingData.hospitalId),
+          doctorId: new mongoose.Types.ObjectId(bookingData.doctorId),
+          appointmentDate: dateObj,
+          tokenNumber: count + 1,
+          status: 'scheduled',
+          paymentStatus: 'pending',
+          userId: (global as any).currentUserId ? new mongoose.Types.ObjectId((global as any).currentUserId) : undefined
+        });
+
+        await newAppt.save();
+        console.log(`[Chatbot] Successfully saved appointment for ${bookingData.patientName} with doctor ${bookingData.doctorId}`);
+
+        // --- ADDED: Sync to S3 and Send Email ---
+        if (newAppt.userId) {
+          // Backup new appointment to S3 with FULL details
+          const populated = await Appointment.findById(newAppt._id)
+            .populate('hospitalId', 'name location')
+            .populate('doctorId', 'name specialty')
+            .lean();
+
+          if (populated) {
+            (populated as any).doctorName = (populated.doctorId as any)?.name || 'Doctor';
+            (populated as any).hospitalName = (populated.hospitalId as any)?.name || 'Hospital';
+
+            uploadAppointmentBackup(populated, newAppt.userId.toString())
+              .catch(err => console.error('⚠️ S3 appointment backup failed on Chatbot book:', err));
+          }
+
+          // Send Confirmation Email
+          // Prefer explicitly provided email from the json over the saved user email
+          const userObj = await User.findById(newAppt.userId);
+          const targetEmail = bookingData.email || (userObj ? userObj.email : null);
+          if (targetEmail) {
+            const doctor = await Doctor.findById(newAppt.doctorId);
+            const hospital = await Hospital.findById(newAppt.hospitalId);
+
+            await notificationService.sendAppointmentConfirmation(targetEmail, {
+              patientName: newAppt.patientName,
+              doctorName: doctor ? doctor.name : "Unknown Doctor",
+              appointmentDate: newAppt.appointmentDate.toDateString(),
+              timeSlot: "N/A",
+              hospitalName: hospital ? hospital.name : "Unknown Hospital"
+            });
+          }
+        }
+        // -----------------------------------------
+
+        // Remove the json block from the user-facing text
+        text = text.replace(/<booking_json>[\s\S]*?<\/booking_json>/g, "").trim();
+      } catch (e) {
+        console.error("[Chatbot] Error parsing or saving booking JSON:", e);
+      }
+    }
+
+    // 4) Run existing cleaner
     text = cleanModelText(text);
 
     if (!text) throw new Error("No text generated by the model.");
@@ -270,15 +424,15 @@ async function callWithFallback(
     try {
       const backoffMs = attempt === 0 ? 0 : Math.min(10000, 1000 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 250);
       if (backoffMs > 0) {
-        console.log(`[Backoff] Waiting ${backoffMs}ms before retrying DeepSeek...`);
+        console.log(`[Backoff] Waiting ${backoffMs}ms before retrying (${PRIMARY_MODEL_ID})...`);
         await sleep(backoffMs);
       }
-      console.log(`[Model] Attempting DeepSeek (${PRIMARY_MODEL_ID})${ragContext ? ' with RAG context' : ''}... (try ${attempt + 1}/${primaryMaxRetries + 1})`);
+      console.log(`[Model] Attempting (${PRIMARY_MODEL_ID})${ragContext ? ' with RAG context' : ''}... (try ${attempt + 1}/${primaryMaxRetries + 1})`);
       return await callModel(PRIMARY_MODEL_ID, message, conversationHistory, imageUrl, compactedRag);
     } catch (err: any) {
       const status = err?.response?.status;
       const msg = err?.response?.data?.error?.message || err.message;
-      console.warn(`[⚠️ DeepSeek failed — Status: ${status}, Message: ${msg}]`);
+      console.warn(`[⚠️ (${PRIMARY_MODEL_ID}) failed — Status: ${status}, Message: ${msg}]`);
       if (status !== 429 || attempt === primaryMaxRetries) {
         break;
       }
@@ -287,15 +441,15 @@ async function callWithFallback(
 
   // 2) Fallback to LLaMA; if 403 moderation error, sanitize and retry once
   try {
-    console.warn("[⚠️ Switching to LLaMA backup model]");
-    console.log(`[Model] Attempting LLaMA (${BACKUP_MODEL_ID})${ragContext ? ' with RAG context' : ''}...`);
+    console.warn(`[⚠️ Switching to (${BACKUP_MODEL_ID}) backup model]`);
+    console.log(`[Model] Attempting (${BACKUP_MODEL_ID})${ragContext ? ' with RAG context' : ''}...`);
     return await callModel(BACKUP_MODEL_ID, message, conversationHistory, imageUrl, compactedRag);
   } catch (llamaErr: any) {
     const status = llamaErr?.response?.status;
     const msg = llamaErr?.response?.data?.error?.message || llamaErr.message;
-    console.warn(`[⚠️ LLaMA failed — Status: ${status}, Message: ${msg}]`);
+    console.warn(`[⚠️ (${BACKUP_MODEL_ID}) failed — Status: ${status}, Message: ${msg}]`);
     if (status === 403) {
-      console.log("[Moderation] Retrying LLaMA with sanitized input and compacted context...");
+      console.log(`[Moderation] Retrying (${BACKUP_MODEL_ID}) with sanitized input and compacted context...`);
       try {
         return await callModel(BACKUP_MODEL_ID, sanitizedMessage, conversationHistory, imageUrl, compactedRag);
       } catch {
@@ -306,8 +460,8 @@ async function callWithFallback(
 
   // 3) Second backup model — more lenient moderation typically
   try {
-    console.warn("[⚠️ Switching to second backup model (Mistral)]");
-    console.log(`[Model] Attempting Mistral (${BACKUP_MODEL_ID_2})${ragContext ? ' with RAG context' : ''}...`);
+    console.warn(`[⚠️ Switching to (${BACKUP_MODEL_ID_2}) backup model]`);
+    console.log(`[Model] Attempting (${BACKUP_MODEL_ID_2})${ragContext ? ' with RAG context' : ''}...`);
     return await callModel(BACKUP_MODEL_ID_2, sanitizedMessage, conversationHistory, imageUrl, compactedRag);
   } catch (err) {
     console.error("[❌ All models failed]");
@@ -322,9 +476,21 @@ export async function handleMessage(
   message: string,
   sessionId: string,
   conversationHistory: any[] = [],
-  locale = "en"
+  locale = "en",
+  userId?: string // Optional userId to attach to appointments
 ): Promise<string> {
   console.log(`[handleMessage] History length: ${conversationHistory.length}`);
+
+  // Store userId temporarily so callModel can access it during the save
+  if (userId) {
+    (global as any).currentUserId = userId;
+  } else {
+    (global as any).currentUserId = undefined;
+  }
+
+  // Fetch doctors and user profile dynamically
+  (global as any).doctorContext = await buildDoctorContext();
+  (global as any).userContext = await buildUserContext(userId);
 
   const ragEnabled = config.RAG_ENABLED !== false;
 
@@ -377,10 +543,20 @@ export async function handleTriage(
   message: string,
   sessionId: string,
   conversationHistory: any[] = [],
-  locale = "en"
+  locale = "en",
+  userId?: string
 ): Promise<string> {
   const triagePrompt = `Perform symptom triage. Guide the user with empathetic, clear, and simple questions. User's concern: ${message}`;
   console.log(`[handleTriage] History length: ${conversationHistory.length}`);
+
+  if (userId) {
+    (global as any).currentUserId = userId;
+  } else {
+    (global as any).currentUserId = undefined;
+  }
+
+  (global as any).doctorContext = await buildDoctorContext();
+  (global as any).userContext = await buildUserContext(userId);
 
   try {
     console.log("[RAG][Triage] Retrieving triage-related context (stateless)...");

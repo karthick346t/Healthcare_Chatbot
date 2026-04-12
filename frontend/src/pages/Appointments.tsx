@@ -440,32 +440,32 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
 
     return (
-        <div className="flex w-full min-h-screen bg-[#eef2f6] relative overflow-x-hidden font-sans text-neutral-dark">
-            {/* Background Blobs */}
-            <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none" />
-            <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none" />
+        <div className="flex w-full min-h-screen bg-[#eef2f5] relative overflow-x-hidden font-sans text-neutral-dark">
+            {/* Minimalist Neumorphic Background Elements */}
+            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-white/40 blur-[100px] pointer-events-none" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#c8d0e7]/40 blur-[100px] pointer-events-none" />
 
             <main className="relative z-10 w-full max-w-6xl mx-auto px-6 py-12 flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <button
                         onClick={() => step > 0 && step < 4 ? setStep(step === 3.5 ? 3 : step - 1) : navigate("/")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-neutral-600 font-bold hover:shadow-[inner_4px_4px_8px_#c8d0e7,-inner_4px_4px_8px_#ffffff] transition-all"
                     >
                         <MdArrowBack />
                         <span>{step === 4 ? t("Back to Dashboard") : t("Go Back")}</span>
                     </button>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex gap-2 mr-4">
+                        <div className="flex gap-2 mr-4 bg-[#eef2f5] p-2 rounded-full shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]">
                             {[0, 1, 2, 3, 3.5].map(s => (
-                                <div key={s} className={`h-2 w-10 rounded-full transition-all duration-500 ${step >= s ? "bg-primary w-14" : "bg-white/50"}`} />
+                                <div key={s} className={`h-2 w-10 rounded-full transition-all duration-500 ${step >= s ? "bg-primary w-14 shadow-[0_0_8px_var(--primary)]" : "bg-neutral-300"}`} />
                             ))}
                         </div>
 
                         {/* Language Selector */}
                         <div className="relative" ref={langMenuRef}>
-                            <button onClick={() => setShowLangMenu(!showLangMenu)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/60 border border-white/80 text-xs font-bold text-neutral-600 shadow-sm cursor-pointer hover:bg-white/80 transition-all">
+                            <button onClick={() => setShowLangMenu(!showLangMenu)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-xs font-bold text-neutral-600 cursor-pointer hover:shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] transition-all">
                                 <span className="text-base">{currentLang.emoji}</span>
                                 <span>{currentLang.code.toUpperCase()}</span>
                             </button>
@@ -492,10 +492,10 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                 {/* STEP 0: Location Entry Point */}
                 {step === 0 && (
                     <div className="animate-fadeIn flex flex-col items-center">
-                        <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center text-4xl text-primary mb-6 shadow-inner">
+                        <div className="w-20 h-20 rounded-3xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex items-center justify-center text-4xl text-primary mb-6">
                             <MdLocationOn />
                         </div>
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2 text-center">{t("book_appointment_title")}</h1>
+                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2 text-center tracking-tight">{t("book_appointment_title")}</h1>
                         <p className="text-neutral-500 mb-10 font-medium text-center max-w-md">{t("book_appointment_desc")}</p>
 
                         <div className="w-full max-w-2xl bg-white/40 border border-white/60 backdrop-blur-xl rounded-[3rem] p-10 shadow-2xl flex flex-col md:flex-row gap-4">
@@ -525,7 +525,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                             {/* Dropdown */}
                             <div className="relative min-w-[200px]">
                                 <select
-                                    className="w-full appearance-none p-4 rounded-2xl bg-white border border-white/80 focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm font-bold text-neutral-700 pr-10"
+                                    className="w-full appearance-none p-4 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] focus:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] outline-none transition-all font-bold text-neutral-700 pr-10"
                                     value={selectedDistrict}
                                     onChange={(e) => {
                                         if (e.target.value) {
@@ -562,7 +562,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                 <input
                                     type="text"
                                     placeholder={t("filter_hospitals_placeholder") || "Filter hospitals by name..."}
-                                    className="w-full pl-12 pr-4 py-3 rounded-2xl bg-white/60 border border-white/80 backdrop-blur-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm font-medium"
+                                    className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#eef2f5] shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#c8d0e7,inset_-6px_-6px_12px_#ffffff] outline-none transition-all font-medium text-neutral-700"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -578,9 +578,9 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                 <div
                                     key={h._id}
                                     onClick={() => { setSelectedHospital(h); setStep(2); }}
-                                    className="group bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-8 hover:bg-white/60 hover:-translate-y-2 transition-all duration-300 cursor-pointer shadow-xl"
+                                    className="group bg-[#eef2f5] rounded-[2.5rem] p-8 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[10px_10px_20px_#c8d0e7,-10px_-10px_20px_#ffffff] hover:-translate-y-2 transition-all duration-300 cursor-pointer overflow-hidden border border-white/20"
                                 >
-                                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-[#eef2f5] shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] flex items-center justify-center text-primary mb-4">
                                         <MdHome size={24} />
                                     </div>
                                     <h3 className="text-2xl font-bold text-neutral-800 mb-2 truncate">{t(h.name || "")}</h3>
@@ -590,7 +590,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {h.specialties.map(s => (
-                                            <span key={s} className="px-3 py-1 bg-white/80 text-primary border border-primary/10 rounded-lg text-[10px] font-black uppercase tracking-wider">{t(s || "")}</span>
+                                            <span key={s} className="px-3 py-1 bg-[#eef2f5] shadow-[2px_2px_4px_#c8d0e7,-2px_-2px_4px_#ffffff] text-primary rounded-lg text-[10px] font-black uppercase tracking-wider">{t(s || "")}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -785,7 +785,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                         placeholder="email@example.com"
                                         value={patientForm.email}
                                         readOnly={bookingFor === 'self'}
-                                                                                onChange={(e) => {
+                                        onChange={(e) => {
                                             setBookingFor('other');
                                             setPatientForm({ ...patientForm, email: e.target.value });
                                         }}
@@ -879,7 +879,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
                             <button
                                 onClick={generatePDF}
-                                className="w-full py-4 flex items-center justify-center gap-2 bg-neutral-800 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-lg"
+                                className="w-full py-4 flex items-center justify-center gap-3 bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-neutral-800 rounded-2xl font-black hover:shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] transition-all uppercase tracking-widest text-xs"
                             >
                                 <MdDownload className="text-xl" />
                                 {t("download_slip")}
@@ -888,7 +888,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
                         <button
                             onClick={() => navigate("/")}
-                            className="px-10 py-4 rounded-2xl bg-white border border-white/80 text-neutral-700 font-extrabold hover:bg-white/80 transition-all shadow-xl"
+                            className="px-12 py-5 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-neutral-700 font-extrabold hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all active:scale-[0.98] uppercase tracking-widest text-sm"
                         >
                             {t("Back to Dashboard")}
                         </button>

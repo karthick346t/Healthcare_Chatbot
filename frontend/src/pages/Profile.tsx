@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { HiUser, HiPhone, HiLocationMarker, HiCalendar, HiSave, HiOutlinePencil } from 'react-icons/hi';
-import { MdMedicalServices, MdWarning, MdEmergency, MdBloodtype } from 'react-icons/md';
+import { MdMedicalServices, MdWarning, MdEmergency, MdBloodtype, MdArrowBack } from 'react-icons/md';
 
 export default function Profile() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const { user, token } = useAuth();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
@@ -90,6 +94,15 @@ export default function Profile() {
 
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-8">
+            <div className="flex items-center mb-4">
+                <button
+                    onClick={() => navigate("/")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                >
+                    <MdArrowBack />
+                    <span>{t("Go Back")}</span>
+                </button>
+            </div>
             {/* Header */}
             <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex items-center gap-6">

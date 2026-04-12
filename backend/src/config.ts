@@ -5,8 +5,9 @@ export default {
   PORT: process.env.PORT || "4000",
   NODE_ENV: process.env.NODE_ENV || "development",
 
-  // OpenRouter API Key (for DeepSeek and embeddings)
+  // API Keys
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY as string,
+  GROQ_API_KEY: process.env.GROQ_API_KEY as string,
 
   // RAG Configuration
   RAG_ENABLED: process.env.RAG_ENABLED !== "false", // Default: true

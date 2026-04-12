@@ -104,9 +104,9 @@ router.post(
       // Pass fresh history + current message to AI service
       // Note: We use the frontend passed history for context, but backend DB for storage
       if (/triage/i.test(translatedInput)) {
-        response = await handleTriage(translatedInput, sessionId, conversationHistory, 'en');
+        response = await handleTriage(translatedInput, sessionId, conversationHistory, 'en', userId);
       } else {
-        response = await handleMessage(translatedInput, sessionId, conversationHistory, 'en');
+        response = await handleMessage(translatedInput, sessionId, conversationHistory, 'en', userId);
       }
 
       // --- C. TRANSLATION (Output) ---

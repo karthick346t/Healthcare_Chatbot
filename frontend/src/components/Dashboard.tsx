@@ -14,6 +14,8 @@ import {
 import { LanguageContext } from "../context/LanguageContext";
 import languages from "../locales/languages.json";
 import i18n from "../utils/i18n";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 // --- COMPONENT: TYPEWRITER TEXT ---
 const TypewriterText = () => {
@@ -133,6 +135,47 @@ export default function Dashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // --- PROJECT TOUR HOOK ---
+  useEffect(() => {
+    if (!user || user.role === 'admin' || user.role === 'staff') return;
+
+    const tourKey = `tour_finished_${user.email}`;
+    const hasSeenTour = localStorage.getItem(tourKey);
+
+    if (!hasSeenTour) {
+        const driverObj = driver({
+            showProgress: true,
+            popoverClass: 'driverjs-theme',
+            steps: [
+                { element: '#dashboard-welcome', popover: { title: 'Welcome to Healthcare Chatbot', description: 'This is your central command dashboard. Let\'s get you familiar with the key features!', side: "bottom", align: 'center' } },
+                { element: '#chatbot-input', popover: { title: 'AI Health Assistant', description: 'Describe your symptoms, ask about medications, or inquire about side effects here. Our AI is ready 24/7.', side: "bottom", align: 'center' } },
+                { element: '#quick-actions', popover: { title: 'Quick Access', description: 'Jump right into your Appointments, Lab Reports, or Medication Tracker with these shortcuts.', side: "top", align: 'center' } },
+                { element: '#vitals-sidebar', popover: { title: 'Vitals Monitoring', description: 'Keep an eye on key health metrics like Heart Rate and Blood Oxygen over here.', side: "left", align: 'center' } },
+            ],
+            onDestroyStarted: () => {
+                localStorage.setItem(tourKey, 'true');
+                const mainEl = document.querySelector('main');
+                if (mainEl) {
+                    mainEl.removeEventListener('scroll', handleScroll);
+                }
+                driverObj.destroy();
+            },
+        });
+
+        const handleScroll = () => {
+             window.dispatchEvent(new Event('resize'));
+        };
+
+        setTimeout(() => {
+            driverObj.drive();
+            const mainEl = document.querySelector('main');
+            if (mainEl) {
+                mainEl.addEventListener('scroll', handleScroll, { passive: true });
+            }
+        }, 800);
+    }
+}, [user]);
+
   return (
     <div className="flex w-full h-screen overflow-hidden bg-transparent text-neutral-dark font-sans relative selection:bg-primary/20">
       <Sidebar />
@@ -142,7 +185,7 @@ export default function Dashboard() {
         <Header />
 
         <div className="flex flex-col h-full">
-          <div className="flex justify-between items-end mb-6">
+          <div id="dashboard-welcome" className="flex justify-between items-end mb-6">
             <div>
               <h2 className="text-4xl font-bold text-neutral-800 tracking-tight drop-shadow-sm">{t("Welcome, how can we help today?")}</h2>
               <p className="text-neutral-500 mt-2 font-medium text-lg">{t("Ask HealthBot about your symptoms, medications, or lab reports.")}</p>
@@ -173,7 +216,7 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-3xl text-neutral-800 mb-8 font-semibold max-w-md leading-tight">{t("greeting")}</h3>
 
-                <div onClick={() => navigate("/chat")} className="bg-[#eef2f5] border-none rounded-2xl p-2 pl-6 flex items-center justify-between shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] cursor-text transition-all duration-300 group/input">
+                <div id="chatbot-input" onClick={() => navigate("/chat")} className="bg-[#eef2f5] border-none rounded-2xl p-2 pl-6 flex items-center justify-between shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] cursor-text transition-all duration-300 group/input">
                   <div className="flex items-center gap-6 text-neutral-400 text-sm font-medium w-full">
                     <span className="group-hover/input:text-neutral-600 transition-colors min-w-[200px]">
                       <TypewriterText />
@@ -186,7 +229,7 @@ export default function Dashboard() {
               </div>
 
               {/* === BOTTOM CARDS GRID (UPDATED) === */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div id="quick-actions" className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {quickActions.map((card, idx) => (
                   <button
                     key={idx}
@@ -205,7 +248,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex-1 xl:max-w-[320px] flex flex-col gap-5">
+            <div id="vitals-sidebar" className="flex-1 xl:max-w-[320px] flex flex-col gap-5">
               <div className="bg-[#eef2f5] border-none p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-shadow relative overflow-hidden">
                 <div className="flex justify-between items-center mb-6 relative z-10">
                   <span className="font-bold text-neutral-700 text-sm">Heart Rate</span>

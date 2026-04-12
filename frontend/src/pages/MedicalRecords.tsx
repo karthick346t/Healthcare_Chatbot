@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { HiDocumentText, HiDownload, HiPlus, HiBeaker, HiClipboardList } from 'react-icons/hi';
+import { MdArrowBack } from 'react-icons/md';
 
 interface Report {
     _id: string;
@@ -13,6 +16,8 @@ interface Report {
 }
 
 export default function MedicalRecords() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [showUpload, setShowUpload] = useState(false);
@@ -111,6 +116,15 @@ export default function MedicalRecords() {
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-8">
+            <div className="flex items-center mb-4">
+                <button
+                    onClick={() => navigate("/")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                >
+                    <MdArrowBack />
+                    <span>{t("Go Back")}</span>
+                </button>
+            </div>
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-bold text-neutral-800">Medical Records</h1>

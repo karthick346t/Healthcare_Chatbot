@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   MdPerson, 
   MdNotifications, 
@@ -9,7 +11,8 @@ import {
   MdLogout,
   MdPermDeviceInformation, 
   MdLanguage,
-  MdDarkMode
+  MdDarkMode,
+  MdArrowBack
 } from 'react-icons/md';
 import { HiCheck, HiX } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -79,6 +82,8 @@ const NeuInput = ({ label, value, type = 'text', placeholder = '' }: { label: st
 );
 
 export default function Settings() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<SectionType>('account');
   const [notifications, setNotifications] = useState({
     email: true,
@@ -87,6 +92,34 @@ export default function Settings() {
     offers: false
   });
   const [darkMode, setDarkMode] = useState(false);
+  const [downloadingData, setDownloadingData] = useState(false);
+
+  const handleDownloadData = async () => {
+    try {
+        setDownloadingData(true);
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/backup', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!res.ok) {
+            throw new Error('Backup failed');
+        }
+        
+        const data = await res.json();
+        if (data.url) {
+            window.open(data.url, '_blank');
+        }
+    } catch (err) {
+        console.error('Download failed', err);
+        alert('Failed to generate backup. Please try again.');
+    } finally {
+        setDownloadingData(false);
+    }
+  };
 
   // --- Render Functions ---
 
@@ -111,6 +144,15 @@ export default function Settings() {
         
         {/* --- Sidebar Navigation --- */}
         <div className="lg:col-span-1 space-y-4">
+            <div className="flex items-center mb-4">
+                <button
+                    onClick={() => navigate("/")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                >
+                    <MdArrowBack />
+                    <span>{t("Go Back")}</span>
+                </button>
+            </div>
             <div className="p-4 mb-4">
                 <h1 className="text-3xl font-black text-neutral-700 tracking-tight mb-1">Settings</h1>
                 <p className="text-neutral-400 text-sm font-medium">Manage your preferences</p>
@@ -233,7 +275,13 @@ export default function Settings() {
                                 <h4 className="font-bold text-neutral-700">Download My Data</h4>
                                 <p className="text-xs text-neutral-400">Get a copy of all your medical records.</p>
                              </div>
-                             <button className="text-cyan-600 font-bold text-sm">Download</button>
+                             <button 
+                                onClick={handleDownloadData}
+                                disabled={downloadingData}
+                                className={`font-bold text-sm ${downloadingData ? 'text-gray-400 cursor-not-allowed' : 'text-cyan-600'}`}
+                             >
+                                 {downloadingData ? 'Processing...' : 'Download'}
+                             </button>
                         </div>
                         
                         <div className="flex items-center justify-between p-4 rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] bg-[#eef2f5]">

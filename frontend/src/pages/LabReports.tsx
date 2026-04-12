@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
     HiUpload, HiDocumentText, HiTrendingUp, HiSearch, HiFilter, HiDownload, HiShare 
 } from 'react-icons/hi';
+import { MdArrowBack } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Mock Component for Charts
@@ -27,6 +30,8 @@ const TrendLine = ({ color, data }: { color: string, data: number[] }) => (
 );
 
 export default function LabReports() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'reports' | 'trends'>('reports');
     const [dragging, setDragging] = useState(false);
 
@@ -62,6 +67,15 @@ export default function LabReports() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-6 font-sans text-neutral-800">
             <div className="max-w-6xl mx-auto">
+                <div className="flex items-center mb-4">
+                    <button
+                        onClick={() => navigate("/")}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                    >
+                        <MdArrowBack />
+                        <span>{t("Go Back")}</span>
+                    </button>
+                </div>
                 
                 {/* Header */}
                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

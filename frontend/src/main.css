@@ -731,3 +731,57 @@ textarea {
 .login-page input:focus {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
+/* ============================================
+   DRIVER.JS CUSTOM NEUMORPHIC THEME
+   ============================================ */
+.driver-popover {
+  background-color: var(--bg-neu) !important;
+  color: var(--neutral-dark) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--shadow-neu-out) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  padding: 20px !important;
+}
+
+.driver-popover-title {
+  color: #0891b2 !important; /* cyan-600 */
+  font-weight: 900 !important;
+  font-size: 1.25rem !important;
+  margin-bottom: 8px !important;
+}
+
+.driver-popover-description {
+  color: var(--neutral-medium) !important;
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+}
+
+.driver-popover-footer button {
+  background-color: var(--bg-neu) !important;
+  color: #0891b2 !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-neu-out) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: bold !important;
+  padding: 8px 16px !important;
+  transition: all 0.3s ease !important;
+  text-shadow: none !important;
+}
+
+.driver-popover-footer button:hover {
+  box-shadow: inset 4px 4px 8px #c8d0e7, inset -4px -4px 8px #ffffff !important;
+  transform: translateY(2px) !important;
+}
+
+.driver-popover-close-btn {
+  color: var(--neutral-medium) !important;
+}
+.driver-popover-close-btn:hover {
+  color: #E63946 !important;
+}
+
+/* Make arrow blend */
+.driver-popover-arrow {
+  display: none !important;
+}

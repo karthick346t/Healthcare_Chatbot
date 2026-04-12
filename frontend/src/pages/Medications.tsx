@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
     HiPlus, HiCheck, HiX, HiClock, HiBell, 
     HiPencil, HiTrash, HiCheckCircle
 } from 'react-icons/hi';
-import { MdMedication, MdLocalPharmacy, MdAccessTimeFilled } from 'react-icons/md';
+import { MdMedication, MdLocalPharmacy, MdAccessTimeFilled, MdArrowBack } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Define types 
@@ -26,6 +28,8 @@ interface Dose {
 }
 
 export default function Medications() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'schedule' | 'list'>('schedule');
     const [showAddModal, setShowAddModal] = useState(false);
     
@@ -148,11 +152,20 @@ export default function Medications() {
     return (
         <div className="min-h-screen bg-[#eef2f5] p-6 font-sans text-neutral-800">
             <div className="max-w-6xl mx-auto">
+                <div className="flex items-center mb-4">
+                    <button
+                        onClick={() => navigate("/")}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                    >
+                        <MdArrowBack />
+                        <span>{t("Go Back")}</span>
+                    </button>
+                </div>
                 
                 {/* Neumorphic Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                     <div>
-                        <h1 className="text-3xl font-black text-neutral-700 flex items-center gap-3 tracking-tight">
+                        <h1 id="medication-header" className="text-3xl font-black text-neutral-700 flex items-center gap-3 tracking-tight">
                             <span className="w-12 h-12 rounded-xl flex items-center justify-center text-cyan-600 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]">
                                 <MdMedication className="text-2xl" />
                             </span>
@@ -161,6 +174,7 @@ export default function Medications() {
                         <p className="text-neutral-500 mt-2 ml-16 font-medium">Manage your prescriptions and track adherence.</p>
                     </div>
                     <button 
+                        id="add-med-btn"
                         onClick={handleAddNew}
                         className="neu-btn px-6 py-3 text-cyan-700 hover:text-cyan-800"
                     >
@@ -175,7 +189,7 @@ export default function Medications() {
                     <div className="lg:col-span-2 space-y-8">
                         
                         {/* Embossed Progress Card */}
-                        <div className="neu-card p-8 relative overflow-hidden">
+                        <div id="progress-card" className="neu-card p-8 relative overflow-hidden">
                             <div className="flex-1 z-10 relative">
                                 <h3 className="text-lg font-bold text-neutral-600 mb-1">Today's Progress</h3>
                                 
@@ -196,7 +210,7 @@ export default function Medications() {
                         </div>
 
                         {/* Neumorphic Tabs */}
-                        <div className="flex p-1.5 bg-[#eef2f5] rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] w-fit">
+                        <div id="schedule-tabs" className="flex p-1.5 bg-[#eef2f5] rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] w-fit">
                             <button
                                 onClick={() => setActiveTab('schedule')}
                                 className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
@@ -208,6 +222,7 @@ export default function Medications() {
                                 Today's Schedule
                             </button>
                             <button
+                                id="all-meds-tab"
                                 onClick={() => setActiveTab('list')}
                                 className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
                                     activeTab === 'list' 
@@ -341,7 +356,7 @@ export default function Medications() {
                     {/* Right Column: Refills */}
                     <div className="space-y-8">
                         
-                        <div className="neu-card p-8">
+                        <div id="refill-alerts" className="neu-card p-8">
                             <h3 className="font-bold text-neutral-700 mb-6 flex items-center gap-3">
                                 <span className="p-2 rounded-lg shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] text-orange-500"><HiBell /></span>
                                 Refill Alerts

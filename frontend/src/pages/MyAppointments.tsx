@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import {
     HiCalendar, HiClock, HiLocationMarker, HiOutlineClipboardList,
     HiX, HiCheckCircle, HiUser, HiExclamation, HiClipboardList, HiIdentification
 } from 'react-icons/hi';
+import { MdArrowBack } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MyAppointments() {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
     const { user, token } = useAuth();
     const [appointments, setAppointments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -80,6 +85,15 @@ export default function MyAppointments() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-6">
             <div className="max-w-5xl mx-auto">
+                <div className="flex items-center mb-4">
+                    <button
+                        onClick={() => navigate("/")}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                    >
+                        <MdArrowBack />
+                        <span>{t("Go Back")}</span>
+                    </button>
+                </div>
                 <header className="mb-8">
                     <h1 className="text-3xl font-bold text-neutral-800 flex items-center gap-3">
                         <span className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
