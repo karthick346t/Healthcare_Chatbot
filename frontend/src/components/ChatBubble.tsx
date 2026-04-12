@@ -137,15 +137,17 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
               : "bg-[#eef2f5] text-neutral-800 rounded-bl-[4px] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]"
           )}
         >
-           {/* ⚠️ Non-health warning */}
+           {/* ⚠️ Non-health warning (Styled Box) */}
           {showWarning && (
-            <div className="mb-3 p-3 rounded-xl bg-amber-50 text-amber-900 text-xs border border-amber-100 flex gap-2">
-              <span>⚠️</span>
-              <span>This document may not be health-related.</span>
+            <div className="mb-1 p-4 rounded-[22px] bg-[#FFF9E6] text-[#855D00] text-sm border border-[#FFE7A3] flex items-start gap-3 shadow-sm">
+              <span className="text-lg mt-[-2px]">⚠️</span>
+              <span className="font-medium leading-snug">This document may not be health-related.</span>
             </div>
           )}
 
-          <ReactMarkdown
+          {/* Render Markdown ONLY if it's not a redundant warning string */}
+          {(!showWarning || (text.length > 60)) && (
+            <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
               p: ({ children }) => <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>,
@@ -190,6 +192,7 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
           >
             {normalizedText}
           </ReactMarkdown>
+          )}
         </div>
 
         {/* ACTIONS SIDEBAR (Speaker, etc.) */}

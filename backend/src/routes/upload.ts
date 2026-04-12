@@ -7,6 +7,10 @@ import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../servi
 import { uploadFileToS3 } from '../services/awsService';
 import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth'; // ✅ Corrected import
+import { exec } from 'child_process';
+import util from 'util';
+
+const execPromise = util.promisify(exec);
 
 // ✅ Standard import for version 1.1.1
 const pdfParse = require('pdf-parse');
@@ -85,6 +89,35 @@ async function extractDocxText(docxPath: string): Promise<string> {
   }
 }
 
+// ✅ NEW: Advanced Fallback using Python + PyMuPDF
+async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
+  try {
+    console.log('🖼️ Running advanced Vision fallback (PDF to Image)...');
+    
+    // Use the absolute path to the script
+    const scriptPath = path.join(__dirname, '../scripts/pdf_to_base64.py');
+    
+    // Run the Python script
+    const { stdout, stderr } = await execPromise(`python "${scriptPath}" "${pdfPath}"`);
+    
+    if (stderr && !stdout) {
+      console.error('❌ Python Script stderr:', stderr);
+      return null;
+    }
+    
+    const result = stdout.trim();
+    if (result.startsWith('Error')) {
+      console.error('❌ PDF to Image conversion failed:', result);
+      return null;
+    }
+
+    return result; // This is the base64 string
+  } catch (error) {
+    console.error('❌ PDF to Image fallback failed:', error);
+    return null;
+  }
+}
+
 router.post('/', authMiddleware, upload.single('file'), async (req: Request, res: Response) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
@@ -121,7 +154,17 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
       if (pdfText.startsWith("Error: Could not extract")) {
         responseMessage = `I encountered a technical error reading your PDF. Please ensure it is a valid text PDF.`;
       } else if (!pdfText.trim()) {
-        responseMessage = `I could not read any text from PDF "${file.originalname}". It might be a scanned image without OCR.`;
+        // --- ADVANCED FALLBACK: PDF has no text (likely scanned) ---
+        const base64Image = await extractPdfAsImage(file.path);
+        
+        if (base64Image) {
+          console.log('🚀 Sending scanned PDF image to Vision AI...');
+          const result = await analyzeImagesWithNvidia([base64Image], file.originalname, locale, history, true);
+          responseMessage = result.analysis;
+          isHealthRelated = result.isHealthRelated;
+        } else {
+          responseMessage = `I could not read any text from PDF "${file.originalname}". It might be a scanned image without OCR.`;
+        }
       } else {
         const result = await analyzeDocumentTextWithNvidia(pdfText, file.originalname, locale, history);
         responseMessage = result.analysis;
