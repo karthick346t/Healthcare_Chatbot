@@ -75,15 +75,36 @@ _Verify: You should now see a `data` folder inside `backend` with `.jsonl` files
 cd backend
 nano .env
 ```
-**Paste your keys here:**
+
+Paste and fill in **all required keys** (the server will refuse to start if any are missing):
+
 ```env
+# ── REQUIRED ─────────────────────────────────────────
+NODE_ENV=production
 PORT=4000
+
+JWT_SECRET=<run: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
+
 MONGO_URI=mongodb://127.0.0.1:27017/healthcare_bot
-OPENROUTER_API_KEY=sk-or-your-key-here
-AWS_ACCESS_KEY_ID=your-aws-key
-AWS_SECRET_ACCESS_KEY=your-aws-secret
+
+OPENROUTER_API_KEY=sk-or-v1-your-key-here
+GROQ_API_KEY=gsk_your-groq-key-here
+
 AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your-iam-access-key
+AWS_SECRET_ACCESS_KEY=your-iam-secret-key
 AWS_BUCKET_NAME=healthcare-chatbot-history
+
+# ── OPTIONAL ─────────────────────────────────────────
+GOOGLE_CLIENT_ID=your-google-oauth-client-id
+EMAIL_USER=yourname@gmail.com
+EMAIL_PASS=your-gmail-app-password
+
+# CORS: set to your domain (e.g. https://yourdomain.com)
+FRONTEND_ORIGIN=http://<YOUR_AWS_PUBLIC_IP>:4000
+
+# Translation API (if running locally on the same server)
+M2M_SERVER=http://localhost:8000/translate
 ```
 _(Save: Ctrl+X, Y, Enter)_
 
@@ -103,8 +124,16 @@ pm2 save
 pm2 startup
 ```
 
-### 4. Verify
-Open your browser to:
+### 4. Verify Deployment
+```bash
+# Health check — should return {"status":"ok","db":"connected","rag":{"docs":N}}
+curl http://localhost:4000/healthz
+
+# Protected route — should return 401 without token
+curl http://localhost:4000/api/appointments/my-appointments
+```
+
+Then open your browser to:
 `http://<YOUR_AWS_PUBLIC_IP>:4000`
 
 ---
@@ -112,4 +141,20 @@ Open your browser to:
 ## 🔒 Security Group Rules (Inbound)
 Make sure these ports are open in AWS:
 *   **SSH (22)**: For your terminal access.
+*   **HTTP (80)** / **HTTPS (443)**: For serving the app via Nginx (recommended in production).
 *   **TCP (4000)**: For the Web App (Source: 0.0.0.0/0).
+
+---
+
+## 🩺 Ongoing Monitoring
+
+```bash
+# View live logs
+pm2 logs healthcare-bot
+
+# Check process status
+pm2 status
+
+# Restart after code update
+pm2 restart healthcare-bot
+```

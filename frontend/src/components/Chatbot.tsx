@@ -5,16 +5,16 @@ import ChatBubble from "./ChatBubble";
 import MessageInput from "./MessageInput";
 import QuickReplies from "./QuickReplies";
 import TyperIndicator from "./TyperIndicator";
+import DisclaimerModal from "./DisclaimerModal";
 
-import { sendChatMessage, uploadFile, getChatSessions, getSessionHistory, type ChatSessionSummary } from "../services/chatApi";
+import { sendChatMessage, uploadFile, getChatSessions, getSessionHistory, type ChatSessionSummary, sendChatFeedback } from "../services/chatApi";
 import { LanguageContext } from "../context/LanguageContext";
 
-import { MdHistory, MdArrowBack, MdAdd, MdChatBubbleOutline, MdClose } from "react-icons/md";
+import { MdHistory, MdArrowBack, MdAdd, MdChatBubbleOutline, MdClose, MdWarning } from "react-icons/md";
 import { useTranslation } from "react-i18next";
 
 import BotLogo from "../assets/logo.png";
 import NexaLogo from "../assets/NEXA.png";
-
 
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -34,6 +34,8 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [historyList, setHistoryList] = useState<ChatSessionSummary[]>([]);
+  const [showEmergencyBanner, setShowEmergencyBanner] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -133,18 +135,24 @@ export default function Chatbot() {
     setIsTyping(true);
 
     try {
-      const reply = await sendChatMessage({
+      const data = await sendChatMessage({
         message: text,
         conversationHistory: currentHistory,
         locale: selectedLanguage || "en",
         sessionId: sessionId,
       });
 
+      // Show emergency banner if backend flagged it
+      if ((data as any).isEmergency) {
+        setShowEmergencyBanner(true);
+      }
+
+      const reply = typeof data === 'string' ? data : (data as any).message ?? String(data);
       setMessages((prev) => [...prev, { sender: "bot", text: reply }]);
       setConversationHistory([...currentHistory, { role: "assistant", content: reply }]);
     } catch {
-      const err = t("error_something_went_wrong");
-      setMessages((prev) => [...prev, { sender: "bot", text: err }]);
+      const errMsg = t("error_something_went_wrong");
+      setMessages((prev) => [...prev, { sender: "bot", text: errMsg }]);
     } finally {
       setIsTyping(false);
     }
@@ -176,6 +184,24 @@ export default function Chatbot() {
 
   return (
     <div className="fixed inset-0 flex flex-col w-full h-full bg-[#eef2f5] text-neutral-dark overflow-hidden selection:bg-primary/20 z-50">
+
+      {/* Medical Disclaimer Modal — once per session */}
+      <DisclaimerModal onAccept={() => setDisclaimerAccepted(true)} />
+
+      {/* 🚨 Emergency Banner */}
+      {showEmergencyBanner && (
+        <div className="relative z-30 flex items-center gap-3 px-4 py-3 bg-red-600 text-white text-sm font-medium shrink-0 animate-fadeIn">
+          <MdWarning className="text-xl shrink-0" />
+          <span className="flex-1">🚨 This looks like a medical emergency. <strong>Call 112 (India) or your local emergency number immediately.</strong></span>
+          <button
+            onClick={() => setShowEmergencyBanner(false)}
+            className="ml-2 text-white/80 hover:text-white shrink-0"
+            aria-label="Dismiss emergency banner"
+          >
+            <MdClose size={18} />
+          </button>
+        </div>
+      )}
 
       {/* Background Gradients */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none" />
@@ -287,7 +313,13 @@ export default function Chatbot() {
         className="flex-1 overflow-y-auto px-5 pt-4 pb-2 space-y-4 bg-transparent z-10"
       >
         {messages.map((m, i) => (
-          <ChatBubble key={i} sender={m.sender} text={m.text} isHealthRelated={m.isHealthRelated} />
+          <ChatBubble 
+            key={i} 
+            sender={m.sender} 
+            text={m.text} 
+            isHealthRelated={m.isHealthRelated} 
+            onFeedback={(rating) => sendChatFeedback(sessionId, rating, i.toString())}
+          />
         ))}
         {isTyping && <TyperIndicator />}
       </div>
@@ -304,7 +336,7 @@ export default function Chatbot() {
         />
 
         <p className="text-[10px] text-neutral-medium text-center mt-1 opacity-70">
-          HealthBot may make mistakes. Consult a doctor for serious issues.
+          AURA is an AI assistant. Always consult a licensed doctor for medical decisions.
         </p>
       </div>
     </div>

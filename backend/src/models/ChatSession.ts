@@ -30,4 +30,6 @@ const ChatSessionSchema: Schema = new Schema({
   locale: { type: String, default: 'en' }
 });
 
+ChatSessionSchema.index({ sessionId: 1, userId: 1 });
+
 export default mongoose.model<IChatSession>('ChatSession', ChatSessionSchema);

@@ -1,5 +1,7 @@
 import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -78,26 +80,30 @@ export const uploadFileToS3 = async (
   try {
     const fileStream = fs.createReadStream(filePath);
 
-    // Create a unique key: uploads/<userId?>/timestamp-filename
+    // ✅ Use UUID suffix instead of timestamp — prevents predictable key enumeration
     const folder = userId ? `uploads/${userId}` : 'uploads/anonymous';
-    const key = `${folder}/${Date.now()}-${fileName}`;
+    const ext = fileName.includes('.') ? fileName.split('.').pop() : '';
+    const key = `${folder}/${randomUUID()}${ext ? '.' + ext : ''}`;
 
     const params = {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: key,
       Body: fileStream,
       ContentType: mimeType,
-      // Note: By default, objects are private. You may need to configure 
-      // CloudFront or a Presigned URL generator if you want frontend access.
     };
 
     const command = new PutObjectCommand(params);
     await s3Client.send(command);
 
-    // Construct standard S3 URL (adjust if using a custom domain/CDN)
-    const url = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-    console.log(`✅ [AWS] File uploaded: ${url}`);
-    return url;
+    // ✅ Return a presigned URL (1-hour expiry) instead of a public URL
+    const getCommand = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: key,
+    });
+    const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+
+    console.log(`✅ [AWS] File uploaded with presigned URL (key: ${key})`);
+    return presignedUrl;
 
   } catch (error) {
     console.error(`❌ [AWS] File upload failed:`, error);

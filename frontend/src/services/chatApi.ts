@@ -30,7 +30,7 @@ export async function sendChatMessage({
   conversationHistory?: Message[];
   locale?: string;
   sessionId: string;
-}): Promise<string> {
+}): Promise<{ message: string; isEmergency?: boolean }> {
   try {
     const token = getToken();
     const headers: HeadersInit = {
@@ -55,7 +55,10 @@ export async function sendChatMessage({
     }
 
     const data = await response.json();
-    return data.message;
+    return {
+      message: data.message,
+      isEmergency: data.isEmergency ?? false,
+    };
   } catch (error) {
     console.error("Chat API Error:", error);
     throw error;
@@ -164,4 +167,23 @@ export async function deleteChatSession(sessionId: string): Promise<void> {
     method: "DELETE",
     headers
   });
+}
+
+// 4. Send chat feedback
+export async function sendChatFeedback(sessionId: string, rating: 1 | -1, messageId: string): Promise<void> {
+  const token = getToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE_URL}/api/chat/feedback`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ sessionId, rating, messageId })
+  });
+
+  if (!response.ok) {
+    console.error("Failed to send feedback", response.status);
+  }
 }

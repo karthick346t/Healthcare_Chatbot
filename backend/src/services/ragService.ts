@@ -57,10 +57,10 @@ interface PrecomputedEmbeddingRecord {
 // Configuration
 // ============================================
 
-const MAX_CHUNK_SIZE = 500; // characters per chunk
-const CHUNK_OVERLAP = 50; // characters overlap between chunks
+const MAX_CHUNK_SIZE = 1000; // characters per chunk
+const CHUNK_OVERLAP = 200; // characters overlap between chunks
 const TOP_K = 5; // Number of documents to retrieve
-const SIMILARITY_THRESHOLD = 0.3; // Minimum similarity score
+const SIMILARITY_THRESHOLD = 0.45; // Minimum similarity score
 
 // ============================================
 // SBERT Embedding (local, via @xenova/transformers)
@@ -442,20 +442,6 @@ export async function indexDocuments(
   await vectorStore.addDocuments(allChunks);
   console.log(
     `[RAG] Indexed ${documents.length} documents into ${allChunks.length} chunks`
-  );
-}
-
-/**
- * Load documents from CSV (for healthcare dataset)
- */
-export async function loadDocumentsFromCSV(
-  csvPath: string,
-  questionColumn: string = "question",
-  answerColumn: string = "answer"
-): Promise<void> {
-  // Not implemented here; you can wire a CSV parser if needed.
-  console.log(
-    `[RAG] CSV loading not implemented. Use indexDocuments() instead.`
   );
 }
 

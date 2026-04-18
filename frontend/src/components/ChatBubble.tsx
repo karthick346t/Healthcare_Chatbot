@@ -2,13 +2,14 @@ import clsx from "clsx";
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { MdVolumeUp, MdStop } from "react-icons/md";
+import { MdVolumeUp, MdStop, MdThumbUp, MdThumbDown, MdOutlineThumbUp, MdOutlineThumbDown } from "react-icons/md";
 import { useTextToSpeech } from "../hooks/useTextToSpeech";
 
 interface ChatBubbleProps {
   sender: "user" | "bot";
   text: string;
   isHealthRelated?: boolean;
+  onFeedback?: (rating: 1 | -1) => void;
 }
 
 /**
@@ -110,12 +111,19 @@ function normalizeHealthMarkdown(input: string): string {
   return result;
 }
 
-export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubbleProps) {
+export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }: ChatBubbleProps) {
   const isUser = sender === "user";
   const showWarning = sender === "bot" && isHealthRelated === false;
 
   const normalizedText = React.useMemo(() => normalizeHealthMarkdown(text), [text]);
   const { speak, stop, isSpeaking, isSupported } = useTextToSpeech();
+  const [feedback, setFeedback] = useState<1 | -1 | null>(null);
+
+  const handleFeedbackClick = (rating: 1 | -1) => {
+    if (feedback === rating) return;
+    setFeedback(rating);
+    onFeedback?.(rating);
+  };
 
   return (
     <div
@@ -197,7 +205,7 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
 
         {/* ACTIONS SIDEBAR (Speaker, etc.) */}
         {!isUser && (
-          <div className="flex flex-col justify-end pb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex flex-col justify-end pb-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 gap-2">
              {isSupported && (
               <button
                 onClick={() => isSpeaking ? stop() : speak(text)}
@@ -212,6 +220,33 @@ export default function ChatBubble({ sender, text, isHealthRelated }: ChatBubble
                 {isSpeaking ? <MdStop className="w-4 h-4" /> : <MdVolumeUp className="w-4 h-4" />}
               </button>
             )}
+            {/* Feedback Buttons */}
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => handleFeedbackClick(1)}
+                className={clsx(
+                  "p-1.5 rounded-full transition-all duration-200 shadow-sm border",
+                  feedback === 1
+                    ? "bg-green-50 text-green-600 border-green-200"
+                    : "bg-white text-neutral-400 hover:text-green-600 hover:border-green-200 hover:bg-green-50 border-transparent"
+                )}
+                title="Helpful"
+              >
+                {feedback === 1 ? <MdThumbUp className="w-3 h-3" /> : <MdOutlineThumbUp className="w-3 h-3" />}
+              </button>
+              <button
+                onClick={() => handleFeedbackClick(-1)}
+                className={clsx(
+                  "p-1.5 rounded-full transition-all duration-200 shadow-sm border",
+                  feedback === -1
+                    ? "bg-red-50 text-red-600 border-red-200"
+                    : "bg-white text-neutral-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent"
+                )}
+                title="Not helpful"
+              >
+                {feedback === -1 ? <MdThumbDown className="w-3 h-3" /> : <MdOutlineThumbDown className="w-3 h-3" />}
+              </button>
+            </div>
           </div>
         )}
       </div>

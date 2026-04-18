@@ -30,6 +30,9 @@ const AppointmentSchema: Schema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User' } // Optional for guest bookings, but we'll use it for logged-in users
 }, { timestamps: true });
 
+// Avoid duplicate token issue + improve query performance
+AppointmentSchema.index({ doctorId: 1, appointmentDate: 1 });
+
 // Ensure a patient can't take multiple tokens for same doctor on same day (optional, but good for demo)
 // AppointmentSchema.index({ patientName: 1, doctorId: 1, appointmentDate: 1 }, { unique: true });
 

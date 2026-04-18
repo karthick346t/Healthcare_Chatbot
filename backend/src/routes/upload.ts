@@ -89,22 +89,37 @@ async function extractDocxText(docxPath: string): Promise<string> {
   }
 }
 
-// ✅ NEW: Advanced Fallback using Python + PyMuPDF
+// ✅ SECURE: Sanitize upload path to prevent shell injection / path traversal
 async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
   try {
     console.log('🖼️ Running advanced Vision fallback (PDF to Image)...');
-    
+
     // Use the absolute path to the script
     const scriptPath = path.join(__dirname, '../scripts/pdf_to_base64.py');
-    
-    // Run the Python script
-    const { stdout, stderr } = await execPromise(`python "${scriptPath}" "${pdfPath}"`);
-    
+
+    // Sanitize: reconstruct path from dir + basename to prevent path traversal
+    const safeDir = path.dirname(pdfPath);
+    const safeFile = path.basename(pdfPath).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safePath = path.join(safeDir, safeFile);
+
+    // Validate the path stays within the uploads directory
+    const uploadsDir = path.resolve(path.join(__dirname, '../../uploads'));
+    const resolvedPath = path.resolve(safePath);
+    if (!resolvedPath.startsWith(uploadsDir)) {
+      console.error('❌ Path traversal attempt blocked:', pdfPath);
+      return null;
+    }
+
+    // Run the Python script with sanitized paths (quoted for safety)
+    const { stdout, stderr } = await execPromise(
+      `python "${scriptPath.replace(/"/g, '')}" "${resolvedPath.replace(/"/g, '')}"`
+    );
+
     if (stderr && !stdout) {
       console.error('❌ Python Script stderr:', stderr);
       return null;
     }
-    
+
     const result = stdout.trim();
     if (result.startsWith('Error')) {
       console.error('❌ PDF to Image conversion failed:', result);
@@ -117,6 +132,7 @@ async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
     return null;
   }
 }
+
 
 router.post('/', authMiddleware, upload.single('file'), async (req: Request, res: Response) => {
   if (!req.file) {

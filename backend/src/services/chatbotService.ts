@@ -10,6 +10,7 @@ import User from "../models/User";
 import mongoose from "mongoose";
 import { uploadAppointmentBackup } from "./awsService";
 import { notificationService } from "./notificationService";
+import symptomChecker from "./symptomChecker";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -79,21 +80,42 @@ function buildHeaders() {
 }
 
 // ----------------------------------------
-// 🔹 Helper: Build Available Doctors Context
+// 🔹 Per-request context bundle (replaces globals)
 // ----------------------------------------
+interface RequestContext {
+  userId?: string;
+  userContext: string;
+  doctorContext: string;
+}
+
+// ----------------------------------------
+// 🔹 Doctor context cache (5-minute TTL)
+// ----------------------------------------
+let _doctorContextCache: string | null = null;
+let _doctorContextExpiry = 0;
+
 async function buildDoctorContext(): Promise<string> {
+  const now = Date.now();
+  if (_doctorContextCache && now < _doctorContextExpiry) {
+    return _doctorContextCache;
+  }
   try {
     const doctors = await Doctor.find().populate("hospitalId", "name location").lean();
-    if (!doctors || doctors.length === 0) return "No doctors are currently available in the database.";
-
-    let docStr = `### 📋 Available Doctors in Database\n\n`;
-    doctors.forEach((doc: any) => {
-      const hospitalName = doc.hospitalId?.name || "Unknown Hospital";
-      const location = doc.hospitalId?.location || "Unknown Location";
-      const hospitalId = doc.hospitalId?._id || "Unknown_Hospital_ID";
-      docStr += `- Dr. ${doc.name} (Specialty: ${doc.specialty}) at ${hospitalName} (${location}).\n  Doctor ID: ${doc._id}\n  Hospital ID: ${hospitalId}\n\n`;
-    });
-    return docStr;
+    if (!doctors || doctors.length === 0) {
+      _doctorContextCache = "No doctors are currently available in the database.";
+    } else {
+      let docStr = `### 📋 Available Doctors in Database\n\n`;
+      doctors.forEach((doc: any) => {
+        const hospitalName = doc.hospitalId?.name || "Unknown Hospital";
+        const location = doc.hospitalId?.location || "Unknown Location";
+        const hospitalId = doc.hospitalId?._id || "Unknown_Hospital_ID";
+        docStr += `- Dr. ${doc.name} (Specialty: ${doc.specialty}) at ${hospitalName} (${location}).\n  Doctor ID: ${doc._id}\n  Hospital ID: ${hospitalId}\n\n`;
+      });
+      _doctorContextCache = docStr;
+    }
+    // Cache for 5 minutes
+    _doctorContextExpiry = now + 5 * 60 * 1000;
+    return _doctorContextCache;
   } catch (error) {
     console.error("Failed to fetch doctors for chatbot context:", error);
     return "Error fetching doctor list.";
@@ -157,7 +179,10 @@ ${contextSections}
 // ----------------------------------------
 // 🔹 Helper: Build system prompt with RAG context
 // ----------------------------------------
-function buildSystemPrompt(ragContext?: string): { role: string; content: string } {
+function buildSystemPrompt(
+  reqCtx: RequestContext,
+  ragContext?: string
+): { role: string; content: string } {
   const basePrompt = `
 You are **AURA**, an advanced and empathetic **Virtual Health Assistant** created to empower individuals with reliable, science-backed health and wellness guidance.
 
@@ -232,7 +257,7 @@ You are a digital health companion built to help people feel informed, understoo
 
   return {
     role: "system",
-    content: (ragContext ? basePrompt + ragContext : basePrompt) + "\n\n" + (global as any).userContext + "\n\n" + (global as any).doctorContext,
+    content: (ragContext ? basePrompt + ragContext : basePrompt) + "\n\n" + reqCtx.userContext + "\n\n" + reqCtx.doctorContext,
   };
 }
 
@@ -242,12 +267,13 @@ You are a digital health companion built to help people feel informed, understoo
 async function callModel(
   modelId: string,
   message: string,
+  reqCtx: RequestContext,
   conversationHistory: any[] = [],
   imageUrl?: string,
   ragContext?: string
 ): Promise<string> {
   const safeRagContext = compactRagContext(ragContext);
-  const systemPrompt = buildSystemPrompt(safeRagContext);
+  const systemPrompt = buildSystemPrompt(reqCtx, safeRagContext);
 
   // Build messages array with full conversation context
   const messages: any[] = [systemPrompt];
@@ -343,13 +369,13 @@ async function callModel(
           tokenNumber: count + 1,
           status: 'scheduled',
           paymentStatus: 'pending',
-          userId: (global as any).currentUserId ? new mongoose.Types.ObjectId((global as any).currentUserId) : undefined
+          userId: reqCtx.userId ? new mongoose.Types.ObjectId(reqCtx.userId) : undefined
         });
 
         await newAppt.save();
         console.log(`[Chatbot] Successfully saved appointment for ${bookingData.patientName} with doctor ${bookingData.doctorId}`);
 
-        // --- ADDED: Sync to S3 and Send Email ---
+        // --- Sync to S3 and Send Email if user is logged in ---
         if (newAppt.userId) {
           // Backup new appointment to S3 with FULL details
           const populated = await Appointment.findById(newAppt._id)
@@ -410,6 +436,7 @@ async function callModel(
 // ----------------------------------------
 async function callWithFallback(
   message: string,
+  reqCtx: RequestContext,
   conversationHistory: any[] = [],
   imageUrl?: string,
   ragContext?: string
@@ -428,7 +455,7 @@ async function callWithFallback(
         await sleep(backoffMs);
       }
       console.log(`[Model] Attempting (${PRIMARY_MODEL_ID})${ragContext ? ' with RAG context' : ''}... (try ${attempt + 1}/${primaryMaxRetries + 1})`);
-      return await callModel(PRIMARY_MODEL_ID, message, conversationHistory, imageUrl, compactedRag);
+      return await callModel(PRIMARY_MODEL_ID, message, reqCtx, conversationHistory, imageUrl, compactedRag);
     } catch (err: any) {
       const status = err?.response?.status;
       const msg = err?.response?.data?.error?.message || err.message;
@@ -443,7 +470,7 @@ async function callWithFallback(
   try {
     console.warn(`[⚠️ Switching to (${BACKUP_MODEL_ID}) backup model]`);
     console.log(`[Model] Attempting (${BACKUP_MODEL_ID})${ragContext ? ' with RAG context' : ''}...`);
-    return await callModel(BACKUP_MODEL_ID, message, conversationHistory, imageUrl, compactedRag);
+    return await callModel(BACKUP_MODEL_ID, message, reqCtx, conversationHistory, imageUrl, compactedRag);
   } catch (llamaErr: any) {
     const status = llamaErr?.response?.status;
     const msg = llamaErr?.response?.data?.error?.message || llamaErr.message;
@@ -451,7 +478,7 @@ async function callWithFallback(
     if (status === 403) {
       console.log(`[Moderation] Retrying (${BACKUP_MODEL_ID}) with sanitized input and compacted context...`);
       try {
-        return await callModel(BACKUP_MODEL_ID, sanitizedMessage, conversationHistory, imageUrl, compactedRag);
+        return await callModel(BACKUP_MODEL_ID, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
       } catch {
         // Fall through to second backup
       }
@@ -462,7 +489,7 @@ async function callWithFallback(
   try {
     console.warn(`[⚠️ Switching to (${BACKUP_MODEL_ID_2}) backup model]`);
     console.log(`[Model] Attempting (${BACKUP_MODEL_ID_2})${ragContext ? ' with RAG context' : ''}...`);
-    return await callModel(BACKUP_MODEL_ID_2, sanitizedMessage, conversationHistory, imageUrl, compactedRag);
+    return await callModel(BACKUP_MODEL_ID_2, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
   } catch (err) {
     console.error("[❌ All models failed]");
     return "I'm currently unable to process your message reliably due to service limits. Please try again shortly. If this is urgent, contact a licensed healthcare provider.";
@@ -477,36 +504,34 @@ export async function handleMessage(
   sessionId: string,
   conversationHistory: any[] = [],
   locale = "en",
-  userId?: string // Optional userId to attach to appointments
+  userId?: string
 ): Promise<string> {
-  console.log(`[handleMessage] History length: ${conversationHistory.length}`);
+  // Enforce sliding window on conversation history (last 20 messages max before current)
+  const recentHistory = conversationHistory ? conversationHistory.slice(-20) : [];
+  console.log(`[handleMessage] History length: ${recentHistory.length}`);
 
-  // Store userId temporarily so callModel can access it during the save
-  if (userId) {
-    (global as any).currentUserId = userId;
-  } else {
-    (global as any).currentUserId = undefined;
-  }
-
-  // Fetch doctors and user profile dynamically
-  (global as any).doctorContext = await buildDoctorContext();
-  (global as any).userContext = await buildUserContext(userId);
+  // Build per-request context — never stored in globals
+  const reqCtx: RequestContext = {
+    userId,
+    doctorContext: await buildDoctorContext(),
+    userContext: await buildUserContext(userId),
+  };
 
   const ragEnabled = config.RAG_ENABLED !== false;
 
-  // ❌ We will NOT use ragContextManager anymore
-  // ❌ We will NOT persist anything by sessionId
-
   if (!ragEnabled) {
     console.log("[handleMessage] RAG disabled, using direct model call");
-    // Ignore any server-side memory — just use provided conversationHistory
-    return callWithFallback(message, conversationHistory);
+    return callWithFallback(message, reqCtx, conversationHistory);
   }
 
-  try {
-    // 1. Retrieve relevant context just for THIS request
+    try {
+    // 1. Retrieve relevant context (RAG)
     console.log("[RAG] Retrieving context for query (stateless)...");
-    const ragContext = await retrieveContext(message, conversationHistory);
+    const ragContext = await retrieveContext(message, recentHistory);
+
+    // 2. Perform Symptom Triage Check (Local)
+    const urgency = symptomChecker.checkSymptomUrgency(message);
+    const urgencyAdvice = symptomChecker.buildUrgencyContext(urgency);
 
     console.log(`[RAG] Retrieved ${ragContext.retrievedDocs.length} relevant documents`);
     if (ragContext.retrievedDocs.length > 0) {
@@ -515,27 +540,16 @@ export async function handleMessage(
           `[RAG] Doc ${idx + 1}: ${doc.chunk.metadata.source} (similarity: ${(doc.similarity * 100).toFixed(1)}%)`
         );
       });
-    } else {
-      console.log("[RAG] No documents retrieved - vector store may be empty or query doesn't match");
     }
 
-    // 2. 🚫 NO ragContextManager.addRAGContext(...)
-    // 3. 🚫 NO ragContextManager.getRelevantContext(...)
-
-    // 4. Directly format the retrieved docs for this single response
-    const formattedContext = formatRAGContext(ragContext.retrievedDocs);
-
-    // 5. Optionally enrich message with **only this request's** history
-    let enhancedMessage = message;
-
-    // If you want, you can still summarize conversationHistory on the frontend
-    // and pass it in; we won't store anything here across requests.
+    // 3. Format context + Prepend urgency advice
+    const formattedContext = urgencyAdvice + formatRAGContext(ragContext.retrievedDocs);
 
     console.log("[RAG] Calling model with stateless RAG context...");
-    return await callWithFallback(enhancedMessage, conversationHistory, undefined, formattedContext);
+    return await callWithFallback(message, reqCtx, recentHistory, undefined, formattedContext);
   } catch (error: any) {
     console.error("[handleMessage] RAG retrieval failed, falling back to direct call:", error.message);
-    return callWithFallback(message, conversationHistory);
+    return callWithFallback(message, reqCtx, recentHistory);
   }
 }
 
@@ -546,21 +560,21 @@ export async function handleTriage(
   locale = "en",
   userId?: string
 ): Promise<string> {
+  // Enforce sliding window on conversation history
+  const recentHistory = conversationHistory ? conversationHistory.slice(-20) : [];
   const triagePrompt = `Perform symptom triage. Guide the user with empathetic, clear, and simple questions. User's concern: ${message}`;
-  console.log(`[handleTriage] History length: ${conversationHistory.length}`);
+  console.log(`[handleTriage] History length: ${recentHistory.length}`);
 
-  if (userId) {
-    (global as any).currentUserId = userId;
-  } else {
-    (global as any).currentUserId = undefined;
-  }
-
-  (global as any).doctorContext = await buildDoctorContext();
-  (global as any).userContext = await buildUserContext(userId);
+  // Per-request context — no globals
+  const reqCtx: RequestContext = {
+    userId,
+    doctorContext: await buildDoctorContext(),
+    userContext: await buildUserContext(userId),
+  };
 
   try {
     console.log("[RAG][Triage] Retrieving triage-related context (stateless)...");
-    const ragContext = await retrieveContext(message, conversationHistory, {
+    const ragContext = await retrieveContext(message, recentHistory, {
       topK: 3,
       documentType: "guideline",
     });
@@ -569,13 +583,10 @@ export async function handleTriage(
 
     const formattedContext = formatRAGContext(ragContext.retrievedDocs);
 
-    // 🚫 No ragContextManager.addRAGContext
-    // 🚫 No getRelevantContext
-
-    return await callWithFallback(triagePrompt, conversationHistory, undefined, formattedContext);
+    return await callWithFallback(triagePrompt, reqCtx, recentHistory, undefined, formattedContext);
   } catch (error: any) {
     console.error("[handleTriage] RAG retrieval failed:", error.message);
-    return callWithFallback(triagePrompt, conversationHistory);
+    return callWithFallback(triagePrompt, reqCtx, recentHistory);
   }
 }
 
@@ -584,8 +595,15 @@ export async function handleImageMessage(
   message: string,
   imageUrl: string,
   sessionId: string,
-  conversationHistory: any[] = []
+  conversationHistory: any[] = [],
+  userId?: string
 ): Promise<string> {
-  console.log(`[handleImageMessage] History length: ${conversationHistory.length}`);
-  return callWithFallback(message, conversationHistory, imageUrl);
+  const recentHistory = conversationHistory ? conversationHistory.slice(-20) : [];
+  console.log(`[handleImageMessage] History length: ${recentHistory.length}`);
+  const reqCtx: RequestContext = {
+    userId,
+    doctorContext: await buildDoctorContext(),
+    userContext: await buildUserContext(userId),
+  };
+  return callWithFallback(message, reqCtx, recentHistory, imageUrl);
 }

@@ -5,7 +5,9 @@ import ChatSession from '../models/ChatSession';
 import { handleMessage, handleTriage } from '../services/chatbotService';
 import { translateViaM2M100 } from '../services/translationService';
 import { uploadSessionToS3 } from '../services/awsService';
-import authMiddleware from '../middleware/auth'; // ✅ Auth Middleware
+import authMiddleware from '../middleware/auth';
+import { emergencyInterceptor } from '../middleware/emergency';
+import Feedback from '../models/Feedback';
 
 const router = Router();
 
@@ -73,7 +75,8 @@ router.get('/session/:sessionId', authMiddleware, async (req: Request, res: Resp
 // ==========================================
 router.post(
   '/',
-  authMiddleware, // ✅ Require Auth for saving history
+  authMiddleware,        // 1️⃣ Verify JWT first
+  emergencyInterceptor,  // 2️⃣ Intercept emergency keywords before LLM
   [
     body("message").isString().trim().notEmpty().isLength({ max: 1024 }),
     body("conversationHistory").optional().isArray(),
@@ -87,42 +90,48 @@ router.post(
       return;
     }
 
-    let { message, conversationHistory = [], locale = 'en', sessionId } = req.body;
+    let { message, locale = 'en', sessionId } = req.body;
     const userId = req.user!.userId;
 
     console.log(`📩 Chat request | User: ${userId} | Session: ${sessionId}`);
 
     try {
-      // --- A. TRANSLATION (Input) ---
+      // --- A. LOAD VERIFIED HISTORY FROM DB (not client) ---
+      // This prevents prompt injection attacks via manipulated conversationHistory
+      let conversationHistory: { role: string; content: string }[] = [];
+      const existingSession = await ChatSession.findOne({ sessionId, userId });
+      if (existingSession && existingSession.messages.length > 0) {
+        // Use last 20 messages from the trusted DB record (sliding window)
+        conversationHistory = existingSession.messages
+          .slice(-20)
+          .map((m: any) => ({ role: m.role, content: m.content }));
+      }
+
+      // --- B. TRANSLATION (Input) ---
       let translatedInput = message;
       if (locale !== 'en') {
         translatedInput = await translateViaM2M100(message, locale, 'en');
       }
 
-      // --- B. AI PROCESSING ---
+      // --- C. AI PROCESSING ---
       let response = null;
-      // Pass fresh history + current message to AI service
-      // Note: We use the frontend passed history for context, but backend DB for storage
       if (/triage/i.test(translatedInput)) {
         response = await handleTriage(translatedInput, sessionId, conversationHistory, 'en', userId);
       } else {
         response = await handleMessage(translatedInput, sessionId, conversationHistory, 'en', userId);
       }
 
-      // --- C. TRANSLATION (Output) ---
+      // --- D. TRANSLATION (Output) ---
       let output = response;
       if (locale !== 'en') {
         output = await translateViaM2M100(response, 'en', locale);
       }
 
-      // --- D. SAVE TO MONGODB (User Scoped) ---
+      // --- E. SAVE TO MONGODB (User Scoped, strict userId match) ---
       const updatedSession = await ChatSession.findOneAndUpdate(
-        { sessionId },
+        { sessionId, $or: [{ userId }, { userId: { $exists: false } }] }, // ✅ Prevent cross-user session hijack
         {
-          $setOnInsert: { locale, userId }, // ✅ Set User ID on creation
-          // If session exists, verify userId matches (security check) is implicit if we trust sessionId uniqueness
-          // But ideally strict check: { sessionId, userId } if we want to prevent hijacking, 
-          // For now, simple update is fine as UUIDs are hard to guess.
+          $setOnInsert: { locale, userId },
           $push: {
             messages: [
               { role: 'user', content: message, timestamp: new Date() },
@@ -134,13 +143,9 @@ router.post(
         { returnDocument: 'after', upsert: true }
       );
 
-      // ✅ Security Fix: If upsert happened but userId was different (rare collision or hijack attempt), 
-      // we should technically verify. However, typical flow creates new random ID. 
-      // If we want to be strict, we can query first. For this scope, we assume random ID safety.
-
-      // --- E. S3 BACKUP ---
+      // --- F. S3 BACKUP (non-blocking) ---
       if (updatedSession) {
-        uploadSessionToS3(sessionId, updatedSession, userId) // ✅ Pass User ID
+        uploadSessionToS3(sessionId, updatedSession, userId)
           .catch(err => console.error(`⚠️ S3 Background Upload Failed:`, err.message));
       }
 
@@ -178,7 +183,34 @@ router.delete('/session/:sessionId', authMiddleware, async (req: Request, res: R
 });
 
 // ==========================================
-// 5. RENAME SESSION (New - if we add meaningful titles later)
+// 5. POST FEEDBACK (New)
+// ==========================================
+router.post('/feedback', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const { sessionId, rating, messageId } = req.body;
+    const userId = req.user!.userId;
+
+    if (!sessionId || !rating) {
+      return res.status(400).json({ error: 'sessionId and rating (1 or -1) are required' });
+    }
+
+    const feedback = new Feedback({
+      sessionId,
+      userId,
+      rating,
+      messageId
+    });
+
+    await feedback.save();
+    res.json({ message: 'Feedback saved successfully' });
+  } catch (error) {
+    console.error('Feedback error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ==========================================
+// 6. RENAME SESSION (New - if we add meaningful titles later)
 // ==========================================
 // Currently titles are dynamic based on first message, but we could add a title field.
 // Skipping for now to keep schema simple unless requested.

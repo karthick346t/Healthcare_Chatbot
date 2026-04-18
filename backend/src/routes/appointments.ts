@@ -6,6 +6,7 @@ import { notificationService } from '../services/notificationService';
 import { uploadAppointmentBackup, fetchAppointmentsFromS3 } from '../services/awsService';
 import mongoose from 'mongoose';
 import User from '../models/User';
+import authMiddleware from '../middleware/auth';
 
 const router = Router();
 
@@ -65,10 +66,10 @@ router.get('/check-availability', async (req: Request, res: Response) => {
     }
 });
 
-// GET /api/appointments/my-appointments
-router.get('/my-appointments', async (req: Request, res: Response) => {
+// GET /api/appointments/my-appointments (auth required)
+router.get('/my-appointments', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const { userId } = req.query;
+        const userId = req.user!.userId;
         if (!userId) {
             return res.status(400).json({ message: "User ID is required" });
         }
@@ -82,26 +83,22 @@ router.get('/my-appointments', async (req: Request, res: Response) => {
     }
 });
 
-// PUT /api/appointments/:id/cancel
-router.put('/:id/cancel', async (req: Request, res: Response) => {
+// PUT /api/appointments/:id/cancel  (auth required — uses JWT userId)
+router.put('/:id/cancel', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const { userId } = req.body;
+        const userId = req.user!.userId; // ✅ Always from verified JWT — never from body
         const appointment = await Appointment.findById(req.params.id);
 
         if (!appointment) {
             return res.status(404).json({ message: "Appointment not found" });
         }
 
-        // Check ownership if appointment is linked to a user
-        if (appointment.userId && userId) {
-            if (appointment.userId.toString() !== userId) {
-                return res.status(403).json({ message: "Unauthorized to cancel this appointment" });
-            }
+        // Verify the appointment belongs to the requesting user
+        if (appointment.userId && appointment.userId.toString() !== userId) {
+            return res.status(403).json({ message: "Unauthorized to cancel this appointment" });
         }
 
-        // If appointment has a user but no userId provided in request, we might want to block it
-        // strictly speaking, but for now we'll allow if logic permits or if we assume guest handling elsewhere.
-        // However, to be safe:
+        // Block if appointment has a linked user but requester doesn't match
         if (appointment.userId && !userId) {
             return res.status(401).json({ message: "Authentication required to cancel this appointment" });
         }
@@ -159,8 +156,8 @@ router.put('/:id/cancel', async (req: Request, res: Response) => {
 });
 
 
-// POST /api/appointments/book
-router.post('/book', async (req: Request, res: Response) => {
+// POST /api/appointments/book  (auth required)
+router.post('/book', authMiddleware, async (req: Request, res: Response) => {
     const {
         patientName,
         patientAge,
@@ -170,9 +167,11 @@ router.post('/book', async (req: Request, res: Response) => {
         hospitalId,
         doctorId,
         appointmentDate,
-        userId, // Extract userId
         status
     } = req.body;
+
+    // ✅ userId always sourced from verified JWT token
+    const userId = req.user!.userId;
 
     try {
         // 1. Normalize date to beginning of day
@@ -249,8 +248,8 @@ router.post('/book', async (req: Request, res: Response) => {
     }
 });
 
-// GET /api/appointments/:id/status
-router.get('/:id/status', async (req: Request, res: Response) => {
+// GET /api/appointments/:id/status  (auth required)
+router.get('/:id/status', authMiddleware, async (req: Request, res: Response) => {
     try {
         const appointment = await Appointment.findById(req.params.id);
         if (!appointment) {
@@ -264,8 +263,8 @@ router.get('/:id/status', async (req: Request, res: Response) => {
 
 // STAFF ROUTES
 
-// GET /api/appointments/today
-router.get('/today', async (req: Request, res: Response) => {
+// GET /api/appointments/today  (auth required — staff/admin only)
+router.get('/today', authMiddleware, async (req: Request, res: Response) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -288,8 +287,8 @@ router.get('/today', async (req: Request, res: Response) => {
     }
 });
 
-// PUT /api/appointments/:id/status
-router.put('/:id/status', async (req: Request, res: Response) => {
+// PUT /api/appointments/:id/status  (auth required — staff/admin only)
+router.put('/:id/status', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { status } = req.body;
         const appointment = await Appointment.findByIdAndUpdate(
@@ -306,8 +305,8 @@ router.put('/:id/status', async (req: Request, res: Response) => {
     }
 });
 
-// PUT /api/appointments/:id/payment
-router.put('/:id/payment', async (req: Request, res: Response) => {
+// PUT /api/appointments/:id/payment  (auth required — staff/admin only)
+router.put('/:id/payment', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { paymentStatus } = req.body;
         const appointment = await Appointment.findByIdAndUpdate(
