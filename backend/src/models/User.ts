@@ -7,7 +7,7 @@ export interface IUser extends Document {
     password?: string;
     googleId?: string;
     avatar?: string;
-    role: 'patient' | 'admin';
+    role: 'patient' | 'admin' | 'staff';
     phone?: string;
     gender?: 'Male' | 'Female' | 'Other';
     dateOfBirth?: Date;

@@ -6,11 +6,27 @@ import { notificationService } from '../services/notificationService';
 import { uploadAppointmentBackup, fetchAppointmentsFromS3 } from '../services/awsService';
 import mongoose from 'mongoose';
 import User from '../models/User';
-import authMiddleware from '../middleware/auth';
+import authMiddleware, { staffMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// GET /api/appointments/hospitals
+/**
+ * @swagger
+ * /api/appointments/hospitals:
+ *   get:
+ *     summary: Retrieve a list of hospitals
+ *     description: Retrieve all hospitals, optionally filtered by district.
+ *     tags: [Appointments]
+ *     parameters:
+ *       - in: query
+ *         name: district
+ *         schema:
+ *           type: string
+ *         description: District name to filter by
+ *     responses:
+ *       200:
+ *         description: A list of hospitals
+ */
 router.get('/hospitals', async (req: Request, res: Response) => {
     try {
         const { district } = req.query;
@@ -264,7 +280,7 @@ router.get('/:id/status', authMiddleware, async (req: Request, res: Response) =>
 // STAFF ROUTES
 
 // GET /api/appointments/today  (auth required — staff/admin only)
-router.get('/today', authMiddleware, async (req: Request, res: Response) => {
+router.get('/today', authMiddleware, staffMiddleware, async (req: Request, res: Response) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -288,7 +304,7 @@ router.get('/today', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // PUT /api/appointments/:id/status  (auth required — staff/admin only)
-router.put('/:id/status', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id/status', authMiddleware, staffMiddleware, async (req: Request, res: Response) => {
     try {
         const { status } = req.body;
         const appointment = await Appointment.findByIdAndUpdate(
@@ -306,7 +322,7 @@ router.put('/:id/status', authMiddleware, async (req: Request, res: Response) =>
 });
 
 // PUT /api/appointments/:id/payment  (auth required — staff/admin only)
-router.put('/:id/payment', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id/payment', authMiddleware, staffMiddleware, async (req: Request, res: Response) => {
     try {
         const { paymentStatus } = req.body;
         const appointment = await Appointment.findByIdAndUpdate(

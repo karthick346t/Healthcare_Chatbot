@@ -1,7 +1,4 @@
-// 1. Define the base URL dynamically
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "http://localhost:4000" : "");
+import { API_BASE_URL } from './apiConfig';
 
 export type Message = {
   role: 'user' | 'assistant';
@@ -15,8 +12,7 @@ export type ChatSessionSummary = {
   date: string;
 };
 
-// Helper to get token
-const getToken = () => localStorage.getItem('healthbot_token');
+import { fetchWithAuth } from './authApi';
 
 /* ---------- CHAT & UPLOAD FUNCTIONS ---------- */
 
@@ -32,13 +28,11 @@ export async function sendChatMessage({
   sessionId: string;
 }): Promise<{ message: string; isEmergency?: boolean }> {
   try {
-    const token = getToken();
     const headers: HeadersInit = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/chat`, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -83,13 +77,8 @@ export async function uploadFile({
   formData.append("sessionId", sessionId);
 
   try {
-    const token = getToken();
-    const headers: HeadersInit = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const response = await fetch(`${API_BASE_URL}/api/upload`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/upload`, {
       method: "POST",
-      headers,
       body: formData,
     });
 
@@ -114,11 +103,7 @@ export async function uploadFile({
 // 1. Fetch the list of past conversations (for the sidebar)
 export async function getChatSessions(): Promise<ChatSessionSummary[]> {
   try {
-    const token = getToken();
-    const headers: HeadersInit = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const response = await fetch(`${API_BASE_URL}/api/chat/sessions`, { headers });
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/chat/sessions`, {});
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -139,11 +124,7 @@ export async function getChatSessions(): Promise<ChatSessionSummary[]> {
 // 2. Fetch the specific messages for one session (when clicking a history item)
 export async function getSessionHistory(sessionId: string): Promise<Message[]> {
   try {
-    const token = getToken();
-    const headers: HeadersInit = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const response = await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`, { headers });
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/chat/session/${sessionId}`, {});
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -157,27 +138,19 @@ export async function getSessionHistory(sessionId: string): Promise<Message[]> {
   }
 }
 
-// 3. Delete a chat session
 export async function deleteChatSession(sessionId: string): Promise<void> {
-  const token = getToken();
-  const headers: HeadersInit = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  await fetch(`${API_BASE_URL}/api/chat/session/${sessionId}`, {
-    method: "DELETE",
-    headers
+  await fetchWithAuth(`${API_BASE_URL}/api/chat/session/${sessionId}`, {
+    method: "DELETE"
   });
 }
 
 // 4. Send chat feedback
 export async function sendChatFeedback(sessionId: string, rating: 1 | -1, messageId: string): Promise<void> {
-  const token = getToken();
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE_URL}/api/chat/feedback`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/chat/feedback`, {
     method: "POST",
     headers,
     body: JSON.stringify({ sessionId, rating, messageId })

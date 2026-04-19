@@ -16,6 +16,8 @@ import {
 } from 'react-icons/md';
 import { HiCheck, HiX } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchWithAuth } from '../services/authApi';
+import { API_BASE_URL } from '../services/apiConfig';
 
 // --- Types ---
 type SectionType = 'account' | 'notifications' | 'privacy' | 'appearance' | 'help';
@@ -97,12 +99,8 @@ export default function Settings() {
   const handleDownloadData = async () => {
     try {
         setDownloadingData(true);
-        const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/backup', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const res = await fetchWithAuth(`${API_BASE_URL}/api/backup`, {
+            method: 'GET'
         });
         
         if (!res.ok) {

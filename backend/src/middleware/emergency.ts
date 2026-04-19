@@ -65,7 +65,7 @@ const EMERGENCY_RESPONSE = `🚨 **This sounds like a medical emergency.**
 - Do NOT give food or water unless instructed by a professional.
 - If trained, begin CPR if the person is unresponsive and not breathing.
 
-⚠️ *AURA is an AI assistant and cannot respond to emergencies. Please contact trained medical professionals immediately.*`;
+⚠️ *NEXA is an AI assistant and cannot respond to emergencies. Please contact trained medical professionals immediately.*`;
 
 /**
  * Emergency Middleware

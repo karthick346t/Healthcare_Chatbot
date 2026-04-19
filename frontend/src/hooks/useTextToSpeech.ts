@@ -1,11 +1,13 @@
-import { useState, useCallback, useEffect, useContext } from "react";
+import { useState, useCallback, useEffect, useContext, useRef } from "react";
 import { LanguageContext } from "../context/LanguageContext";
+import { API_BASE_URL } from "../services/apiConfig";
 
 export function useTextToSpeech() {
     const { selectedLanguage } = useContext(LanguageContext);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [supported, setSupported] = useState(true);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
         if (!("speechSynthesis" in window)) {
@@ -67,7 +69,24 @@ export function useTextToSpeech() {
             .trim();
     };
 
-    const speak = useCallback((text: string) => {
+    const fetchGoogleTts = async (text: string, lang: string): Promise<string | null> => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/tts/tts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, languageCode: lang })
+            });
+
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data.audioContent;
+        } catch (error) {
+            console.error("[TTS Hook] Google TTS fetch failed:", error);
+            return null;
+        }
+    };
+
+    const speak = useCallback(async (text: string) => {
         if (!supported) return;
 
         // Cancel any ongoing speech
@@ -77,6 +96,39 @@ export function useTextToSpeech() {
         if (!cleanedText) return;
 
         const langTag = detectLanguage(text);
+
+        // --- 1. Attempt Google Cloud TTS (Premium) ---
+        setIsSpeaking(true);
+        const googleAudio = await fetchGoogleTts(cleanedText, langTag);
+
+        if (googleAudio) {
+            try {
+                console.info(`[TTS Hook] 🚀 Using High-Quality Google Cloud TTS (${langTag})`);
+                
+                // Cleanup previous audio if any
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                    audioRef.current = null;
+                }
+
+                const audio = new Audio(`data:audio/mp3;base64,${googleAudio}`);
+                audioRef.current = audio;
+
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    audioRef.current = null;
+                };
+
+                audio.play();
+                return; // Audio found, we're done!
+            } catch (err) {
+                console.error("[TTS Hook] Error playing Google audio:", err);
+                audioRef.current = null;
+            }
+        }
+
+        // --- 2. Fallback to Native Speech API (Free) ---
+        console.log("[TTS Hook] Falling back to native browser speech synthesis");
         const utterance = new SpeechSynthesisUtterance(cleanedText);
         utterance.lang = langTag;
 
@@ -100,7 +152,15 @@ export function useTextToSpeech() {
     }, [selectedLanguage, supported, voices]);
 
     const stop = useCallback(() => {
+        // Stop browser native speech
         window.speechSynthesis.cancel();
+        
+        // Stop Google Cloud audio
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+
         setIsSpeaking(false);
     }, []);
 

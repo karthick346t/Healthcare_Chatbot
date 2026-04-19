@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand, ServerSideEncryption } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
@@ -26,6 +26,7 @@ export const uploadSessionToS3 = async (sessionId: string, data: any, userId?: s
       Key: `${folder}/${sessionId}.json`,
       Body: JSON.stringify(data, null, 2),
       ContentType: 'application/json',
+      ServerSideEncryption: ServerSideEncryption.AES256,
     };
 
     const command = new PutObjectCommand(params);
@@ -55,6 +56,7 @@ export const uploadUserBackup = async (user: any) => {
       Key: `users/${userObj._id}.json`,
       Body: JSON.stringify(userObj, null, 2),
       ContentType: 'application/json',
+      ServerSideEncryption: ServerSideEncryption.AES256,
     };
 
     const command = new PutObjectCommand(params);
@@ -90,6 +92,7 @@ export const uploadFileToS3 = async (
       Key: key,
       Body: fileStream,
       ContentType: mimeType,
+      ServerSideEncryption: ServerSideEncryption.AES256,
     };
 
     const command = new PutObjectCommand(params);
@@ -125,6 +128,7 @@ export const uploadAppointmentBackup = async (appointment: any, userId: string):
       Key: `appointments/${userId}/${appointmentId}.json`,
       Body: JSON.stringify(appointment, null, 2),
       ContentType: 'application/json',
+      ServerSideEncryption: ServerSideEncryption.AES256,
     };
 
     const command = new PutObjectCommand(params);

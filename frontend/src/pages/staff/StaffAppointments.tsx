@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { MdRefresh, MdCheckCircle, MdPayment, MdPlayCircleOutline, MdDoneAll, MdEventAvailable } from 'react-icons/md';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function StaffAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -10,7 +11,7 @@ export default function StaffAppointments() {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/appointments/today');
+      const res = await fetchWithAuth('/api/appointments/today');
       setAppointments(await res.json());
     } catch (err) {
       console.error(err);
@@ -34,7 +35,7 @@ export default function StaffAppointments() {
     else return;
 
     try {
-      await fetch(`/api/appointments/${id}/status`, {
+      await fetchWithAuth(`/api/appointments/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
@@ -48,7 +49,7 @@ export default function StaffAppointments() {
 
   const markAsPaid = async (id: string) => {
     try {
-      await fetch(`/api/appointments/${id}/payment`, {
+      await fetchWithAuth(`/api/appointments/${id}/payment`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paymentStatus: 'paid' })

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { MdTrendingUp, MdPeople, MdEventAvailable, MdPayments } from 'react-icons/md';
+import { fetchWithAuth } from '../../services/authApi';
 
 const STATS = [
   { label: 'Total Walk-ins', value: '12', icon: MdTrendingUp, color: 'text-blue-600', bg: 'bg-blue-100' },
@@ -22,7 +23,7 @@ export default function StaffDashboard() {
     try {
       setLoading(true);
       // In a real scenario, this would aggregate data. We'll use the today's appointments API to calculate stats.
-      const res = await fetch('/api/appointments/today');
+      const res = await fetchWithAuth('/api/appointments/today');
       const data = await res.json();
       setAppointments(data);
 

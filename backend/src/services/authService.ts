@@ -7,11 +7,20 @@ import { uploadUserBackup } from './awsService';
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
 /**
- * Generate JWT token for a user
+ * Generate Access JWT token for a user
  */
-export function generateToken(userId: string): string {
+export function generateAccessToken(userId: string): string {
     return jwt.sign({ userId }, config.JWT_SECRET, {
-        expiresIn: '7d',
+        expiresIn: (config.JWT_EXPIRES_IN || '15m') as any,
+    });
+}
+
+/**
+ * Generate Refresh JWT token for a user
+ */
+export function generateRefreshToken(userId: string): string {
+    return jwt.sign({ userId }, config.JWT_REFRESH_SECRET || config.JWT_SECRET, {
+        expiresIn: (config.JWT_REFRESH_EXPIRES_IN || '7d') as any,
     });
 }
 
@@ -29,14 +38,15 @@ export async function registerUser(
     name: string,
     email: string,
     password: string
-): Promise<{ user: unknown; token: string }> {
+): Promise<{ user: unknown; accessToken: string; refreshToken: string }> {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
         throw new Error('An account with this email already exists');
     }
 
     const user = await User.create({ name, email, password });
-    const token = generateToken(String(user._id));
+    const accessToken = generateAccessToken(String(user._id));
+    const refreshToken = generateRefreshToken(String(user._id));
 
     // Trigger S3 User Backup (Non-blocking)
     uploadUserBackup(user).catch(err =>
@@ -46,7 +56,7 @@ export async function registerUser(
     const userObj = JSON.parse(JSON.stringify(user));
     delete userObj.password;
 
-    return { user: userObj, token };
+    return { user: userObj, accessToken, refreshToken };
 }
 
 /**
@@ -55,7 +65,7 @@ export async function registerUser(
 export async function loginUser(
     email: string,
     password: string
-): Promise<{ user: unknown; token: string }> {
+): Promise<{ user: unknown; accessToken: string; refreshToken: string }> {
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
         throw new Error('Invalid email or password');
@@ -70,7 +80,8 @@ export async function loginUser(
         throw new Error('Invalid email or password');
     }
 
-    const token = generateToken(String(user._id));
+    const accessToken = generateAccessToken(String(user._id));
+    const refreshToken = generateRefreshToken(String(user._id));
 
     // Trigger S3 User Backup (Non-blocking) - Keep backup fresh on login
     uploadUserBackup(user).catch(err =>
@@ -80,7 +91,7 @@ export async function loginUser(
     const userObj = JSON.parse(JSON.stringify(user));
     delete userObj.password;
 
-    return { user: userObj, token };
+    return { user: userObj, accessToken, refreshToken };
 }
 
 /**
@@ -88,7 +99,7 @@ export async function loginUser(
  */
 export async function googleLogin(
     idToken: string
-): Promise<{ user: IUser; token: string }> {
+): Promise<{ user: IUser; accessToken: string; refreshToken: string }> {
     console.log(`🔐 Verifying Google Token for Client ID: ${config.GOOGLE_CLIENT_ID}`);
     try {
         const ticket = await googleClient.verifyIdToken({
@@ -140,8 +151,9 @@ export async function googleLogin(
             console.error(`⚠️ S3 User Backup Failed for ${user._id}:`, err)
         );
 
-        const token = generateToken(String(user._id));
-        return { user, token };
+        const accessToken = generateAccessToken(String(user._id));
+        const refreshToken = generateRefreshToken(String(user._id));
+        return { user, accessToken, refreshToken };
     } catch (error: any) {
         console.error("❌ Google Verification Error:", error.message);
         if (error.message.includes("Wrong recipient")) {

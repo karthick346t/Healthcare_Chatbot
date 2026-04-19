@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import app from "./app";
 import config from "./config";
-import { vectorStore, loadPrecomputedEmbeddings } from "./services/ragService";
+
 
 // Load environment variables immediately
 dotenv.config();
@@ -29,21 +29,7 @@ async function initializeServer() {
     if (config.RAG_ENABLED) {
       console.log("🚀 Initializing RAG system...");
 
-      // Load precomputed MedlinePlus embeddings from Python pipeline
-      await loadPrecomputedEmbeddings();
-
-      const docCount = vectorStore.getDocuments().length;
-
-      if (docCount === 0) {
-        console.warn(
-          "⚠️  Vector store is still empty after loading precomputed embeddings.\n" +
-            "   Make sure src/data/medlineplus_embeddings.jsonl exists and is not empty."
-        );
-      } else {
-        console.log(
-          `✅ RAG system ready with ${docCount} document chunks indexed`
-        );
-      }
+      console.log("✅ Pinecone RAG system is enabled and configured");
     } else {
       console.log("ℹ️  RAG system is disabled (RAG_ENABLED=false)");
     }

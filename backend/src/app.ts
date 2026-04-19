@@ -3,6 +3,7 @@ import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import i18next from 'i18next';
 import Backend from 'i18next-fs-backend';
 import i18nextMiddleware from 'i18next-http-middleware';
@@ -16,13 +17,25 @@ import backupRouter from './routes/backup';
 import adminRouter from './routes/admin';
 import doctorRouter from './routes/doctors';
 import reportRouter from './routes/reports';
+import ttsRouter from './routes/ttsRoutes';
 import localizationMiddleware from './middleware/localization';
 import { auditLogger } from './middleware/audit';
 import config from './config';
 
 import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
+import logger from './utils/logger';
 
 const app = express();
+
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url}`, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+  next();
+});
 
 // ─────────────────────────────────────────────
 // Security Headers (Helmet)
@@ -79,9 +92,10 @@ const authLimiter = rateLimit({
 });
 
 // ─────────────────────────────────────────────
-// Body Parser
+// Body & Cookie Parsers
 // ─────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }));
+app.use(cookieParser());
 
 // ─────────────────────────────────────────────
 // i18n Internationalization
@@ -131,6 +145,10 @@ app.use('/api/appointments', appointmentRouter);
 app.use('/api/doctors', doctorRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/reports', reportRouter);
+app.use('/api/tts', ttsRouter);
+
+// Swagger UI configuration
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ─────────────────────────────────────────────
 // Serve Frontend (Single-Port Deployment)

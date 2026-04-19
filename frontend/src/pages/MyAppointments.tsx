@@ -8,6 +8,7 @@ import {
 } from 'react-icons/hi';
 import { MdArrowBack } from 'react-icons/md';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchWithAuth } from '../services/authApi';
 
 export default function MyAppointments() {
     const { t } = useTranslation();
@@ -31,9 +32,7 @@ export default function MyAppointments() {
     const fetchAppointments = async () => {
         try {
             const userId = user?.userId || (user as any)?._id;
-            const res = await fetch(`/api/appointments/my-appointments?userId=${userId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await fetchWithAuth(`/api/appointments/my-appointments?userId=${userId}`);
             const data = await res.json();
             if (Array.isArray(data)) setAppointments(data);
         } catch (error) {
@@ -47,10 +46,9 @@ export default function MyAppointments() {
         if (!cancelAppt) return;
         setActionLoading(cancelAppt._id);
         try {
-            const res = await fetch(`/api/appointments/${cancelAppt._id}/cancel`, {
+            const res = await fetchWithAuth(`/api/appointments/${cancelAppt._id}/cancel`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ userId: user?.userId || (user as any)?._id })

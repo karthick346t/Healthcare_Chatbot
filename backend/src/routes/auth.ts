@@ -4,7 +4,8 @@ import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
-import { registerUser, loginUser, googleLogin } from '../services/authService';
+import config from '../config';
+import { registerUser, loginUser, googleLogin, generateAccessToken } from '../services/authService';
 import authMiddleware from '../middleware/auth';
 
 const router = Router();
@@ -35,8 +36,14 @@ router.post(
 
         try {
             const { name, email, password } = req.body;
-            const result = await registerUser(name, email, password);
-            res.status(201).json(result);
+            const { user, accessToken, refreshToken } = await registerUser(name, email, password);
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+            res.status(201).json({ user, token: accessToken });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Registration failed';
             const status = message.includes('already exists') ? 409 : 500;
@@ -64,8 +71,14 @@ router.post(
 
         try {
             const { email, password } = req.body;
-            const result = await loginUser(email, password);
-            res.json(result);
+            const { user, accessToken, refreshToken } = await loginUser(email, password);
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+            res.json({ user, token: accessToken });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Login failed';
             res.status(401).json({ error: message });
@@ -88,14 +101,53 @@ router.post(
 
         try {
             const { idToken } = req.body;
-            const result = await googleLogin(idToken);
-            res.json(result);
+            const { user, accessToken, refreshToken } = await googleLogin(idToken);
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+            res.json({ user, token: accessToken });
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Google auth failed';
             res.status(401).json({ error: 'Google authentication failed. ' + message });
         }
     }
 );
+
+/**
+ * POST /api/auth/refresh
+ * Refreshes the access token using the httpOnly cookie
+ */
+router.post('/refresh', async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+        return res.status(401).json({ error: 'No refresh token provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET || config.JWT_SECRET) as { userId: string };
+        
+        // Generate new access token
+        const newAccessToken = generateAccessToken(decoded.userId);
+        res.json({ token: newAccessToken });
+    } catch (err) {
+        return res.status(403).json({ error: 'Invalid or expired refresh token' });
+    }
+});
+
+/**
+ * POST /api/auth/logout
+ */
+router.post('/logout', (req: Request, res: Response) => {
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    });
+    res.json({ message: 'Logged out successfully' });
+});
 
 /**
  * GET /api/auth/me

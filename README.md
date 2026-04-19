@@ -1,4 +1,4 @@
-# 🏥 Healthcare Chatbot — AURA / NEXA
+# 🏥 Healthcare Chatbot — NEXA
 
 An intelligent healthcare assistant powered by **RAG (Retrieval-Augmented Generation)**, multi-model AI fallback, and cloud storage. Features appointment booking via conversational AI, multilingual support, and medical document analysis.
 
@@ -6,25 +6,50 @@ An intelligent healthcare assistant powered by **RAG (Retrieval-Augmented Genera
 
 ## 🏗️ Architecture
 
-```
-┌────────────────────┐    ┌────────────────────┐    ┌──────────────────┐
-│  Frontend (Vite)   │───▶│  Backend (Express) │───▶│  MongoDB Atlas   │
-│  React + TypeScript│    │  Node.js + JWT Auth│    │  (Chat, Users,   │
-│  Port 5173         │    │  Port 4000         │    │   Appointments)  │
-└────────────────────┘    └─────────┬──────────┘    └──────────────────┘
-                                    │
-              ┌─────────────────────┼──────────────────────┐
-              ▼                     ▼                      ▼
-   ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-   │  OpenRouter LLM  │  │  Groq (Fallback) │  │    AWS S3        │
-   │  (gpt-oss-120b)  │  │  LLaMA 70B / 8B  │  │  (Backups)       │
-   └──────────────────┘  └──────────────────┘  └──────────────────┘
-              │
-   ┌──────────▼──────────┐    ┌──────────────────────┐
-   │  RAG Pipeline        │    │  Translation API     │
-   │  Python FAISS index  │    │  FastAPI + M2M100    │
-   │  SBERT all-MiniLM   │    │  Port 8000           │
-   └─────────────────────┘    └──────────────────────┘
+```mermaid
+graph TD
+    classDef frontend fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff
+    classDef backend fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
+    classDef db fill:#f59e0b,stroke:#b45309,stroke-width:2px,color:#fff
+    classDef ai fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#fff
+    classDef ext fill:#64748b,stroke:#334155,stroke-width:2px,color:#fff
+
+    subgraph User Browser
+        UI[React + Vite Frontend\nTypeScript & Tailwind]
+    end
+
+    subgraph Backend Infrastructure
+        API[Express 5 Node.js Backend\nREST API & JWT Auth]
+        UI -->|HTTPs Requests| API
+        
+        DB[(MongoDB Atlas\nUser Data & Chat History\nEncrypted at Rest)]
+        API <-->|Mongoose ODM| DB
+    end
+
+    subgraph AI Processing Pipeline
+        API -->|Semantic Search| PINECONE[(Pinecone Vector DB\nMedical Knowledge)]
+        API -->|LLM Queries| OR[OpenRouter API\nPrimary: gpt-oss-120b]
+        API -->|LLM Fallback| GROQ[Groq API\nFallback: LLaMA 70B/8B]
+        
+        API -.->|Translation| FAST(FastAPI Microservice\nFacebook M2M100)
+    end
+
+    subgraph External Systems
+        API -->|File Backup / SSE| S3[(AWS S3\nChat & PDF Archives)]
+        API -->|Auth| GOOG(Google OAuth 2.0)
+        API -.->|Alerts| MAIL(Nodemailer SMTP)
+    end
+
+    UI:::frontend
+    API:::backend
+    DB:::db
+    PINECONE:::db
+    S3:::db
+    OR:::ai
+    GROQ:::ai
+    FAST:::ext
+    GOOG:::ext
+    MAIL:::ext
 ```
 
 ---
@@ -139,8 +164,8 @@ Verify it's healthy: **[http://localhost:4000/healthz](http://localhost:4000/hea
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Frontend will run on: **[http://localhost:5173](http://localhost:5173)**

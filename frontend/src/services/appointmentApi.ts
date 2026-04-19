@@ -1,15 +1,11 @@
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL ||
-    (import.meta.env.DEV ? "http://localhost:4000" : "");
+import { API_BASE_URL } from './apiConfig';
 
 const BASE_PATH = `${API_BASE_URL}/api/appointments`;
 
-const getToken = () => localStorage.getItem('healthbot_token');
+import { fetchWithAuth } from './authApi';
 
 const getAuthHeaders = (): HeadersInit => {
-    const token = getToken();
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
     return headers;
 };
 
@@ -50,13 +46,13 @@ export interface Appointment {
 export const appointmentApi = {
     getHospitals: async (district?: string): Promise<Hospital[]> => {
         const url = district ? `${BASE_PATH}/hospitals?district=${district}` : `${BASE_PATH}/hospitals`;
-        const response = await fetch(url, { headers: { ...getAuthHeaders() } });
+        const response = await fetchWithAuth(url, { headers: { ...getAuthHeaders() } });
         if (!response.ok) throw new Error('Failed to fetch hospitals');
         return response.json();
     },
 
     getDoctors: async (hospitalId: string): Promise<Doctor[]> => {
-        const response = await fetch(`${BASE_PATH}/hospitals/${hospitalId}/doctors`, { headers: { ...getAuthHeaders() } });
+        const response = await fetchWithAuth(`${BASE_PATH}/hospitals/${hospitalId}/doctors`, { headers: { ...getAuthHeaders() } });
         if (!response.ok) throw new Error('Failed to fetch doctors');
         return response.json();
     },
@@ -74,7 +70,7 @@ export const appointmentApi = {
         userId?: string;
         status?: string;
     }): Promise<Appointment> => {
-        const response = await fetch(`${BASE_PATH}/book`, {
+        const response = await fetchWithAuth(`${BASE_PATH}/book`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(data),
@@ -92,19 +88,19 @@ export const appointmentApi = {
         availableSlots: number;
         isFull: boolean;
     }> => {
-        const response = await fetch(`${BASE_PATH}/check-availability?doctorId=${doctorId}&appointmentDate=${appointmentDate}`, { headers: { ...getAuthHeaders() } });
+        const response = await fetchWithAuth(`${BASE_PATH}/check-availability?doctorId=${doctorId}&appointmentDate=${appointmentDate}`, { headers: { ...getAuthHeaders() } });
         if (!response.ok) throw new Error('Failed to check availability');
         return response.json();
     },
 
     checkAppointmentStatus: async (appointmentId: string): Promise<{ status: string }> => {
-        const response = await fetch(`${BASE_PATH}/${appointmentId}/status`, { headers: { ...getAuthHeaders() } });
+        const response = await fetchWithAuth(`${BASE_PATH}/${appointmentId}/status`, { headers: { ...getAuthHeaders() } });
         if (!response.ok) throw new Error('Failed to fetch appointment status');
         return response.json();
     },
 
     simulateUpiPayment: async (appointmentId: string): Promise<{ success: boolean; message: string }> => {
-        const response = await fetch(`${BASE_PATH}/webhook/upi-mock`, {
+        const response = await fetchWithAuth(`${BASE_PATH}/webhook/upi-mock`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({ appointmentId }),

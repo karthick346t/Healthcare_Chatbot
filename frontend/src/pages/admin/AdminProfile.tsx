@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { HiUser, HiPhone, HiLocationMarker, HiSave, HiOutlinePencil, HiBriefcase, HiMail } from 'react-icons/hi';
 import { MdAdminPanelSettings } from 'react-icons/md';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function AdminProfile() {
     const { user, token } = useAuth();
@@ -42,11 +43,10 @@ export default function AdminProfile() {
                 address: formData.address,
             };
 
-            const res = await fetch('/api/auth/profile', {
+            const res = await fetchWithAuth('/api/auth/profile', {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });

@@ -11,7 +11,10 @@ const REQUIRED_VARS = [
   'AWS_ACCESS_KEY_ID',
   'AWS_SECRET_ACCESS_KEY',
   'AWS_BUCKET_NAME',
-  'OPENROUTER_API_KEY'
+  'OPENROUTER_API_KEY',
+  'PINECONE_API_KEY',
+  'PINECONE_INDEX_NAME',
+  'JWT_REFRESH_SECRET'
 ];
 
 const missing = REQUIRED_VARS.filter(v => !process.env[v] || process.env[v]!.trim() === "");
@@ -39,10 +42,14 @@ export default {
   RAG_ENABLED: process.env.RAG_ENABLED !== "false", // Default: true
   RAG_TOP_K: parseInt(process.env.RAG_TOP_K || "5"),
   RAG_SIMILARITY_THRESHOLD: parseFloat(process.env.RAG_SIMILARITY_THRESHOLD || "0.45"),
+  PINECONE_API_KEY: process.env.PINECONE_API_KEY as string,
+  PINECONE_INDEX_NAME: process.env.PINECONE_INDEX_NAME as string,
 
   // Auth Configuration — JWT_SECRET validated above
   JWT_SECRET,
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "15m",
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,
+  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
 
   // CORS — set FRONTEND_ORIGIN in .env for production

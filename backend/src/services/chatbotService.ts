@@ -11,6 +11,10 @@ import mongoose from "mongoose";
 import { uploadAppointmentBackup } from "./awsService";
 import { notificationService } from "./notificationService";
 import symptomChecker from "./symptomChecker";
+import NodeCache from "node-cache";
+
+// Initialize cache with standard TTL of 5 minutes (300 seconds), checking for expired keys every 30 seconds
+const cache = new NodeCache({ stdTTL: 300, checkperiod: 30 });
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -88,34 +92,30 @@ interface RequestContext {
   doctorContext: string;
 }
 
-// ----------------------------------------
-// 🔹 Doctor context cache (5-minute TTL)
-// ----------------------------------------
-let _doctorContextCache: string | null = null;
-let _doctorContextExpiry = 0;
-
 async function buildDoctorContext(): Promise<string> {
-  const now = Date.now();
-  if (_doctorContextCache && now < _doctorContextExpiry) {
-    return _doctorContextCache;
+  const cachedContext = cache.get<string>("doctorContext");
+  if (cachedContext) {
+    return cachedContext;
   }
+
   try {
     const doctors = await Doctor.find().populate("hospitalId", "name location").lean();
+    let docStr = "";
     if (!doctors || doctors.length === 0) {
-      _doctorContextCache = "No doctors are currently available in the database.";
+      docStr = "No doctors are currently available in the database.";
     } else {
-      let docStr = `### 📋 Available Doctors in Database\n\n`;
+      docStr = `### 📋 Available Doctors in Database\n\n`;
       doctors.forEach((doc: any) => {
         const hospitalName = doc.hospitalId?.name || "Unknown Hospital";
         const location = doc.hospitalId?.location || "Unknown Location";
         const hospitalId = doc.hospitalId?._id || "Unknown_Hospital_ID";
         docStr += `- Dr. ${doc.name} (Specialty: ${doc.specialty}) at ${hospitalName} (${location}).\n  Doctor ID: ${doc._id}\n  Hospital ID: ${hospitalId}\n\n`;
       });
-      _doctorContextCache = docStr;
     }
-    // Cache for 5 minutes
-    _doctorContextExpiry = now + 5 * 60 * 1000;
-    return _doctorContextCache;
+    
+    // Save string context in cache, implicitly using the 300s TTL configured
+    cache.set("doctorContext", docStr);
+    return docStr;
   } catch (error) {
     console.error("Failed to fetch doctors for chatbot context:", error);
     return "Error fetching doctor list.";
@@ -184,7 +184,7 @@ function buildSystemPrompt(
   ragContext?: string
 ): { role: string; content: string } {
   const basePrompt = `
-You are **AURA**, an advanced and empathetic **Virtual Health Assistant** created to empower individuals with reliable, science-backed health and wellness guidance.
+You are **NEXA**, an advanced and empathetic **Virtual Health Assistant** created to empower individuals with reliable, science-backed health and wellness guidance.
 
 ---
 

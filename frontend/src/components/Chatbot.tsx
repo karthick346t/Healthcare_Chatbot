@@ -336,7 +336,7 @@ export default function Chatbot() {
         />
 
         <p className="text-[10px] text-neutral-medium text-center mt-1 opacity-70">
-          AURA is an AI assistant. Always consult a licensed doctor for medical decisions.
+          NEXA is an AI assistant. Always consult a licensed doctor for medical decisions.
         </p>
       </div>
     </div>

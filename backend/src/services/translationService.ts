@@ -9,11 +9,19 @@ export async function translateViaM2M100(
 ): Promise<string> {
   if (!text || from === to) return text;
   try {
-    const resp = await axios.post<{ translation: string }>(M2M_SERVER, {
-      text,
-      source_lang: from,
-      target_lang: to,
-    });
+    const resp = await axios.post<{ translation: string }>(
+      M2M_SERVER,
+      {
+        text,
+        source_lang: from,
+        target_lang: to,
+      },
+      {
+        headers: {
+          'Translation-API-Key': process.env.TRANSLATION_API_KEY || 'default-dev-key',
+        },
+      }
+    );
     return resp.data.translation;
   } catch (err: any) {
     console.error(

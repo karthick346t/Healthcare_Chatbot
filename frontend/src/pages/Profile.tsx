@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
+import { fetchWithAuth } from '../services/authApi';
 import { HiUser, HiPhone, HiLocationMarker, HiCalendar, HiSave, HiOutlinePencil } from 'react-icons/hi';
 import { MdMedicalServices, MdWarning, MdEmergency, MdBloodtype, MdArrowBack } from 'react-icons/md';
 
@@ -71,11 +72,10 @@ export default function Profile() {
                 }
             };
 
-            const res = await fetch('/api/auth/profile', {
+            const res = await fetchWithAuth('/api/auth/profile', {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });

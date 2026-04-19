@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HiTrash, HiSearch, HiUser } from 'react-icons/hi';
 import { useAuth } from '../../hooks/useAuth';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function AdminUsers() {
     const { token } = useAuth();
@@ -10,9 +11,7 @@ export default function AdminUsers() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('/api/admin/users', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetchWithAuth('/api/admin/users');
             const data = await res.json();
             setUsers(data);
         } catch (err) {
@@ -29,9 +28,8 @@ export default function AdminUsers() {
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
         try {
-            await fetch(`/api/admin/users/${id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
+            await fetchWithAuth(`/api/admin/users/${id}`, {
+                method: 'DELETE'
             });
             fetchUsers();
         } catch (err) {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { HiDocumentText, HiDownload, HiPlus, HiBeaker, HiClipboardList } from 'react-icons/hi';
 import { MdArrowBack } from 'react-icons/md';
+import { fetchWithAuth } from '../services/authApi';
 
 interface Report {
     _id: string;
@@ -40,7 +41,7 @@ export default function MedicalRecords() {
         try {
             // Retrieve patient name from profile or auth context in real app
             // For demo, we'll just fetch "My Reports" with a hardcoded name or just list all for the user
-            const response = await fetch('/api/reports/my-reports?patientName=Demo User');
+            const response = await fetchWithAuth('/api/reports/my-reports?patientName=Demo User');
             if (response.ok) {
                 const data = await response.json();
                 setReports(data);
@@ -68,7 +69,7 @@ export default function MedicalRecords() {
             const formData = new FormData();
             formData.append('file', newReport.file);
 
-            const uploadRes = await fetch('/api/upload', {
+            const uploadRes = await fetchWithAuth('/api/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -94,7 +95,7 @@ export default function MedicalRecords() {
                 date: new Date()
             };
 
-            const reportRes = await fetch('/api/reports', {
+            const reportRes = await fetchWithAuth('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(reportData)

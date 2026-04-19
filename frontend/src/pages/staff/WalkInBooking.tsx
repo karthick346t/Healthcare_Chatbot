@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import { MdPersonAdd, MdCheckCircle } from 'react-icons/md';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function WalkInBooking() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function WalkInBooking() {
 
   const fetchHospitals = async () => {
     try {
-      const res = await fetch('/api/appointments/hospitals');
+      const res = await fetchWithAuth('/api/appointments/hospitals');
       setHospitals(await res.json());
     } catch (err) {
       console.error(err);
@@ -38,7 +39,7 @@ export default function WalkInBooking() {
     setFormData({ ...formData, hospitalId: hid, doctorId: '' });
     if (hid) {
       try {
-        const res = await fetch(`/api/appointments/hospitals/${hid}/doctors`);
+        const res = await fetchWithAuth(`/api/appointments/hospitals/${hid}/doctors`);
         setDoctors(await res.json());
       } catch (err) {
         console.error(err);
@@ -52,7 +53,7 @@ export default function WalkInBooking() {
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch('/api/appointments/walk-in', {
+      await fetchWithAuth('/api/appointments/walk-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

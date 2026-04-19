@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { HiUserGroup, HiCalendar, HiClock, HiOfficeBuilding } from 'react-icons/hi';
+import { fetchWithAuth } from '../services/authApi';
 
 interface Stats {
     users: number;
@@ -36,13 +37,12 @@ export default function AdminDashboard() {
     const fetchData = async () => {
         try {
             const headers = {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
+                "Content-Type": "application/json"
             };
 
-            const statsRes = await fetch(`${API_BASE}/stats`, { headers });
-            const usersRes = await fetch(`${API_BASE}/users`, { headers });
-            const apptsRes = await fetch(`${API_BASE}/appointments?limit=5`, { headers });
+            const statsRes = await fetchWithAuth(`${API_BASE}/stats`, { headers });
+            const usersRes = await fetchWithAuth(`${API_BASE}/users`, { headers });
+            const apptsRes = await fetchWithAuth(`${API_BASE}/appointments?limit=5`, { headers });
 
             if (!statsRes.ok) throw new Error("Failed to fetch data");
 

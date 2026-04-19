@@ -10,6 +10,8 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { Pinecone } from '@pinecone-database/pinecone';
+import config from '../config';
 // import { pipeline } from "@xenova/transformers"; // Removed for dynamic import compatibility
 
 // ============================================
@@ -195,105 +197,93 @@ export async function embedChunks(
   return embeddedChunks;
 }
 
-// ============================================
-// Vector Store (In-Memory)
-// ============================================
+const pc = new Pinecone({
+  apiKey: config.PINECONE_API_KEY
+});
+const index = pc.index(config.PINECONE_INDEX_NAME);
 
-class VectorStore {
-  private documents: DocumentChunk[] = [];
-
-  /**
-   * Add documents to the vector store (computes embeddings for them).
-   * Use this for NEW documents indexed from Node.
-   */
+class PineconeStore {
   async addDocuments(chunks: DocumentChunk[]): Promise<void> {
     const embedded = await embedChunks(chunks);
-    this.documents.push(...embedded);
-    console.log(
-      `[RAG] Added ${embedded.length} chunks to vector store (total: ${this.documents.length})`
-    );
+    const vectors = embedded.map(chunk => {
+      // Pinecone allows certain nested formats but keeping it flat is safer.
+      const md = {
+        source: chunk.metadata.source,
+        documentType: chunk.metadata.documentType || "general",
+        section: chunk.metadata.section || "",
+        text: chunk.content
+      };
+      
+      return {
+        id: chunk.id,
+        values: chunk.embedding as number[],
+        metadata: md
+      };
+    }).filter(v => v.values && v.values.length > 0);
+    
+    // Batch upserts to Pinecone
+    const batchSize = 100;
+    for (let i = 0; i < vectors.length; i += batchSize) {
+      const batch = vectors.slice(i, i + batchSize);
+      await index.upsert({ records: batch });
+    }
+    
+    console.log(`[RAG] Upserted ${vectors.length} chunks to Pinecone index ${config.PINECONE_INDEX_NAME}`);
   }
 
-  /**
-   * Add documents that ALREADY have embeddings (from Python RAG export).
-   */
-  async addPreembeddedDocuments(chunks: DocumentChunk[]): Promise<void> {
-    const valid = chunks.filter(
-      (c) => Array.isArray(c.embedding) && c.embedding!.length > 0
-    );
-    this.documents.push(...valid);
-    console.log(
-      `[RAG] Loaded ${valid.length} pre-embedded chunks into vector store (total: ${this.documents.length})`
-    );
+  async getStats(): Promise<{ totalCount: number }> {
+    try {
+      const stats = await index.describeIndexStats();
+      return { totalCount: stats.totalRecordCount || 0 };
+    } catch (err) {
+      console.error("[Pinecone] Failed to get stats", err);
+      return { totalCount: 0 };
+    }
   }
 
-  /**
-   * Search for similar documents using cosine similarity
-   */
   async search(
     queryEmbedding: number[],
-    topK: number = TOP_K,
-    threshold: number = SIMILARITY_THRESHOLD,
-    filters?: { documentType?: string; source?: string }
+    topK: number,
+    threshold: number,
+    filters?: any
   ): Promise<RetrievalResult[]> {
-    if (this.documents.length === 0) {
-      return [];
+    const queryRequest: any = {
+      vector: queryEmbedding,
+      topK: topK,
+      includeMetadata: true
+    };
+    if (filters && Object.keys(filters).length > 0) {
+      queryRequest.filter = filters;
     }
 
-    // Calculate cosine similarity for all documents
-    const similarities = this.documents
-      .map((doc, index) => {
-        if (!doc.embedding) return null;
-
-        // Apply filters
-        if (
-          filters?.documentType &&
-          doc.metadata.documentType !== filters.documentType
-        ) {
-          return null;
-        }
-        if (filters?.source && doc.metadata.source !== filters.source) {
-          return null;
-        }
-
-        const similarity = cosineSimilarity(queryEmbedding, doc.embedding);
-        return {
-          chunk: doc,
-          similarity,
-          rank: index,
-        };
-      })
-      .filter(
-        (result): result is RetrievalResult =>
-          result !== null && result.similarity >= threshold
-      )
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, topK)
-      .map((result, index) => ({
-        ...result,
-        rank: index + 1,
-      }));
-
-    return similarities;
-  }
-
-  /**
-   * Get all documents (for debugging)
-   */
-  getDocuments(): DocumentChunk[] {
-    return this.documents;
-  }
-
-  /**
-   * Clear the vector store
-   */
-  clear(): void {
-    this.documents = [];
+    try {
+      const response = await index.query(queryRequest);
+      const matches = response.matches || [];
+      
+      return matches
+        .filter(match => match.score && match.score >= threshold)
+        .map((match, idx) => ({
+          chunk: {
+            id: match.id,
+            content: (match.metadata as any)?.text || "",
+            metadata: {
+              source: (match.metadata as any)?.source || "unknown",
+              documentType: ((match.metadata as any)?.documentType as any) || "general",
+              section: (match.metadata as any)?.section
+            }
+          },
+          similarity: match.score as number,
+          rank: idx + 1
+        }));
+    } catch (err: any) {
+      console.error("[Pinecone] Search failed", err);
+      return [];
+    }
   }
 }
 
-// Singleton instance
-const vectorStore = new VectorStore();
+// Global instance to expose for backward API compatibility with our script structures
+const vectorStore = new PineconeStore();
 
 // ============================================
 // Cosine Similarity Calculation
@@ -366,17 +356,6 @@ export async function retrieveContext(
   } = {}
 ): Promise<RAGContext> {
   try {
-    // Check if vector store has documents
-    const docCount = vectorStore.getDocuments().length;
-    if (docCount === 0) {
-      console.log("[RAG] Vector store is empty. No documents indexed yet.");
-      return {
-        retrievedDocs: [],
-        query,
-        timestamp: new Date().toISOString(),
-      };
-    }
-
     // 1. Reformulate query with conversation context
     const reformulatedQuery = await reformulateQuery(query, conversationHistory);
     console.log(`[RAG] Reformulated query: "${reformulatedQuery}"`);
@@ -390,8 +369,8 @@ export async function retrieveContext(
     if (options.documentType) filters.documentType = options.documentType;
     if (options.source) filters.source = options.source;
 
-    // 4. Search vector store
-    console.log(`[RAG] Searching ${docCount} documents in vector store...`);
+    // 4. Search Pinecone vector store
+    console.log(`[RAG] Searching Pinecone...`);
     const results = await vectorStore.search(
       queryEmbedding,
       options.topK || TOP_K,
@@ -447,54 +426,8 @@ export async function indexDocuments(
 
 // ============================================
 // Load Precomputed Embeddings from Python RAG
+// Deprecated: Now we use Pinecone upload script.
 // ============================================
-
-/**
- * Load precomputed MedlinePlus embeddings exported by the Python RAG pipeline.
- * Expects: src/data/medlineplus_embeddings.jsonl
- */
-export async function loadPrecomputedEmbeddings(): Promise<void> {
-  try {
-    const embeddingsPath = path.join(
-      process.cwd(),
-      "data",
-      "medlineplus_embeddings.jsonl"
-    );
-
-    if (!fs.existsSync(embeddingsPath)) {
-      console.warn(
-        `[RAG] Precomputed embeddings file not found at ${embeddingsPath}`
-      );
-      return;
-    }
-
-    const fileContents = fs.readFileSync(embeddingsPath, "utf-8");
-    const lines = fileContents
-      .split(/\r?\n/)
-      .filter((l) => l.trim().length > 0);
-
-    const docs: DocumentChunk[] = lines.map((line) => {
-      const rec: PrecomputedEmbeddingRecord = JSON.parse(line);
-      return {
-        id: rec.id,
-        content: rec.text,
-        metadata: {
-          source: rec.source,
-          section: `chunk_${rec.chunk_index}`,
-          documentType: "general", // you can refine this if you export documentType
-        },
-        embedding: rec.embedding,
-      };
-    });
-
-    await vectorStore.addPreembeddedDocuments(docs);
-  } catch (error: any) {
-    console.error(
-      "[RAG] Failed to load precomputed embeddings:",
-      error?.message || error
-    );
-  }
-}
 
 // ============================================
 // Exports
@@ -508,5 +441,4 @@ export default {
   embedChunks,
   reformulateQuery,
   vectorStore,
-  loadPrecomputedEmbeddings,
 };

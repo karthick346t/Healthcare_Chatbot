@@ -1,4 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { fieldEncryption } from 'mongoose-field-encryption';
+import config from '../config';
 
 export interface IMessage {
   role: 'user' | 'assistant';
@@ -31,5 +33,12 @@ const ChatSessionSchema: Schema = new Schema({
 });
 
 ChatSessionSchema.index({ sessionId: 1, userId: 1 });
+
+if (process.env.ENCRYPTION_KEY) {
+  ChatSessionSchema.plugin(fieldEncryption, {
+    fields: ['messages'],
+    secret: process.env.ENCRYPTION_KEY,
+  });
+}
 
 export default mongoose.model<IChatSession>('ChatSession', ChatSessionSchema);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HiTrash, HiPlus, HiSearch } from 'react-icons/hi';
 import { useAuth } from '../../hooks/useAuth';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function AdminDoctors() {
     const { token } = useAuth();
@@ -10,9 +11,7 @@ export default function AdminDoctors() {
 
     const fetchDoctors = async () => {
         try {
-            const res = await fetch('/api/admin/doctors', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetchWithAuth('/api/admin/doctors');
             const data = await res.json();
             setDoctors(data);
         } catch (err) {
@@ -29,9 +28,8 @@ export default function AdminDoctors() {
     const handleDelete = async (id: string, name: string) => {
         if (!window.confirm(`Are you sure you want to dismiss Dr. ${name}?`)) return;
         try {
-            await fetch(`/api/admin/doctors/${id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
+            await fetchWithAuth(`/api/admin/doctors/${id}`, {
+                method: 'DELETE'
             });
             fetchDoctors();
         } catch (err) {

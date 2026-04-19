@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { HiCheck, HiX, HiSearch, HiFilter } from 'react-icons/hi';
 import { useAuth } from '../../hooks/useAuth';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function AdminAppointments() {
     const { token } = useAuth();
@@ -11,9 +12,7 @@ export default function AdminAppointments() {
 
     const fetchAppointments = async () => {
         try {
-            const res = await fetch(`/api/admin/appointments?status=${filter}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetchWithAuth(`/api/admin/appointments?status=${filter}`);
             const data = await res.json();
             setAppointments(data.appointments);
         } catch (err) {
@@ -29,11 +28,10 @@ export default function AdminAppointments() {
 
     const handleStatusUpdate = async (id: string, status: string) => {
         try {
-            await fetch(`/api/admin/appointments/${id}/status`, {
+            await fetchWithAuth(`/api/admin/appointments/${id}/status`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ status })
             });

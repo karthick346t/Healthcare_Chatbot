@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const SESSION_KEY = "aura_disclaimer_accepted";
+const SESSION_KEY = "nexa_disclaimer_accepted";
 
 interface DisclaimerModalProps {
   onAccept: () => void;
@@ -61,7 +61,7 @@ export default function DisclaimerModal({ onAccept }: DisclaimerModalProps) {
             <div className="flex gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100">
               <span className="text-blue-500 text-lg mt-0.5 shrink-0">ℹ️</span>
               <p>
-                <strong>AURA</strong> is an AI-powered health assistant designed to provide
+                <strong>NEXA</strong> is an AI-powered health assistant designed to provide
                 general health information and wellness guidance. It is{" "}
                 <strong>not a licensed medical professional</strong>.
               </p>
@@ -70,7 +70,7 @@ export default function DisclaimerModal({ onAccept }: DisclaimerModalProps) {
             <div className="flex gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
               <span className="text-amber-500 text-lg mt-0.5 shrink-0">⚠️</span>
               <p>
-                Information provided by AURA should <strong>not</strong> be used as a
+                Information provided by NEXA should <strong>not</strong> be used as a
                 substitute for professional medical advice, diagnosis, or treatment.
               </p>
             </div>
@@ -97,7 +97,7 @@ export default function DisclaimerModal({ onAccept }: DisclaimerModalProps) {
               background: "linear-gradient(135deg, #06b6d4, #3b82f6)",
             }}
           >
-            I Understand — Continue to AURA
+            I Understand — Continue to NEXA
           </button>
         </div>
       </div>

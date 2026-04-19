@@ -15,17 +15,17 @@ const router = Router();
  * GET /api/rag/status
  * Get RAG system status
  */
-router.get('/status', (req: Request, res: Response) => {
+router.get('/status', async (req: Request, res: Response) => {
   try {
-    const documents = vectorStore.getDocuments();
-    const docCount = documents.length;
+    const stats = await vectorStore.getStats();
+    const docCount = stats.totalCount;
     
     res.json({
       enabled: config.RAG_ENABLED,
       documentCount: docCount,
       status: docCount > 0 ? 'active' : 'empty',
       message: docCount > 0 
-        ? `RAG is active with ${docCount} document chunks indexed`
+        ? `RAG is active with ${docCount} document chunks indexed in Pinecone`
         : 'RAG is enabled but no documents indexed yet. Use POST /api/rag/index to add documents.',
       configuration: {
         topK: config.RAG_TOP_K,
@@ -66,7 +66,8 @@ router.post('/index', async (req: Request, res: Response) => {
     }
     
     await indexDocuments(documents);
-    const docCount = vectorStore.getDocuments().length;
+    const stats = await vectorStore.getStats();
+    const docCount = stats.totalCount;
     
     res.json({
       success: true,

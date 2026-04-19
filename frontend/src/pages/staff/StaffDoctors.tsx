@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { MdBlock, MdEventBusy, MdClose } from 'react-icons/md';
+import { fetchWithAuth } from '../../services/authApi';
 
 export default function StaffDoctors() {
   const [doctors, setDoctors] = useState([]);
@@ -19,7 +20,7 @@ export default function StaffDoctors() {
   const fetchDoctors = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/doctors');
+      const res = await fetchWithAuth('/api/doctors');
       setDoctors(await res.json());
     } catch (err) {
       console.error(err);
@@ -38,7 +39,7 @@ export default function StaffDoctors() {
 
     try {
       setIsBlocking(true);
-      const res = await fetch(`/api/doctors/${selectedDoctor._id}/block`, {
+      const res = await fetchWithAuth(`/api/doctors/${selectedDoctor._id}/block`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
