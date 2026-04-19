@@ -1,35 +1,24 @@
 /**
- * RAG System Initialization Script
+ * RAG System Initialization Script (Pinecone)
  *
- * This version loads precomputed embeddings exported from the Python RAG pipeline.
- * No OpenRouter embedding calls. No CSV indexing. No sample documents.
+ * This script prints current Pinecone index stats.
+ * To add documents, use the uploadToPinecone.ts script instead.
  *
  * Usage:
  *   ts-node src/scripts/initializeRAG.ts
  */
 
-import { loadPrecomputedEmbeddings, vectorStore } from "../services/ragService";
+import { vectorStore } from "../services/ragService";
 
 async function main() {
-  console.log("🚀 Initializing RAG system...\n");
+  console.log("🚀 Checking RAG system (Pinecone)...\n");
 
   try {
-    console.log("📦 Loading precomputed MedlinePlus embeddings...");
-    await loadPrecomputedEmbeddings();
-
-    const count = vectorStore.getDocuments().length;
-
-    if (count === 0) {
-      console.warn(
-        "⚠️  No documents were loaded. Check that file exists at src/data/medlineplus_embeddings.jsonl"
-      );
-    } else {
-      console.log(`✅ Loaded ${count} medical chunks into vector store.`);
-    }
-
+    const stats = await vectorStore.getStats();
+    console.log(`✅ Pinecone index contains ${stats.totalCount} document chunks.`);
     console.log("\n🎉 RAG system is ready to use!");
   } catch (error: any) {
-    console.error("❌ RAG initialization failed:", error.message || error);
+    console.error("❌ RAG check failed:", error.message || error);
     process.exit(1);
   }
 }

@@ -6,15 +6,6 @@ import Appointment from '../models/Appointment';
 import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth';
 
-declare global {
-    namespace Express {
-        interface Request {
-            user?: {
-                userId: string;
-            };
-        }
-    }
-}
 
 const router = Router();
 

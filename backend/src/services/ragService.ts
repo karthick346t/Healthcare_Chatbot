@@ -322,20 +322,28 @@ export async function reformulateQuery(
   query: string,
   conversationHistory: any[] = []
 ): Promise<string> {
-  // Extract key medical terms from conversation history
-  const recentContext = conversationHistory
-    .slice(-4) // Last 4 messages
-    .map((msg) => msg.content)
-    .join(" ");
+  const trimmed = query.trim();
 
-  // Combine query with recent context
-  const enhancedQuery = recentContext
-    ? `${query}. Context: ${recentContext}`
-    : query;
+  // If the query is very short (likely a follow-up pronoun like "it", "that", "yes"),
+  // anchor it with just the first sentence of the last assistant reply so the
+  // embedding is meaningful without being polluted by full history.
+  if (trimmed.length < 25 && conversationHistory.length > 0) {
+    const lastBotMsg = [...conversationHistory]
+      .reverse()
+      .find((m) => m.role === 'assistant');
+    if (lastBotMsg) {
+      const anchor = lastBotMsg.content
+        .split(/[.!?]/)[0]  // First sentence only
+        .slice(0, 80)        // Max 80 chars
+        .trim();
+      if (anchor) {
+        return `${trimmed} (context: ${anchor})`;
+      }
+    }
+  }
 
-  // For now, return enhanced query
-  // In production, you could use DeepSeek / other model to reformulate.
-  return enhancedQuery;
+  // Default: use the query as-is for clean, focused embedding
+  return trimmed;
 }
 
 // ============================================

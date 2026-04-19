@@ -137,7 +137,6 @@ export default function Chatbot() {
     try {
       const data = await sendChatMessage({
         message: text,
-        conversationHistory: currentHistory,
         locale: selectedLanguage || "en",
         sessionId: sessionId,
       });

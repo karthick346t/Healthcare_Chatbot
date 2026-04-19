@@ -44,7 +44,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      // NOTE: 'unsafe-inline' kept because Swagger UI (/api/docs) injects inline scripts.
+      // If Swagger is moved behind auth or removed, drop 'unsafe-inline' too.
+      // 'unsafe-eval' intentionally removed — it enables arbitrary JS eval().
+      scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
       connectSrc: ["'self'", "http://localhost:*", "ws://localhost:*"],
@@ -124,11 +127,11 @@ app.get('/healthz', async (req: Request, res: Response) => {
     const mongoose = require('mongoose');
     const { vectorStore } = require('./services/ragService');
     const dbState = mongoose.connection.readyState;
-    const ragDocs = vectorStore.getDocuments().length;
+    const ragStats = await vectorStore.getStats().catch(() => ({ totalCount: 0 }));
     res.json({
       status: "ok",
       db: dbState === 1 ? "connected" : "disconnected",
-      rag: { docs: ragDocs, enabled: config.RAG_ENABLED },
+      rag: { docs: ragStats.totalCount, enabled: config.RAG_ENABLED },
       uptime: Math.floor(process.uptime()) + 's',
       env: config.NODE_ENV,
     });

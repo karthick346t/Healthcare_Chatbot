@@ -79,7 +79,6 @@ router.post(
   emergencyInterceptor,  // 2️⃣ Intercept emergency keywords before LLM
   [
     body("message").isString().trim().notEmpty().isLength({ max: 1024 }),
-    body("conversationHistory").optional().isArray(),
     body("locale").optional().isString(),
     body("sessionId").exists().isString().isLength({ min: 8 }),
   ],

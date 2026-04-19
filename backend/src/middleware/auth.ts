@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/authService';
 
-// Extend Express Request type to include user
+// Extend Express Request type to include user (with role)
 declare global {
     namespace Express {
         interface Request {
             user?: {
                 userId: string;
+                role?: string;
             };
         }
     }
@@ -15,7 +16,8 @@ declare global {
 /**
  * JWT Authentication Middleware
  * Extracts Bearer token from Authorization header, verifies it,
- * and attaches userId to req.user for downstream handlers.
+ * and attaches userId + role to req.user for downstream handlers.
+ * Role is embedded in the JWT — no DB lookup needed.
  */
 export default function authMiddleware(
     req: Request,
@@ -33,7 +35,7 @@ export default function authMiddleware(
 
     try {
         const decoded = verifyToken(token);
-        req.user = { userId: decoded.userId };
+        req.user = { userId: decoded.userId, role: decoded.role };
         next();
     } catch (err) {
         res.status(401).json({ error: 'Invalid or expired token.' });
@@ -43,58 +45,46 @@ export default function authMiddleware(
 
 /**
  * Admin Middleware
- * Checks if the authenticated user has 'admin' role.
+ * Reads role from the JWT (already in req.user) — zero DB lookups.
  * Must be placed AFTER authMiddleware.
  */
-export const adminMiddleware = async (
+export function adminMiddleware(
     req: Request,
     res: Response,
     next: NextFunction
-): Promise<void> => {
-    try {
-        if (!req.user || !req.user.userId) {
-            res.status(401).json({ error: 'Access denied. Not authenticated.' });
-            return;
-        }
-
-        const user = await import('../models/User').then(m => m.default.findById(req.user!.userId));
-
-        if (!user || user.role !== 'admin') {
-            res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-            return;
-        }
-
-        next();
-    } catch (error) {
-        res.status(500).json({ error: 'Server error checking admin privileges.' });
+): void {
+    if (!req.user) {
+        res.status(401).json({ error: 'Access denied. Not authenticated.' });
+        return;
     }
-};
+
+    if (req.user.role !== 'admin') {
+        res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+        return;
+    }
+
+    next();
+}
 
 /**
  * Staff Middleware
- * Checks if the authenticated user has 'staff' or 'admin' role.
+ * Reads role from the JWT (already in req.user) — zero DB lookups.
  * Must be placed AFTER authMiddleware.
  */
-export const staffMiddleware = async (
+export function staffMiddleware(
     req: Request,
     res: Response,
     next: NextFunction
-): Promise<void> => {
-    try {
-        if (!req.user || !req.user.userId) {
-            res.status(401).json({ error: 'Access denied. Not authenticated.' });
-            return;
-        }
-
-        const user = await import('../models/User').then(m => m.default.findById(req.user!.userId));
-
-        if (!user || (user.role !== 'staff' && user.role !== 'admin')) {
-            res.status(403).json({ error: 'Access denied. Staff privileges required.' });
-            return;
-        }
-
-        next();
-    } catch (error) {
-        res.status(500).json({ error: 'Server error checking staff privileges.' });
+): void {
+    if (!req.user) {
+        res.status(401).json({ error: 'Access denied. Not authenticated.' });
+        return;
     }
-};
+
+    if (req.user.role !== 'staff' && req.user.role !== 'admin') {
+        res.status(403).json({ error: 'Access denied. Staff privileges required.' });
+        return;
+    }
+
+    next();
+}

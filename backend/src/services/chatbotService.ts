@@ -13,17 +13,14 @@ import { notificationService } from "./notificationService";
 import symptomChecker from "./symptomChecker";
 import NodeCache from "node-cache";
 
-// Initialize cache with standard TTL of 5 minutes (300 seconds), checking for expired keys every 30 seconds
+// Initialize cache with standard TTL of 5 minutes (300 seconds)
 const cache = new NodeCache({ stdTTL: 300, checkperiod: 30 });
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// Primary model
-const PRIMARY_MODEL_ID = "openai/gpt-oss-120b";
-// Backup model 
-const BACKUP_MODEL_ID = "llama-3.3-70b-versatile";
-// Second backup model 
-const BACKUP_MODEL_ID_2 = "llama-3.1-8b-instant";
+// Model chain: best → fastest fallback
+const PRIMARY_MODEL_ID = "llama-3.3-70b-versatile";   // Best Groq model ✅
+const BACKUP_MODEL_ID = "llama-3.1-8b-instant";       // Fast fallback ✅
 
 const AXIOS_TIMEOUT = 25_000; // 25 seconds
 
@@ -46,18 +43,15 @@ function sleep(ms: number): Promise<void> {
 }
 
 function sanitizeForModeration(text: string): string {
-  // Remove URLs, emails, and collapse whitespace to reduce moderation triggers
   const noUrls = text.replace(/https?:\/\/\S+/gi, "[link]");
   const noEmails = noUrls.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email]");
   const collapsed = noEmails.replace(/\s+/g, " ").trim();
-  // Trim extremely long inputs
   return collapsed.length > 1200 ? collapsed.slice(0, 1200) + " …" : collapsed;
 }
 
 function compactRagContext(ragContext?: string, maxLen = 1500): string | undefined {
   if (!ragContext) return ragContext;
   if (ragContext.length <= maxLen) return ragContext;
-  // Keep header and truncate references conservatively
   const headerEnd = ragContext.indexOf("### ⚠️ Critical Instructions");
   if (headerEnd > 0) {
     const header = ragContext.slice(0, headerEnd);
@@ -76,7 +70,6 @@ function buildHeaders() {
   if (!apiKey) {
     throw new Error("❌ GROQ_API_KEY missing. Set it in your .env file.");
   }
-
   return {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
@@ -94,9 +87,7 @@ interface RequestContext {
 
 async function buildDoctorContext(): Promise<string> {
   const cachedContext = cache.get<string>("doctorContext");
-  if (cachedContext) {
-    return cachedContext;
-  }
+  if (cachedContext) return cachedContext;
 
   try {
     const doctors = await Doctor.find().populate("hospitalId", "name location").lean();
@@ -112,8 +103,6 @@ async function buildDoctorContext(): Promise<string> {
         docStr += `- Dr. ${doc.name} (Specialty: ${doc.specialty}) at ${hospitalName} (${location}).\n  Doctor ID: ${doc._id}\n  Hospital ID: ${hospitalId}\n\n`;
       });
     }
-    
-    // Save string context in cache, implicitly using the 300s TTL configured
     cache.set("doctorContext", docStr);
     return docStr;
   } catch (error) {
@@ -122,9 +111,6 @@ async function buildDoctorContext(): Promise<string> {
   }
 }
 
-// ----------------------------------------
-// 🔹 Helper: Build User Context
-// ----------------------------------------
 async function buildUserContext(userId?: string): Promise<string> {
   if (!userId) {
     return `### 👤 User Profile\nNo user is currently logged in. You MUST ask for the patient's full name, age, gender, address, email, and specific problem.`;
@@ -147,23 +133,17 @@ async function buildUserContext(userId?: string): Promise<string> {
   }
 }
 
-// ----------------------------------------
-// 🔹 Helper: Format RAG context for prompt
-// ----------------------------------------
 function formatRAGContext(retrievedDocs: any[]): string {
-  if (!retrievedDocs || retrievedDocs.length === 0) {
-    return "";
-  }
+  if (!retrievedDocs || retrievedDocs.length === 0) return "";
 
   const contextSections = retrievedDocs.map((doc, index) => {
     const source = doc.chunk.metadata.source || "medical knowledge base";
     const docType = doc.chunk.metadata.documentType || "general";
-    return `[Reference ${index + 1}] (Source: ${source}, Type: ${docType}, Relevance: ${(doc.similarity * 100).toFixed(1)}%)
-${doc.chunk.content}`;
+    return `[Reference ${index + 1}] (Source: ${source}, Type: ${docType}, Relevance: ${(doc.similarity * 100).toFixed(1)}%)\n${doc.chunk.content}`;
   }).join("\n\n");
 
   return `\n\n### 📚 Relevant Medical Information
-The following information has been retrieved from medical knowledge bases to help answer the user's question. Use this information as the PRIMARY source for your response. If the information doesn't directly address the question, you may supplement with your general knowledge, but always prioritize the retrieved information.
+The following information has been retrieved from medical knowledge bases to help answer the user's question. Use this information as the PRIMARY source for your response.
 
 ${contextSections}
 
@@ -176,9 +156,6 @@ ${contextSections}
 - Maintain empathy and clarity in your communication`;
 }
 
-// ----------------------------------------
-// 🔹 Helper: Build system prompt with RAG context
-// ----------------------------------------
 function buildSystemPrompt(
   reqCtx: RequestContext,
   ragContext?: string
@@ -262,7 +239,102 @@ You are a digital health companion built to help people feel informed, understoo
 }
 
 // ----------------------------------------
-// 🔹 Helper: Generic model call with conversation history and RAG
+// 🔹 Booking Validation & Save (server-side, replaces bare LLM → DB)
+// ----------------------------------------
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function validateAndSaveBooking(bookingData: any, reqCtx: RequestContext): Promise<void> {
+  // 1. Validate required fields are present
+  const { doctorId, hospitalId, date, patientName, patientAge } = bookingData;
+  if (!doctorId || !hospitalId || !date || !patientName) {
+    throw new Error("Missing required booking fields (doctorId, hospitalId, date, patientName)");
+  }
+
+  // 2. Validate MongoDB ObjectIds
+  if (!mongoose.Types.ObjectId.isValid(doctorId) || !mongoose.Types.ObjectId.isValid(hospitalId)) {
+    throw new Error("Invalid doctorId or hospitalId — must be valid MongoDB ObjectIds");
+  }
+
+  // 3. Verify doctor and hospital actually exist in the DB
+  const [doctor, hospital] = await Promise.all([
+    Doctor.findById(doctorId),
+    Hospital.findById(hospitalId),
+  ]);
+  if (!doctor) throw new Error(`Doctor not found in database: ${doctorId}`);
+  if (!hospital) throw new Error(`Hospital not found in database: ${hospitalId}`);
+
+  // 4. Validate and normalise date — must be today or future
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) throw new Error("Invalid appointment date format");
+  dateObj.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (dateObj < today) throw new Error("Appointment date must not be in the past");
+
+  // 5. Validate patient age
+  const age = Number(patientAge);
+  if (!Number.isFinite(age) || age < 0 || age > 150) {
+    throw new Error("Invalid patient age — must be between 0 and 150");
+  }
+
+  // 6. Check slot availability (max 10 per doctor per day)
+  const count = await Appointment.countDocuments({
+    doctorId: new mongoose.Types.ObjectId(doctorId),
+    appointmentDate: dateObj,
+    status: "scheduled",
+  });
+  if (count >= 10) {
+    throw new Error("No available slots for this doctor on the selected date (max 10 per day)");
+  }
+
+  // 7. Save the appointment
+  const newAppt = new Appointment({
+    patientName: String(patientName).slice(0, 100),
+    patientAge: age,
+    patientGender: String(bookingData.patientGender || "Not Specified").slice(0, 20),
+    patientAddress: String(bookingData.patientAddress || "Not Specified").slice(0, 200),
+    problem: String(bookingData.problem || "Chatbot Booking").slice(0, 500),
+    hospitalId: new mongoose.Types.ObjectId(hospitalId),
+    doctorId: new mongoose.Types.ObjectId(doctorId),
+    appointmentDate: dateObj,
+    tokenNumber: count + 1,
+    status: "scheduled",
+    paymentStatus: "pending",
+    userId: reqCtx.userId ? new mongoose.Types.ObjectId(reqCtx.userId) : undefined,
+  });
+
+  await newAppt.save();
+  console.log(`[Chatbot] ✅ Booking saved: ${patientName} → Dr. ${doctor.name} on ${date}`);
+
+  // 8. Non-blocking S3 backup + email notification
+  if (newAppt.userId) {
+    const populated = await Appointment.findById(newAppt._id)
+      .populate("hospitalId", "name location")
+      .populate("doctorId", "name specialty")
+      .lean();
+
+    if (populated) {
+      (populated as any).doctorName = (populated.doctorId as any)?.name || "Doctor";
+      (populated as any).hospitalName = (populated.hospitalId as any)?.name || "Hospital";
+      uploadAppointmentBackup(populated, newAppt.userId.toString())
+        .catch(err => console.error("⚠️ S3 appointment backup failed:", err));
+    }
+
+    const email = String(bookingData.email || "").trim();
+    if (email && EMAIL_REGEX.test(email)) {
+      notificationService.sendAppointmentConfirmation(email, {
+        patientName: newAppt.patientName,
+        doctorName: doctor.name,
+        appointmentDate: newAppt.appointmentDate.toDateString(),
+        timeSlot: "N/A",
+        hospitalName: hospital.name,
+      }).catch(err => console.error("⚠️ Email notification failed:", err));
+    }
+  }
+}
+
+// ----------------------------------------
+// 🔹 Helper: Generic model call
 // ----------------------------------------
 async function callModel(
   modelId: string,
@@ -275,10 +347,8 @@ async function callModel(
   const safeRagContext = compactRagContext(ragContext);
   const systemPrompt = buildSystemPrompt(reqCtx, safeRagContext);
 
-  // Build messages array with full conversation context
   const messages: any[] = [systemPrompt];
 
-  // Add conversation history (excluding system messages to avoid duplicates)
   if (conversationHistory && conversationHistory.length > 0) {
     conversationHistory.forEach(msg => {
       if (msg.role !== "system") {
@@ -290,7 +360,6 @@ async function callModel(
     });
   }
 
-  // Add current message
   const userMessage: any = {
     role: "user",
     content: imageUrl
@@ -300,10 +369,8 @@ async function callModel(
       ]
       : message,
   };
-
   messages.push(userMessage);
 
-  // Build payload
   const payload: any = {
     model: modelId,
     messages,
@@ -325,99 +392,29 @@ async function callModel(
       "";
 
     if (typeof text === "string") {
-      // 1) Strip DeepSeek-style <think>...</think> reasoning blocks if present
+      // Strip DeepSeek-style <think>...</think> reasoning blocks
       text = text.replace(/<think>[\s\S]*?<\/think>/i, "").trim();
 
-      // 2) Optional: strip obvious meta-reasoning preamble if the model still
-      // starts with something like "Alright, the user keeps saying 'hi'..."
+      // Strip obvious meta-reasoning preamble
       text = text.replace(
         /^(?:Alright|Okay|Ok|Hmm|Firstly|First of all)[\s\S]{0,500}?\n\n/i,
         ""
       ).trim();
     }
 
-    // 3) Process actual appointment saving if <booking_json> is present
+    // Process appointment booking if <booking_json> is present
     const bookingMatch = text.match(/<booking_json>([\s\S]*?)<\/booking_json>/);
     if (bookingMatch && bookingMatch[1]) {
       try {
         const bookingData = JSON.parse(bookingMatch[1].trim());
-
-        // Count bookings for token number
-        const dateObj = new Date(bookingData.date);
-        dateObj.setHours(0, 0, 0, 0);
-
-        const count = await Appointment.countDocuments({
-          doctorId: new mongoose.Types.ObjectId(bookingData.doctorId),
-          appointmentDate: dateObj,
-          status: 'scheduled'
-        });
-
-        // The session userId should be extracted if we bind it, 
-        // but since chatbotService doesn't have req.user easily, we extract if passed, or save as guest (null userId)
-        // A better approach is passing userId from the frontend to handleMessage.
-        // For now, we save without userId or we can extract it if we modify handleMessage signature.
-
-        const newAppt = new Appointment({
-          patientName: bookingData.patientName,
-          patientAge: bookingData.patientAge,
-          patientGender: bookingData.patientGender || "Not Specified",
-          patientAddress: bookingData.patientAddress || "Not Specified",
-          problem: bookingData.problem || "Chatbot Booking",
-          hospitalId: new mongoose.Types.ObjectId(bookingData.hospitalId),
-          doctorId: new mongoose.Types.ObjectId(bookingData.doctorId),
-          appointmentDate: dateObj,
-          tokenNumber: count + 1,
-          status: 'scheduled',
-          paymentStatus: 'pending',
-          userId: reqCtx.userId ? new mongoose.Types.ObjectId(reqCtx.userId) : undefined
-        });
-
-        await newAppt.save();
-        console.log(`[Chatbot] Successfully saved appointment for ${bookingData.patientName} with doctor ${bookingData.doctorId}`);
-
-        // --- Sync to S3 and Send Email if user is logged in ---
-        if (newAppt.userId) {
-          // Backup new appointment to S3 with FULL details
-          const populated = await Appointment.findById(newAppt._id)
-            .populate('hospitalId', 'name location')
-            .populate('doctorId', 'name specialty')
-            .lean();
-
-          if (populated) {
-            (populated as any).doctorName = (populated.doctorId as any)?.name || 'Doctor';
-            (populated as any).hospitalName = (populated.hospitalId as any)?.name || 'Hospital';
-
-            uploadAppointmentBackup(populated, newAppt.userId.toString())
-              .catch(err => console.error('⚠️ S3 appointment backup failed on Chatbot book:', err));
-          }
-
-          // Send Confirmation Email
-          // Prefer explicitly provided email from the json over the saved user email
-          const userObj = await User.findById(newAppt.userId);
-          const targetEmail = bookingData.email || (userObj ? userObj.email : null);
-          if (targetEmail) {
-            const doctor = await Doctor.findById(newAppt.doctorId);
-            const hospital = await Hospital.findById(newAppt.hospitalId);
-
-            await notificationService.sendAppointmentConfirmation(targetEmail, {
-              patientName: newAppt.patientName,
-              doctorName: doctor ? doctor.name : "Unknown Doctor",
-              appointmentDate: newAppt.appointmentDate.toDateString(),
-              timeSlot: "N/A",
-              hospitalName: hospital ? hospital.name : "Unknown Hospital"
-            });
-          }
-        }
-        // -----------------------------------------
-
-        // Remove the json block from the user-facing text
-        text = text.replace(/<booking_json>[\s\S]*?<\/booking_json>/g, "").trim();
-      } catch (e) {
-        console.error("[Chatbot] Error parsing or saving booking JSON:", e);
+        await validateAndSaveBooking(bookingData, reqCtx);
+      } catch (e: any) {
+        console.error("[Chatbot] Booking validation/save failed:", e.message);
       }
+      // Always strip the JSON tag from user-facing response
+      text = text.replace(/<booking_json>[\s\S]*?<\/booking_json>/g, "").trim();
     }
 
-    // 4) Run existing cleaner
     text = cleanModelText(text);
 
     if (!text) throw new Error("No text generated by the model.");
@@ -430,9 +427,8 @@ async function callModel(
   }
 }
 
-
 // ----------------------------------------
-// 🔹 Automatic model switch logic with conversation history and RAG
+// 🔹 Fallback chain: 70b → 8b
 // ----------------------------------------
 async function callWithFallback(
   message: string,
@@ -441,11 +437,10 @@ async function callWithFallback(
   imageUrl?: string,
   ragContext?: string
 ): Promise<string> {
-  // 0) Prepare sanitized inputs for moderated retries
   const sanitizedMessage = sanitizeForModeration(message);
   const compactedRag = compactRagContext(ragContext);
 
-  // 1) Try primary model with retry/backoff on 429
+  // 1) Primary model with retry on 429
   const primaryMaxRetries = 2;
   for (let attempt = 0; attempt <= primaryMaxRetries; attempt++) {
     try {
@@ -454,42 +449,20 @@ async function callWithFallback(
         console.log(`[Backoff] Waiting ${backoffMs}ms before retrying (${PRIMARY_MODEL_ID})...`);
         await sleep(backoffMs);
       }
-      console.log(`[Model] Attempting (${PRIMARY_MODEL_ID})${ragContext ? ' with RAG context' : ''}... (try ${attempt + 1}/${primaryMaxRetries + 1})`);
+      console.log(`[Model] Attempting (${PRIMARY_MODEL_ID})${ragContext ? ' with RAG' : ''}... (try ${attempt + 1}/${primaryMaxRetries + 1})`);
       return await callModel(PRIMARY_MODEL_ID, message, reqCtx, conversationHistory, imageUrl, compactedRag);
     } catch (err: any) {
       const status = err?.response?.status;
       const msg = err?.response?.data?.error?.message || err.message;
       console.warn(`[⚠️ (${PRIMARY_MODEL_ID}) failed — Status: ${status}, Message: ${msg}]`);
-      if (status !== 429 || attempt === primaryMaxRetries) {
-        break;
-      }
+      if (status !== 429 || attempt === primaryMaxRetries) break;
     }
   }
 
-  // 2) Fallback to LLaMA; if 403 moderation error, sanitize and retry once
+  // 2) Fallback to fast model
   try {
-    console.warn(`[⚠️ Switching to (${BACKUP_MODEL_ID}) backup model]`);
-    console.log(`[Model] Attempting (${BACKUP_MODEL_ID})${ragContext ? ' with RAG context' : ''}...`);
-    return await callModel(BACKUP_MODEL_ID, message, reqCtx, conversationHistory, imageUrl, compactedRag);
-  } catch (llamaErr: any) {
-    const status = llamaErr?.response?.status;
-    const msg = llamaErr?.response?.data?.error?.message || llamaErr.message;
-    console.warn(`[⚠️ (${BACKUP_MODEL_ID}) failed — Status: ${status}, Message: ${msg}]`);
-    if (status === 403) {
-      console.log(`[Moderation] Retrying (${BACKUP_MODEL_ID}) with sanitized input and compacted context...`);
-      try {
-        return await callModel(BACKUP_MODEL_ID, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
-      } catch {
-        // Fall through to second backup
-      }
-    }
-  }
-
-  // 3) Second backup model — more lenient moderation typically
-  try {
-    console.warn(`[⚠️ Switching to (${BACKUP_MODEL_ID_2}) backup model]`);
-    console.log(`[Model] Attempting (${BACKUP_MODEL_ID_2})${ragContext ? ' with RAG context' : ''}...`);
-    return await callModel(BACKUP_MODEL_ID_2, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
+    console.warn(`[⚠️ Switching to backup model (${BACKUP_MODEL_ID})]`);
+    return await callModel(BACKUP_MODEL_ID, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
   } catch (err) {
     console.error("[❌ All models failed]");
     return "I'm currently unable to process your message reliably due to service limits. Please try again shortly. If this is urgent, contact a licensed healthcare provider.";
@@ -497,7 +470,7 @@ async function callWithFallback(
 }
 
 // ----------------------------------------
-// 🔹 Public API functions with conversation history and RAG
+// 🔹 Public API
 // ----------------------------------------
 export async function handleMessage(
   message: string,
@@ -506,11 +479,9 @@ export async function handleMessage(
   locale = "en",
   userId?: string
 ): Promise<string> {
-  // Enforce sliding window on conversation history (last 20 messages max before current)
   const recentHistory = conversationHistory ? conversationHistory.slice(-20) : [];
   console.log(`[handleMessage] History length: ${recentHistory.length}`);
 
-  // Build per-request context — never stored in globals
   const reqCtx: RequestContext = {
     userId,
     doctorContext: await buildDoctorContext(),
@@ -521,31 +492,20 @@ export async function handleMessage(
 
   if (!ragEnabled) {
     console.log("[handleMessage] RAG disabled, using direct model call");
-    return callWithFallback(message, reqCtx, conversationHistory);
+    return callWithFallback(message, reqCtx, recentHistory);
   }
 
-    try {
-    // 1. Retrieve relevant context (RAG)
-    console.log("[RAG] Retrieving context for query (stateless)...");
+  try {
+    console.log("[RAG] Retrieving context for query...");
     const ragContext = await retrieveContext(message, recentHistory);
 
-    // 2. Perform Symptom Triage Check (Local)
     const urgency = symptomChecker.checkSymptomUrgency(message);
     const urgencyAdvice = symptomChecker.buildUrgencyContext(urgency);
 
     console.log(`[RAG] Retrieved ${ragContext.retrievedDocs.length} relevant documents`);
-    if (ragContext.retrievedDocs.length > 0) {
-      ragContext.retrievedDocs.forEach((doc, idx) => {
-        console.log(
-          `[RAG] Doc ${idx + 1}: ${doc.chunk.metadata.source} (similarity: ${(doc.similarity * 100).toFixed(1)}%)`
-        );
-      });
-    }
 
-    // 3. Format context + Prepend urgency advice
     const formattedContext = urgencyAdvice + formatRAGContext(ragContext.retrievedDocs);
 
-    console.log("[RAG] Calling model with stateless RAG context...");
     return await callWithFallback(message, reqCtx, recentHistory, undefined, formattedContext);
   } catch (error: any) {
     console.error("[handleMessage] RAG retrieval failed, falling back to direct call:", error.message);
@@ -560,12 +520,10 @@ export async function handleTriage(
   locale = "en",
   userId?: string
 ): Promise<string> {
-  // Enforce sliding window on conversation history
   const recentHistory = conversationHistory ? conversationHistory.slice(-20) : [];
   const triagePrompt = `Perform symptom triage. Guide the user with empathetic, clear, and simple questions. User's concern: ${message}`;
   console.log(`[handleTriage] History length: ${recentHistory.length}`);
 
-  // Per-request context — no globals
   const reqCtx: RequestContext = {
     userId,
     doctorContext: await buildDoctorContext(),
@@ -573,23 +531,18 @@ export async function handleTriage(
   };
 
   try {
-    console.log("[RAG][Triage] Retrieving triage-related context (stateless)...");
     const ragContext = await retrieveContext(message, recentHistory, {
       topK: 3,
       documentType: "guideline",
     });
 
-    console.log(`[RAG][Triage] Retrieved ${ragContext.retrievedDocs.length} guideline docs`);
-
     const formattedContext = formatRAGContext(ragContext.retrievedDocs);
-
     return await callWithFallback(triagePrompt, reqCtx, recentHistory, undefined, formattedContext);
   } catch (error: any) {
     console.error("[handleTriage] RAG retrieval failed:", error.message);
     return callWithFallback(triagePrompt, reqCtx, recentHistory);
   }
 }
-
 
 export async function handleImageMessage(
   message: string,

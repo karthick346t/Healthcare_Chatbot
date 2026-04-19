@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { check, body, validationResult } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import config from '../config';
 import { registerUser, loginUser, googleLogin, generateAccessToken } from '../services/authService';
+import { revokeRefreshToken, findRefreshTokenInDB } from '../models/RefreshToken';
 import authMiddleware from '../middleware/auth';
 
 const router = Router();
@@ -118,7 +118,8 @@ router.post(
 
 /**
  * POST /api/auth/refresh
- * Refreshes the access token using the httpOnly cookie
+ * Issues a new access token using the stored httpOnly refresh token cookie.
+ * Validates against the DB to detect revoked tokens.
  */
 router.post('/refresh', async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken;
@@ -127,10 +128,26 @@ router.post('/refresh', async (req: Request, res: Response) => {
     }
 
     try {
-        const decoded = jwt.verify(refreshToken, config.JWT_REFRESH_SECRET || config.JWT_SECRET) as { userId: string };
-        
-        // Generate new access token
-        const newAccessToken = generateAccessToken(decoded.userId);
+        // 1. Verify JWT signature + expiry
+        const decoded = jwt.verify(
+            refreshToken,
+            config.JWT_REFRESH_SECRET || config.JWT_SECRET
+        ) as { userId: string };
+
+        // 2. Check the token hasn't been revoked in the DB
+        const storedToken = await findRefreshTokenInDB(refreshToken, decoded.userId);
+        if (!storedToken) {
+            return res.status(403).json({ error: 'Refresh token has been revoked. Please log in again.' });
+        }
+
+        // 3. Get current user role (role may have changed since token was issued)
+        const user = await User.findById(decoded.userId).select('role');
+        if (!user) {
+            return res.status(403).json({ error: 'User account not found.' });
+        }
+
+        // 4. Issue new access token with fresh role
+        const newAccessToken = generateAccessToken(decoded.userId, user.role);
         res.json({ token: newAccessToken });
     } catch (err) {
         return res.status(403).json({ error: 'Invalid or expired refresh token' });
@@ -139,8 +156,20 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/logout
+ * Clears the cookie AND deletes the refresh token from the DB (true revocation).
  */
-router.post('/logout', (req: Request, res: Response) => {
+router.post('/logout', async (req: Request, res: Response) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+        try {
+            await revokeRefreshToken(refreshToken);
+            console.log('[Auth] Refresh token revoked on logout');
+        } catch (err) {
+            console.error('[Auth] Failed to revoke refresh token:', err);
+        }
+    }
+
     res.clearCookie('refreshToken', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -164,7 +193,6 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
             email: user.email,
             role: user.role,
             avatar: user.avatar,
-            // Return full profile
             phone: user.phone,
             gender: user.gender,
             dateOfBirth: user.dateOfBirth,
@@ -185,10 +213,10 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
 router.put('/profile', authMiddleware, async (req: Request, res: Response) => {
     try {
         const updates = req.body;
-        // Prevent updating sensitive fields
+        // Prevent updating sensitive fields via this endpoint
         delete updates.password;
         delete updates.role;
-        delete updates.email; // Usually separate flow for email change
+        delete updates.email;
         delete updates.googleId;
 
         const user = await User.findByIdAndUpdate(

@@ -18,26 +18,19 @@ import { fetchWithAuth } from './authApi';
 
 export async function sendChatMessage({
   message,
-  conversationHistory = [],
   locale = "en",
   sessionId,
 }: {
   message: string;
-  conversationHistory?: Message[];
   locale?: string;
   sessionId: string;
 }): Promise<{ message: string; isEmergency?: boolean }> {
   try {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-
     const response = await fetchWithAuth(`${API_BASE_URL}/api/chat`, {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
-        conversationHistory,
         locale,
         sessionId,
       }),

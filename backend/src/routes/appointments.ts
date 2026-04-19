@@ -86,14 +86,24 @@ router.get('/check-availability', async (req: Request, res: Response) => {
 router.get('/my-appointments', authMiddleware, async (req: Request, res: Response) => {
     try {
         const userId = req.user!.userId;
-        if (!userId) {
-            return res.status(400).json({ message: "User ID is required" });
-        }
 
-        // Fetch from S3 directly to ensure cross-device consistency
-        const appointments = await fetchAppointmentsFromS3(userId as string);
+        // Query MongoDB directly — fast, consistent, no S3 overhead
+        const appointments = await Appointment.find({
+            userId: new mongoose.Types.ObjectId(userId)
+        })
+            .populate('doctorId', 'name specialty')
+            .populate('hospitalId', 'name location')
+            .sort({ appointmentDate: -1 })
+            .lean();
 
-        res.json(appointments);
+        // Flatten populated fields for frontend compatibility
+        const result = appointments.map((appt: any) => ({
+            ...appt,
+            doctorName: appt.doctorId?.name || 'Doctor',
+            hospitalName: appt.hospitalId?.name || 'Hospital',
+        }));
+
+        res.json(result);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
@@ -339,8 +349,8 @@ router.put('/:id/payment', authMiddleware, staffMiddleware, async (req: Request,
     }
 });
 
-// POST /api/appointments/walk-in
-router.post('/walk-in', async (req: Request, res: Response) => {
+// POST /api/appointments/walk-in (staff/admin only — reception desk)
+router.post('/walk-in', authMiddleware, staffMiddleware, async (req: Request, res: Response) => {
     const {
         patientName,
         patientAge,
@@ -384,12 +394,20 @@ router.post('/walk-in', async (req: Request, res: Response) => {
 });
 
 // POST /api/appointments/webhook/upi-mock
+// Secured with a shared WEBHOOK_SECRET to prevent free payment marking
 router.post('/webhook/upi-mock', async (req: Request, res: Response) => {
     try {
+        // Verify the shared webhook secret
+        const webhookSecret = process.env.WEBHOOK_SECRET;
+        const providedSecret = req.headers['x-webhook-secret'];
+        if (!webhookSecret || !providedSecret || providedSecret !== webhookSecret) {
+            return res.status(401).json({ message: 'Unauthorized webhook request. Invalid or missing x-webhook-secret header.' });
+        }
+
         const { appointmentId } = req.body;
 
-        if (!appointmentId) {
-            return res.status(400).json({ message: "appointmentId is required" });
+        if (!appointmentId || !mongoose.Types.ObjectId.isValid(appointmentId)) {
+            return res.status(400).json({ message: "Valid appointmentId is required" });
         }
 
         const appointment = await Appointment.findById(appointmentId);

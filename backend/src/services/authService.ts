@@ -3,20 +3,23 @@ import User, { IUser } from '../models/User';
 import { OAuth2Client } from 'google-auth-library';
 import config from '../config';
 import { uploadUserBackup } from './awsService';
+import { saveRefreshTokenToDB } from '../models/RefreshToken';
 
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID);
 
 /**
- * Generate Access JWT token for a user
+ * Generate Access JWT token for a user.
+ * Now includes the user's role so downstream middleware
+ * can authorise without a DB lookup.
  */
-export function generateAccessToken(userId: string): string {
-    return jwt.sign({ userId }, config.JWT_SECRET, {
+export function generateAccessToken(userId: string, role: string = 'patient'): string {
+    return jwt.sign({ userId, role }, config.JWT_SECRET, {
         expiresIn: (config.JWT_EXPIRES_IN || '15m') as any,
     });
 }
 
 /**
- * Generate Refresh JWT token for a user
+ * Generate Refresh JWT token for a user.
  */
 export function generateRefreshToken(userId: string): string {
     return jwt.sign({ userId }, config.JWT_REFRESH_SECRET || config.JWT_SECRET, {
@@ -25,14 +28,14 @@ export function generateRefreshToken(userId: string): string {
 }
 
 /**
- * Verify and decode a JWT token
+ * Verify and decode a JWT access token.
  */
-export function verifyToken(token: string): { userId: string } {
-    return jwt.verify(token, config.JWT_SECRET) as { userId: string };
+export function verifyToken(token: string): { userId: string; role?: string } {
+    return jwt.verify(token, config.JWT_SECRET) as { userId: string; role?: string };
 }
 
 /**
- * Register a new user with email and password
+ * Register a new user with email and password.
  */
 export async function registerUser(
     name: string,
@@ -45,8 +48,13 @@ export async function registerUser(
     }
 
     const user = await User.create({ name, email, password });
-    const accessToken = generateAccessToken(String(user._id));
+    const accessToken = generateAccessToken(String(user._id), user.role);
     const refreshToken = generateRefreshToken(String(user._id));
+
+    // Persist refresh token to DB for revocation support
+    await saveRefreshTokenToDB(String(user._id), refreshToken).catch(err =>
+        console.error('⚠️ Failed to persist refresh token:', err)
+    );
 
     // Trigger S3 User Backup (Non-blocking)
     uploadUserBackup(user).catch(err =>
@@ -60,7 +68,7 @@ export async function registerUser(
 }
 
 /**
- * Login with email and password
+ * Login with email and password.
  */
 export async function loginUser(
     email: string,
@@ -80,10 +88,15 @@ export async function loginUser(
         throw new Error('Invalid email or password');
     }
 
-    const accessToken = generateAccessToken(String(user._id));
+    const accessToken = generateAccessToken(String(user._id), user.role);
     const refreshToken = generateRefreshToken(String(user._id));
 
-    // Trigger S3 User Backup (Non-blocking) - Keep backup fresh on login
+    // Persist refresh token to DB for revocation support
+    await saveRefreshTokenToDB(String(user._id), refreshToken).catch(err =>
+        console.error('⚠️ Failed to persist refresh token:', err)
+    );
+
+    // Trigger S3 User Backup (Non-blocking)
     uploadUserBackup(user).catch(err =>
         console.error(`⚠️ S3 User Backup Failed for ${user._id}:`, err)
     );
@@ -95,7 +108,7 @@ export async function loginUser(
 }
 
 /**
- * Login or register via Google OAuth
+ * Login or register via Google OAuth.
  */
 export async function googleLogin(
     idToken: string
@@ -116,7 +129,7 @@ export async function googleLogin(
 
         console.log(`✅ Google Token Verified for ${email} (${googleId})`);
         console.log(`   - Name: ${name}`);
-        console.log(`   - Picture URL: ${picture ? 'Present' : 'Missing'}`); // Don't log full URL to keep logs clean, just presence
+        console.log(`   - Picture URL: ${picture ? 'Present' : 'Missing'}`);
 
         let user = await User.findOne({
             $or: [{ googleId }, { email }],
@@ -128,12 +141,10 @@ export async function googleLogin(
                 user.googleId = googleId;
                 updates = true;
             }
-            // Always update avatar if provided by Google to keep it fresh
             if (picture && user.avatar !== picture) {
                 user.avatar = picture;
                 updates = true;
             }
-
             if (updates) {
                 await user.save();
             }
@@ -151,18 +162,23 @@ export async function googleLogin(
             console.error(`⚠️ S3 User Backup Failed for ${user._id}:`, err)
         );
 
-        const accessToken = generateAccessToken(String(user._id));
+        const accessToken = generateAccessToken(String(user._id), user.role);
         const refreshToken = generateRefreshToken(String(user._id));
+
+        // Persist refresh token to DB for revocation support
+        await saveRefreshTokenToDB(String(user._id), refreshToken).catch(err =>
+            console.error('⚠️ Failed to persist refresh token:', err)
+        );
+
         return { user, accessToken, refreshToken };
     } catch (error: any) {
-        console.error("❌ Google Verification Error:", error.message);
-        if (error.message.includes("Wrong recipient")) {
+        console.error('❌ Google Verification Error:', error.message);
+        if (error.message.includes('Wrong recipient')) {
             console.error(`   Expected Audience: ${config.GOOGLE_CLIENT_ID}`);
-            // Try to decode without verification to see what's in it (debugging only)
             const decoded = jwt.decode(idToken);
             console.error(`   Received Token Payload:`, JSON.stringify(decoded, null, 2));
         }
-        throw new Error("Google authentication failed. " + error.message);
+        throw new Error('Google authentication failed. ' + error.message);
     }
 }
 
