@@ -10,6 +10,11 @@ interface AuthResponse {
         avatar?: string;
         role: string;
         googleId?: string;
+        phone?: string;
+        gender?: string;
+        dateOfBirth?: string;
+        bloodGroup?: string;
+        address?: string;
     };
     token: string;
 }
@@ -82,7 +87,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         ? `${API_BASE_URL}${url}` 
         : url;
 
-    let response = await fetch(absoluteUrl, { ...options, headers });
+    let response = await fetch(absoluteUrl, { 
+        credentials: "include", 
+        ...options, 
+        headers 
+    });
 
     // Intercept 401 Expired Access Token
     if (response.status === 401) {
@@ -99,7 +108,11 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
                 
                 // Retry requested fetch
                 headers.set("Authorization", `Bearer ${newToken}`);
-                response = await fetch(url, { ...options, headers });
+                response = await fetch(url, { 
+                    credentials: "include", 
+                    ...options, 
+                    headers 
+                });
             } else {
                 // If the refresh token itself is expired or invalid, log them out.
                 localStorage.removeItem("healthbot_token");
@@ -114,6 +127,16 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
 
 export async function apiGetMe(): Promise<{ user: AuthResponse["user"] }> {
     const res = await fetchWithAuth(`${API_BASE}/me`);
+    const user = await handleResponse(res);
+    return { user };
+}
+
+export async function apiUpdateProfile(updates: Partial<AuthResponse["user"]>): Promise<{ user: AuthResponse["user"] }> {
+    const res = await fetchWithAuth(`${API_BASE}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates)
+    });
     const user = await handleResponse(res);
     return { user };
 }

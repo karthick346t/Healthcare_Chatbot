@@ -88,10 +88,10 @@ export default function Header() {
           {/* Info button */}
           <button
             onClick={handleHelp}
-            className="p-3 rounded-xl bg-[#eef2f5] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-200"
+            className="p-3 rounded-xl bg-neu dark:bg-neu-dark border-none shadow-neu-out dark:shadow-neu-out-dark hover:shadow-neu-out dark:shadow-neu-out-dark active:shadow-neu-in dark:shadow-neu-in-dark transition-all duration-200"
             aria-label={t("Help & Privacy")}
           >
-            <HiOutlineInformationCircle className="text-neutral-500 hover:text-cyan-600 text-xl transition-colors" />
+            <HiOutlineInformationCircle className="text-neutral-500 dark:text-neutral-400 hover:text-themeAccent-600 text-xl transition-colors" />
           </button>
 
           {/* Language dropdown */}
@@ -101,22 +101,22 @@ export default function Header() {
                 e.stopPropagation();
                 setShowLangMenu((prev) => !prev);
               }}
-              className="flex items-center gap-2 px-4 h-11 rounded-xl bg-[#eef2f5] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-200 text-neutral-600 text-sm font-semibold"
+              className="flex items-center gap-2 px-4 h-11 rounded-xl bg-neu dark:bg-neu-dark border-none shadow-neu-out dark:shadow-neu-out-dark hover:shadow-neu-out dark:shadow-neu-out-dark active:shadow-neu-in dark:shadow-neu-in-dark transition-all duration-200 text-neutral-600 dark:text-neutral-300 text-sm font-semibold"
               aria-label={t("Change language")}
             >
-              <TbLanguage className="text-lg text-neutral-500" />
+              <TbLanguage className="text-lg text-neutral-500 dark:text-neutral-400" />
               <span className="hidden sm:inline">
                 {currentLang?.emoji} {currentLang?.native}
               </span>
             </button>
 
             {showLangMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-xl border border-white/60 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1f232b]/90 backdrop-blur-xl border border-white/60 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
-                    className={`w-full text-left px-4 py-3 text-xs font-medium flex items-center gap-3 transition-colors ${selectedLanguage === lang.code ? "bg-cyan-50 text-cyan-700" : "text-neutral-600 hover:bg-white/50"}`}
+                    className={`w-full text-left px-4 py-3 text-xs font-medium flex items-center gap-3 transition-colors ${selectedLanguage === lang.code ? "bg-themeAccent-50 text-themeAccent-700" : "text-neutral-600 dark:text-neutral-300 hover:bg-white dark:bg-[#1f232b]/50"}`}
                   >
                     <span className="text-lg">{lang.emoji}</span>
                     <span>{lang.native}</span>
@@ -135,13 +135,13 @@ export default function Header() {
                   console.log("Avatar clicked!", showUserMenu); 
                   setShowUserMenu((prev) => !prev);
                 }}
-                className="flex items-center gap-3 p-1 pl-4 rounded-xl bg-[#eef2f5] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-200"
+                className="flex items-center gap-3 p-1 pl-4 rounded-xl bg-neu dark:bg-neu-dark border-none shadow-neu-out dark:shadow-neu-out-dark hover:shadow-neu-out dark:shadow-neu-out-dark active:shadow-neu-in dark:shadow-neu-in-dark transition-all duration-200"
                 aria-label="User Menu"
                 type="button"
               >
                 <div className="hidden md:flex flex-col items-end mr-1">
-                    <span className="text-xs font-bold text-neutral-700 leading-none">{user.name}</span>
-                    <span className="text-[10px] text-neutral-500 leading-none mt-0.5 capitalize">{user.role}</span>
+                    <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200 leading-none">{user.name}</span>
+                    <span className="text-[10px] text-neutral-500 dark:text-neutral-400 leading-none mt-0.5 capitalize">{user.role}</span>
                 </div>
                 {user.avatar && !imageError ? (
                   <img
@@ -152,15 +152,15 @@ export default function Header() {
                     onError={() => setImageError(true)}
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center border-2 border-white shadow-md text-white">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-themeAccent-400 to-blue-500 flex items-center justify-center border-2 border-white shadow-md text-white">
                      <span className="text-sm font-bold">{user.name?.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
               </button>
 
               {showUserMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white/90 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl z-[100] overflow-hidden ring-1 ring-black/5 animate-fadeIn">
-                    <div className="p-5 border-b border-gray-100 bg-white/50">
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-[#1f232b]/90 backdrop-blur-xl border border-white/60 rounded-2xl shadow-2xl z-[100] overflow-hidden ring-1 ring-black/5 animate-fadeIn">
+                    <div className="p-5 border-b border-gray-100 bg-white dark:bg-[#1f232b]/50">
                         <div className="flex items-center gap-4">
                             {user.avatar && !imageError ? (
                                 <img 
@@ -171,13 +171,13 @@ export default function Header() {
                                     onError={() => setImageError(true)}
                                 />
                             ) : (
-                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow-sm">
+                                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-themeAccent-400 to-blue-500 flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow-sm">
                                     {user.name?.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             <div className="flex flex-col overflow-hidden">
-                                <span className="text-neutral-800 font-bold truncate text-base" title={user.name}>{user.name}</span>
-                                <span className="text-neutral-500 text-xs truncate" title={user.email}>{user.email}</span>
+                                <span className="text-neutral-800 dark:text-neutral-100 font-bold truncate text-base" title={user.name}>{user.name}</span>
+                                <span className="text-neutral-500 dark:text-neutral-400 text-xs truncate" title={user.email}>{user.email}</span>
                             </div>
                         </div>
                     </div>
@@ -190,7 +190,7 @@ export default function Header() {
                                         navigate('/profile');
                                         setShowUserMenu(false);
                                     }}
-                                    className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 hover:bg-neutral-50 hover:text-cyan-600 flex items-center gap-3 transition-colors font-medium"
+                                    className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 hover:text-themeAccent-600 flex items-center gap-3 transition-colors font-medium"
                                  >
                                     <HiUserCircle className="text-lg" />
                                     <span>{t("My Profile")}</span>
@@ -203,7 +203,7 @@ export default function Header() {
                                     navigate('/admin');
                                     setShowUserMenu(false);
                                 }}
-                                className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 hover:bg-neutral-50 hover:text-cyan-600 flex items-center gap-3 transition-colors font-medium"
+                                className="w-full text-left px-4 py-3 text-sm rounded-xl text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 hover:text-themeAccent-600 flex items-center gap-3 transition-colors font-medium"
                              >
                                 <HiShieldCheck className="text-lg" />
                                 <span>{t("Admin Dashboard")}</span>
@@ -224,7 +224,7 @@ export default function Header() {
 
           {/* Login Button (if not logged in) - Optional, but good practice */}
           {!user && (
-              <a href="/login" className="hidden sm:block text-sm font-semibold text-neutral-600 hover:text-cyan-600 transition-colors bg-white/60 px-4 py-2 rounded-xl border border-white/80 hover:shadow-sm">
+              <a href="/login" className="hidden sm:block text-sm font-semibold text-neutral-600 dark:text-neutral-300 hover:text-themeAccent-600 transition-colors bg-white dark:bg-[#1f232b]/60 px-4 py-2 rounded-xl border border-white/80 dark:border-white/5 hover:shadow-sm">
                   {t("Login")}
               </a>
           )}
@@ -233,23 +233,23 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setShowMenu((prev) => !prev)}
-            className="sm:hidden p-2 rounded-xl bg-white/60 border border-white/80 hover:border-cyan-400/50 hover:bg-white/90 transition-all duration-200"
+            className="sm:hidden p-2 rounded-xl bg-white dark:bg-[#1f232b]/60 border border-white/80 dark:border-white/5 hover:border-cyan-400/50 hover:bg-white dark:bg-[#1f232b]/90 transition-all duration-200"
             aria-label={t("Menu")}
           >
-            <HiMenu className="text-neutral-600 hover:text-cyan-600 text-xl" />
+            <HiMenu className="text-neutral-600 dark:text-neutral-300 hover:text-themeAccent-600 text-xl" />
           </button>
         </div>
       </div>
 
       {showMenu && (
-        <div className="sm:hidden bg-white/90 border-t border-gray-100 px-5 py-3 backdrop-blur-xl">
+        <div className="sm:hidden bg-white dark:bg-[#1f232b]/90 border-t border-gray-100 px-5 py-3 backdrop-blur-xl">
             <div className="flex flex-col gap-3">
              {/* Mobile Language Selector */}
              <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                <span className="text-neutral-500 text-sm font-medium">{t("Language")}</span>
+                <span className="text-neutral-500 dark:text-neutral-400 text-sm font-medium">{t("Language")}</span>
                  <button
                     onClick={() => setShowLangMenu(!showLangMenu)}
-                    className="flex items-center gap-2 text-neutral-700 text-sm font-semibold"
+                    className="flex items-center gap-2 text-neutral-700 dark:text-neutral-200 text-sm font-semibold"
                   >
                     <TbLanguage className="text-lg" />
                     <span>{currentLang?.native}</span>
@@ -261,7 +261,7 @@ export default function Header() {
                         <button
                             key={lang.code}
                             onClick={() => handleLanguageChange(lang.code)}
-                            className={`text-left px-3 py-2 text-sm rounded-lg ${selectedLanguage === lang.code ? 'bg-cyan-50 text-cyan-700 border border-cyan-100' : 'text-neutral-600 bg-gray-50'}`}
+                            className={`text-left px-3 py-2 text-sm rounded-lg ${selectedLanguage === lang.code ? 'bg-themeAccent-50 text-themeAccent-700 border border-themeAccent-100' : 'text-neutral-600 dark:text-neutral-300 bg-gray-50'}`}
                         >
                             {lang.emoji} {lang.native}
                         </button>

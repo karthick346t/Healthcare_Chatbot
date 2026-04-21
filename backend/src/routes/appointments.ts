@@ -397,10 +397,11 @@ router.post('/walk-in', authMiddleware, staffMiddleware, async (req: Request, re
 // Secured with a shared WEBHOOK_SECRET to prevent free payment marking
 router.post('/webhook/upi-mock', async (req: Request, res: Response) => {
     try {
-        // Verify the shared webhook secret
+        // Verify the shared webhook secret (skip in local development for simulation)
+        const isDevelopment = process.env.NODE_ENV !== 'production';
         const webhookSecret = process.env.WEBHOOK_SECRET;
         const providedSecret = req.headers['x-webhook-secret'];
-        if (!webhookSecret || !providedSecret || providedSecret !== webhookSecret) {
+        if (!isDevelopment && (!webhookSecret || !providedSecret || providedSecret !== webhookSecret)) {
             return res.status(401).json({ message: 'Unauthorized webhook request. Invalid or missing x-webhook-secret header.' });
         }
 

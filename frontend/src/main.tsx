@@ -4,6 +4,7 @@ import App from "./App";
 import { LanguageProvider } from "./context/LanguageProvider";
 import { AuthProvider } from "./context/AuthProvider";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ThemeProvider } from "./context/ThemeContext";
 import "./utils/i18n";
 import "./main.css";
 
@@ -14,7 +15,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
         <LanguageProvider>
-          <App />
+          <ThemeProvider>
+            <App />
+          </ThemeProvider>
         </LanguageProvider>
       </AuthProvider>
     </GoogleOAuthProvider>

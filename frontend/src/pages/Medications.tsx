@@ -150,12 +150,12 @@ export default function Medications() {
     };
 
     return (
-        <div className="min-h-screen bg-[#eef2f5] p-6 font-sans text-neutral-800">
+        <div className="min-h-screen bg-neu dark:bg-neu-dark p-6 font-sans text-neutral-800 dark:text-neutral-100">
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center mb-4">
                     <button
                         onClick={() => navigate("/")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 text-neutral-600 dark:text-neutral-300 font-bold hover:bg-white dark:bg-[#1f232b]/80 transition-all shadow-sm"
                     >
                         <MdArrowBack />
                         <span>{t("Go Back")}</span>
@@ -165,18 +165,18 @@ export default function Medications() {
                 {/* Neumorphic Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                     <div>
-                        <h1 id="medication-header" className="text-3xl font-black text-neutral-700 flex items-center gap-3 tracking-tight">
-                            <span className="w-12 h-12 rounded-xl flex items-center justify-center text-cyan-600 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]">
+                        <h1 id="medication-header" className="text-3xl font-black text-neutral-700 dark:text-neutral-200 flex items-center gap-3 tracking-tight">
+                            <span className="w-12 h-12 rounded-xl flex items-center justify-center text-themeAccent-600 shadow-neu-out dark:shadow-neu-out-dark">
                                 <MdMedication className="text-2xl" />
                             </span>
                             Medication Tracker
                         </h1>
-                        <p className="text-neutral-500 mt-2 ml-16 font-medium">Manage your prescriptions and track adherence.</p>
+                        <p className="text-neutral-500 dark:text-neutral-400 mt-2 ml-16 font-medium">Manage your prescriptions and track adherence.</p>
                     </div>
                     <button 
                         id="add-med-btn"
                         onClick={handleAddNew}
-                        className="neu-btn px-6 py-3 text-cyan-700 hover:text-cyan-800"
+                        className="neu-btn px-6 py-3 text-themeAccent-700 hover:text-cyan-800"
                     >
                         <HiPlus className="text-xl mr-2" /> Add Medication
                     </button>
@@ -191,18 +191,18 @@ export default function Medications() {
                         {/* Embossed Progress Card */}
                         <div id="progress-card" className="neu-card p-8 relative overflow-hidden">
                             <div className="flex-1 z-10 relative">
-                                <h3 className="text-lg font-bold text-neutral-600 mb-1">Today's Progress</h3>
+                                <h3 className="text-lg font-bold text-neutral-600 dark:text-neutral-300 mb-1">Today's Progress</h3>
                                 
                                 <div className="flex items-end justify-between mb-2">
                                      <p className="text-sm text-neutral-400 font-medium">You have taken {todaysDoses.filter(d => d.taken).length} out of {todaysDoses.length} doses.</p>
-                                     <span className="text-3xl font-black text-cyan-600">{Math.round((todaysDoses.filter(d => d.taken).length / todaysDoses.length) * 100) || 0}%</span>
+                                     <span className="text-3xl font-black text-themeAccent-600">{Math.round((todaysDoses.filter(d => d.taken).length / todaysDoses.length) * 100) || 0}%</span>
                                 </div>
 
                                 {/* Embossed Progress Bar Track */}
-                                <div className="h-4 w-full rounded-full shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] bg-[#eef2f5] overflow-hidden p-[2px]">
+                                <div className="h-4 w-full rounded-full shadow-neu-in dark:shadow-neu-in-dark bg-neu dark:bg-neu-dark overflow-hidden p-[2px]">
                                     {/* Popped out Progress Bar Fill */}
                                     <div 
-                                        className="h-full rounded-full bg-cyan-500 shadow-[2px_2px_4px_#b8e0e0] transition-all duration-1000 ease-out"
+                                        className="h-full rounded-full bg-themeAccent-500 shadow-[2px_2px_4px_#b8e0e0] transition-all duration-1000 ease-out"
                                         style={{ width: `${todaysDoses.length > 0 ? (todaysDoses.filter(d => d.taken).length / todaysDoses.length) * 100 : 0}%` }}
                                     ></div>
                                 </div>
@@ -210,12 +210,12 @@ export default function Medications() {
                         </div>
 
                         {/* Neumorphic Tabs */}
-                        <div id="schedule-tabs" className="flex p-1.5 bg-[#eef2f5] rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] w-fit">
+                        <div id="schedule-tabs" className="flex p-1.5 bg-neu dark:bg-neu-dark rounded-xl shadow-neu-in dark:shadow-neu-in-dark w-fit">
                             <button
                                 onClick={() => setActiveTab('schedule')}
                                 className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
                                     activeTab === 'schedule' 
-                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]' 
+                                    ? 'bg-neu dark:bg-neu-dark text-themeAccent-600 shadow-neu-out dark:shadow-neu-out-dark' 
                                     : 'text-gray-400 hover:text-gray-600'
                                 }`}
                             >
@@ -226,7 +226,7 @@ export default function Medications() {
                                 onClick={() => setActiveTab('list')}
                                 className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
                                     activeTab === 'list' 
-                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]' 
+                                    ? 'bg-neu dark:bg-neu-dark text-themeAccent-600 shadow-neu-out dark:shadow-neu-out-dark' 
                                     : 'text-gray-400 hover:text-gray-600'
                                 }`}
                             >
@@ -263,21 +263,21 @@ export default function Medications() {
                                                     key={dose.id} 
                                                     className={`p-6 rounded-2xl transition-all flex items-center gap-6 group ${
                                                         dose.taken 
-                                                        ? 'shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] opacity-60' // Pressed in when taken
+                                                        ? 'shadow-neu-in dark:shadow-neu-in-dark opacity-60' // Pressed in when taken
                                                         : 'neu-card hover:-translate-y-1' // Popped out when active
                                                     }`}
                                                 >
                                                     <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shrink-0 ${
-                                                        dose.taken ? 'bg-[#eef2f5]' : 'bg-[#eef2f5] shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
+                                                        dose.taken ? 'bg-neu dark:bg-neu-dark' : 'bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark'
                                                     } ${med.color}`}>
                                                         {med.icon}
                                                     </div>
                                                     
                                                     <div className="flex-1">
                                                         <div className="flex justify-between items-start">
-                                                            <h4 className={`font-bold text-lg ${dose.taken ? 'line-through text-gray-400' : 'text-neutral-700'}`}>{med.name}</h4>
+                                                            <h4 className={`font-bold text-lg ${dose.taken ? 'line-through text-gray-400' : 'text-neutral-700 dark:text-neutral-200'}`}>{med.name}</h4>
                                                             <span className={`text-sm font-bold flex items-center gap-1 ${
-                                                                dose.taken ? 'text-green-600' : isPast ? 'text-red-500' : 'text-neutral-400 shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] px-2 py-1 rounded-lg'
+                                                                dose.taken ? 'text-green-600' : isPast ? 'text-red-500' : 'text-neutral-400 shadow-neu-in-sm dark:shadow-neu-in-sm-dark px-2 py-1 rounded-lg'
                                                             }`}>
                                                                 <MdAccessTimeFilled /> {dose.time}
                                                             </span>
@@ -289,8 +289,8 @@ export default function Medications() {
                                                         onClick={() => toggleTaken(dose.id)}
                                                         className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                                                             dose.taken 
-                                                                ? 'text-green-500 shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] bg-[#eef2f5]' 
-                                                                : 'text-gray-300 hover:text-green-500 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] bg-[#eef2f5]'
+                                                                ? 'text-green-500 shadow-neu-in-sm dark:shadow-neu-in-sm-dark bg-neu dark:bg-neu-dark' 
+                                                                : 'text-gray-300 hover:text-green-500 shadow-neu-out dark:shadow-neu-out-dark bg-neu dark:bg-neu-dark'
                                                         }`}
                                                     >
                                                         {dose.taken ? <HiCheckCircle className="text-2xl" /> : <HiCheck className="text-xl" />}
@@ -311,7 +311,7 @@ export default function Medications() {
                                     {medications.map(med => (
                                         <div key={med.id} className="neu-card p-6 flex flex-col justify-between group h-full">
                                             <div className="flex justify-between items-start mb-4">
-                                                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] ${med.color}`}>
+                                                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-neu-in dark:shadow-neu-in-dark ${med.color}`}>
                                                     {med.icon}
                                                 </div>
                                                 <div className="flex gap-3">
@@ -331,10 +331,10 @@ export default function Medications() {
                                             </div>
                                             
                                             <div>
-                                                <h4 className="font-bold text-xl text-neutral-700 mb-1">{med.name}</h4>
-                                                <p className="text-sm text-cyan-600 font-bold mb-4">{med.dosage}</p>
+                                                <h4 className="font-bold text-xl text-neutral-700 dark:text-neutral-200 mb-1">{med.name}</h4>
+                                                <p className="text-sm text-themeAccent-600 font-bold mb-4">{med.dosage}</p>
                                                 
-                                                <div className="space-y-3 text-sm text-neutral-500">
+                                                <div className="space-y-3 text-sm text-neutral-500 dark:text-neutral-400">
                                                     <div className="flex items-center gap-3 p-2 rounded-xl">
                                                         <HiClock className="text-xl text-neutral-400" />
                                                         <span className="font-medium">{med.frequency}</span>
@@ -357,8 +357,8 @@ export default function Medications() {
                     <div className="space-y-8">
                         
                         <div id="refill-alerts" className="neu-card p-8">
-                            <h3 className="font-bold text-neutral-700 mb-6 flex items-center gap-3">
-                                <span className="p-2 rounded-lg shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] text-orange-500"><HiBell /></span>
+                            <h3 className="font-bold text-neutral-700 dark:text-neutral-200 mb-6 flex items-center gap-3">
+                                <span className="p-2 rounded-lg shadow-neu-in-sm dark:shadow-neu-in-sm-dark text-orange-500"><HiBell /></span>
                                 Refill Alerts
                             </h3>
                             <div className="space-y-4">
@@ -366,10 +366,10 @@ export default function Medications() {
                                      <p className="text-sm text-gray-400 text-center py-4">All stocked up!</p>
                                 ) : (
                                     medications.filter(m => m.stock < 20).map(med => (
-                                        <div key={med.id} className="flex items-center gap-4 p-4 rounded-2xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]">
+                                        <div key={med.id} className="flex items-center gap-4 p-4 rounded-2xl shadow-neu-in dark:shadow-neu-in-dark">
                                             <div className="text-2xl">{med.icon}</div>
                                             <div className="flex-1">
-                                                <h4 className="font-bold text-sm text-neutral-700">{med.name}</h4>
+                                                <h4 className="font-bold text-sm text-neutral-700 dark:text-neutral-200">{med.name}</h4>
                                                 <p className="text-xs text-red-500 font-bold">{med.stock} left</p>
                                             </div>
                                             <button 
@@ -392,7 +392,7 @@ export default function Medications() {
              {/* Add/Edit Modal (Glassmorphism for contrast) */}
              <AnimatePresence>
                 {showAddModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#eef2f5]/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neu dark:bg-neu-dark/80 backdrop-blur-sm">
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -400,7 +400,7 @@ export default function Medications() {
                             className="neu-card w-full max-w-md p-8 relative"
                         >
                             <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-2xl font-black text-neutral-700">
+                                <h2 className="text-2xl font-black text-neutral-700 dark:text-neutral-200">
                                     {editingId ? 'Edit Medication' : 'Add Medication'}
                                 </h2>
                                 <button onClick={() => setShowAddModal(false)} className="neu-icon-btn w-10 h-10 text-gray-400 hover:text-red-500">
@@ -452,8 +452,8 @@ export default function Medications() {
                                                 onClick={() => setFormData({...formData, frequency: freq})}
                                                 className={`py-3 rounded-xl text-sm font-bold transition-all ${
                                                     formData.frequency === freq
-                                                    ? 'neu-pressed text-cyan-600 shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]'
-                                                    : 'neu-flat text-neutral-400 hover:text-neutral-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
+                                                    ? 'neu-pressed text-themeAccent-600 shadow-neu-in dark:shadow-neu-in-dark'
+                                                    : 'neu-flat text-neutral-400 hover:text-neutral-600 dark:text-neutral-300 shadow-neu-out dark:shadow-neu-out-dark'
                                                 }`}
                                             >
                                                 {freq.split(' ')[0]}
@@ -464,10 +464,10 @@ export default function Medications() {
                             </div>
 
                             <div className="mt-10 flex gap-4">
-                                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 font-bold text-neutral-400 hover:text-neutral-600 transition-colors">Cancel</button>
+                                <button onClick={() => setShowAddModal(false)} className="flex-1 py-4 font-bold text-neutral-400 hover:text-neutral-600 dark:text-neutral-300 transition-colors">Cancel</button>
                                 <button 
                                     onClick={handleSave}
-                                    className="flex-1 py-4 neu-btn bg-cyan-500 text-white shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:bg-cyan-600"
+                                    className="flex-1 py-4 neu-btn bg-themeAccent-500 text-white shadow-neu-out dark:shadow-neu-out-dark hover:bg-themeAccent-600"
                                 >
                                     {editingId ? 'Update' : 'Save Details'}
                                 </button>

@@ -52,13 +52,22 @@ export function useSpeechRecognition({
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript && onResult) {
-        onResult(transcript);
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript && onResult) {
+        onResult(finalTranscript);
       }
     };
 
     recognitionRef.current = recognition;
+
+    return () => {
+      recognition.stop();
+    };
   }, [langCode, onResult]);
 
   const startListening = () => {

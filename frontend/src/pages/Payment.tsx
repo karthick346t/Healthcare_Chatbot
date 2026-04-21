@@ -145,31 +145,31 @@ export default function Payment() {
                 {/* Left Side: Order Summary */}
                 <div className="flex-1 space-y-6">
                     <div>
-                        <h1 className="text-4xl font-bold text-neutral-800 mb-2">Secure Checkout</h1>
-                        <p className="text-neutral-500">Pay via UPI to confirm your appointment.</p>
+                        <h1 className="text-4xl font-bold text-neutral-800 dark:text-neutral-100 mb-2">Secure Checkout</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400">Pay via UPI to confirm your appointment.</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                    <div className="bg-white dark:bg-[#1f232b] p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
                         <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-                            <span className="text-neutral-500 font-medium">Consultation Fee</span>
-                            <span className="text-xl font-bold text-neutral-800">₹500.00</span>
+                            <span className="text-neutral-500 dark:text-neutral-400 font-medium">Consultation Fee</span>
+                            <span className="text-xl font-bold text-neutral-800 dark:text-neutral-100">₹500.00</span>
                         </div>
                         <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm text-neutral-600">
-                                <div className="w-8 h-8 rounded-full bg-cyan-50 flex items-center justify-center text-cyan-600">
+                            <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300">
+                                <div className="w-8 h-8 rounded-full bg-themeAccent-50 flex items-center justify-center text-themeAccent-600">
                                     <HiShieldCheck />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-bold text-neutral-800">Doctor</p>
+                                    <p className="font-bold text-neutral-800 dark:text-neutral-100">Doctor</p>
                                     <p>{appointmentDetails?.doctor?.name || "Dr. Sarah Wilson"}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 text-sm text-neutral-600">
+                            <div className="flex items-center gap-3 text-sm text-neutral-600 dark:text-neutral-300">
                                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                                     <HiCalendar />
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-bold text-neutral-800">Date & Time</p>
+                                    <p className="font-bold text-neutral-800 dark:text-neutral-100">Date & Time</p>
                                     <p>{appointmentDetails?.date ? new Date(appointmentDetails.date).toLocaleDateString() : "Oct 24, 2024"} • {appointmentDetails?.timeSlot || "10:00 AM"}</p>
                                 </div>
                             </div>
@@ -183,23 +183,23 @@ export default function Payment() {
 
                 {/* Right Side: UPI QR Interface */}
                 <div className="flex-1">
-                    <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 relative overflow-hidden flex flex-col items-center justify-center text-center">
+                    <div className="bg-white dark:bg-[#1f232b] p-8 rounded-3xl shadow-xl border border-gray-100 relative overflow-hidden flex flex-col items-center justify-center text-center">
                         
                         {(status === 'processing' || status === 'confirmed') && (
-                            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                            <div className="absolute inset-0 bg-white dark:bg-[#1f232b]/95 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                                 {status === 'processing' ? (
                                     <>
-                                        <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                        <h3 className="text-xl font-bold text-neutral-800">Generating Secure QR...</h3>
-                                        <p className="text-neutral-500">Please wait while we set up your transaction.</p>
+                                        <div className="w-16 h-16 border-4 border-themeAccent-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                        <h3 className="text-xl font-bold text-neutral-800 dark:text-neutral-100">Generating Secure QR...</h3>
+                                        <p className="text-neutral-500 dark:text-neutral-400">Please wait while we set up your transaction.</p>
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                                         </div>
-                                        <h3 className="text-xl font-bold text-neutral-800">Payment Successful!</h3>
-                                        <p className="text-neutral-500">Redirecting to confirmation...</p>
+                                        <h3 className="text-xl font-bold text-neutral-800 dark:text-neutral-100">Payment Successful!</h3>
+                                        <p className="text-neutral-500 dark:text-neutral-400">Redirecting to confirmation...</p>
                                     </>
                                 )}
                             </div>
@@ -212,13 +212,13 @@ export default function Payment() {
                         )}
 
                         <div className="w-full space-y-6 flex flex-col items-center">
-                            <div className="flex items-center gap-2 text-lg font-bold text-neutral-800">
-                                <HiQrcode className="text-2xl text-cyan-500" />
+                            <div className="flex items-center gap-2 text-lg font-bold text-neutral-800 dark:text-neutral-100">
+                                <HiQrcode className="text-2xl text-themeAccent-500" />
                                 <span>Scan to Pay</span>
                             </div>
 
                             {qrCodeDataUrl ? (
-                                <div className="p-4 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
+                                <div className="p-4 bg-white dark:bg-[#1f232b] border-2 border-dashed border-gray-200 rounded-2xl">
                                     <img src={qrCodeDataUrl} alt="UPI Payment QR Code" className="w-[250px] h-[250px]" />
                                 </div>
                             ) : (
@@ -226,11 +226,11 @@ export default function Payment() {
                             )}
 
                             <div className="space-y-1">
-                                <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Amount to Pay</p>
-                                <p className="text-3xl font-bold text-neutral-800">₹500.00</p>
+                                <p className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest">Amount to Pay</p>
+                                <p className="text-3xl font-bold text-neutral-800 dark:text-neutral-100">₹500.00</p>
                             </div>
 
-                            <p className="text-sm text-neutral-500 max-w-[250px]">
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-[250px]">
                                 Open any UPI app on your mobile device and scan this code to complete the payment.
                             </p>
 

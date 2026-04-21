@@ -21,7 +21,7 @@ export default function LanguageSelector({ onStartChat }: HomeProps) {
         {/* Logo Container with Teal Glow */}
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-primary/30 blur-2xl rounded-full opacity-60 animate-pulse" />
-          <div className="relative h-20 w-20 rounded-2xl bg-white border border-primary/20 shadow-xl flex items-center justify-center overflow-hidden hover-lift">
+          <div className="relative h-20 w-20 rounded-2xl bg-white dark:bg-[#1f232b] border border-primary/20 shadow-xl flex items-center justify-center overflow-hidden hover-lift">
             <img
               src={logo}
               alt={t("HealthBot logo")}

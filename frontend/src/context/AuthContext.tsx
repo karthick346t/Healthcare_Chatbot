@@ -29,6 +29,7 @@ export interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -40,6 +41,7 @@ export const AuthContext = createContext<AuthContextType>({
   register: async () => {},
   googleLogin: async () => {},
   logout: () => {},
+  refreshUser: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);

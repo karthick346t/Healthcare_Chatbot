@@ -120,7 +120,7 @@ export default function MedicalRecords() {
             <div className="flex items-center mb-4">
                 <button
                     onClick={() => navigate("/")}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 text-neutral-600 dark:text-neutral-300 font-bold hover:bg-white dark:bg-[#1f232b]/80 transition-all shadow-sm"
                 >
                     <MdArrowBack />
                     <span>{t("Go Back")}</span>
@@ -128,12 +128,12 @@ export default function MedicalRecords() {
             </div>
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-2xl font-bold text-neutral-800">Medical Records</h1>
-                    <p className="text-neutral-500">View and manage your lab reports and prescriptions.</p>
+                    <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">Medical Records</h1>
+                    <p className="text-neutral-500 dark:text-neutral-400">View and manage your lab reports and prescriptions.</p>
                 </div>
                 <button
                     onClick={() => setShowUpload(!showUpload)}
-                    className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-themeAccent-500 text-white rounded-lg hover:bg-themeAccent-600 transition-colors shadow-sm"
                 >
                     <HiPlus className="text-lg" />
                     <span>Add Record</span>
@@ -142,7 +142,7 @@ export default function MedicalRecords() {
 
             {/* Upload Modal / Form Area */}
             {showUpload && (
-                <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 animate-in fade-in slide-in-from-top-4">
+                <div className="bg-white dark:bg-[#1f232b] p-6 rounded-2xl shadow-lg border border-gray-100 animate-in fade-in slide-in-from-top-4">
                     <h3 className="font-bold text-lg mb-4">Upload New Record</h3>
                     <form onSubmit={handleUpload} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -150,7 +150,7 @@ export default function MedicalRecords() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                                 <input
                                     type="text"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-cyan-500 outline-none"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-themeAccent-500 outline-none"
                                     placeholder="e.g. Blood Test Results"
                                     value={newReport.title}
                                     onChange={e => setNewReport({ ...newReport, title: e.target.value })}
@@ -160,7 +160,7 @@ export default function MedicalRecords() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                                 <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-cyan-500 outline-none"
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-themeAccent-500 outline-none"
                                     value={newReport.type}
                                     onChange={e => setNewReport({ ...newReport, type: e.target.value as any })}
                                 >
@@ -173,7 +173,7 @@ export default function MedicalRecords() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <input
                                 type="text"
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-cyan-500 outline-none"
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-themeAccent-500 outline-none"
                                 placeholder="Optional notes..."
                                 value={newReport.description}
                                 onChange={e => setNewReport({ ...newReport, description: e.target.value })}
@@ -199,7 +199,7 @@ export default function MedicalRecords() {
                             <button
                                 type="submit"
                                 disabled={uploading}
-                                className="px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 font-medium disabled:opacity-50"
+                                className="px-6 py-2 bg-themeAccent-500 text-white rounded-lg hover:bg-themeAccent-600 font-medium disabled:opacity-50"
                             >
                                 {uploading ? 'Uploading...' : 'Upload Record'}
                             </button>
@@ -222,7 +222,7 @@ export default function MedicalRecords() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {reports.map((report) => (
-                        <div key={report._id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                        <div key={report._id} className="bg-white dark:bg-[#1f232b] p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
                             <div className="flex items-start justify-between mb-4">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${report.type === 'Lab Report' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'
                                     }`}>
@@ -233,7 +233,7 @@ export default function MedicalRecords() {
                                 </span>
                             </div>
 
-                            <h3 className="font-bold text-gray-800 mb-1 group-hover:text-cyan-600 transition-colors">{report.title}</h3>
+                            <h3 className="font-bold text-gray-800 mb-1 group-hover:text-themeAccent-600 transition-colors">{report.title}</h3>
                             <p className="text-sm text-gray-500 mb-4 line-clamp-2">{report.description || `Medical ${report.type}`}</p>
 
                             <div className="flex items-center justify-between pt-4 border-t border-gray-50">
@@ -242,7 +242,7 @@ export default function MedicalRecords() {
                                     href={report.fileUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-sm font-medium text-cyan-500 hover:text-cyan-700"
+                                    className="flex items-center gap-1 text-sm font-medium text-themeAccent-500 hover:text-themeAccent-700"
                                 >
                                     <HiDownload />
                                     <span>Download</span>

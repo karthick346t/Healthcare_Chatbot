@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { 
   MdPerson, 
@@ -18,6 +18,8 @@ import { HiCheck, HiX } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchWithAuth } from '../services/authApi';
 import { API_BASE_URL } from '../services/apiConfig';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 // --- Types ---
 type SectionType = 'account' | 'notifications' | 'privacy' | 'appearance' | 'help';
@@ -41,8 +43,8 @@ const NeuButton = ({ children, onClick, className = '', active = false }: { chil
     onClick={onClick}
     className={`${
       active 
-        ? 'neu-pressed text-cyan-700 shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]' 
-        : 'neu-flat hover:text-cyan-600 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:-translate-y-0.5'
+        ? 'neu-pressed text-cyan-700 shadow-neu-in dark:shadow-neu-in-dark' 
+        : 'neu-flat hover:text-cyan-600 shadow-neu-out dark:shadow-neu-out-dark hover:-translate-y-0.5'
     } transition-all duration-300 rounded-xl px-4 py-2 flex items-center justify-center gap-2 ${className}`}
   >
     {children}
@@ -51,33 +53,35 @@ const NeuButton = ({ children, onClick, className = '', active = false }: { chil
 
 const NeuToggle = ({ label, enabled, onChange }: ToggleSwitchProps) => (
   <div className="flex items-center justify-between py-4">
-    <span className="font-medium text-neutral-600">{label}</span>
+    <span className="font-medium text-neutral-600 dark:text-neutral-300">{label}</span>
     <button
       onClick={() => onChange(!enabled)}
       className={`w-14 h-7 rounded-full p-1 transition-all duration-300 ${
         enabled 
           ? 'bg-cyan-50 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1)]' 
-          : 'bg-[#eef2f5] shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff]'
+          : 'bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark'
       }`}
     >
       <div
         className={`w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-          enabled ? 'translate-x-7 bg-cyan-500' : 'translate-x-0 bg-neutral-400'
+          enabled ? 'translate-x-7 bg-themeAccent-500' : 'translate-x-0 bg-neutral-400'
         }`}
       />
     </button>
   </div>
 );
 
-const NeuInput = ({ label, value, type = 'text', placeholder = '' }: { label: string; value?: string; type?: string; placeholder?: string }) => (
+const NeuInput = ({ label, value, onChange, readOnly = false, type = 'text', placeholder = '' }: { label: string; value?: string; onChange?: (val: string) => void; readOnly?: boolean; type?: string; placeholder?: string }) => (
   <div className="mb-4">
     <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2 ml-1">{label}</label>
     <div className="relative">
       <input
         type={type}
-        defaultValue={value}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        readOnly={readOnly}
         placeholder={placeholder}
-        className="w-full bg-[#eef2f5] rounded-xl px-4 py-3 outline-none text-neutral-700 font-medium shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#c8d0e7,inset_-6px_-6px_12px_#ffffff] transition-all"
+        className={`w-full bg-neu dark:bg-neu-dark rounded-xl px-4 py-3 outline-none text-neutral-700 dark:text-neutral-200 font-medium shadow-neu-in dark:shadow-neu-in-dark focus:shadow-neu-in-lg dark:shadow-neu-in-lg-dark transition-all ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
       />
     </div>
   </div>
@@ -93,8 +97,51 @@ export default function Settings() {
     sms: false,
     offers: false
   });
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDarkMode, toggleDarkMode, accentColor, setAccentColor } = useTheme();
   const [downloadingData, setDownloadingData] = useState(false);
+  const { user, logout, refreshUser } = useAuth();
+  const location = useLocation();
+
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      alert("Name and Phone Number are required.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { apiUpdateProfile } = await import('../services/authApi');
+      await apiUpdateProfile({ name: formData.name, phone: formData.phone });
+      await refreshUser();
+      
+      // If they came from the onboarding redirect, let them proceed to the dashboard
+      if (location.state?.fromOnboarding) {
+         navigate('/', { replace: true });
+      } else {
+         alert("Profile updated successfully!");
+      }
+    } catch (err) {
+      console.error("Failed to save profile", err);
+      alert("Failed to save profile. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDownloadData = async () => {
     try {
@@ -126,8 +173,8 @@ export default function Settings() {
       onClick={() => setActiveSection(id)}
       className={`w-full text-left px-6 py-4 rounded-xl flex items-center gap-4 transition-all duration-200 ${
         activeSection === id
-          ? 'neu-pressed text-cyan-700 shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]'
-          : 'text-neutral-500 hover:text-cyan-600 hover:bg-[#eef2f5] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
+          ? 'neu-pressed text-cyan-700 shadow-neu-in dark:shadow-neu-in-dark'
+          : 'text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 hover:bg-neu dark:bg-neu-dark hover:shadow-neu-out dark:shadow-neu-out-dark'
       }`}
     >
       <Icon className="text-xl" />
@@ -137,7 +184,7 @@ export default function Settings() {
   );
 
   return (
-    <div className="min-h-screen bg-[#eef2f5] p-6 lg:p-10 font-sans text-neutral-800 flex justify-center">
+    <div className="min-h-screen bg-neu dark:bg-neu-dark p-6 lg:p-10 font-sans text-neutral-800 dark:text-neutral-100 flex justify-center">
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         {/* --- Sidebar Navigation --- */}
@@ -145,14 +192,14 @@ export default function Settings() {
             <div className="flex items-center mb-4">
                 <button
                     onClick={() => navigate("/")}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 text-neutral-600 dark:text-neutral-300 font-bold hover:bg-white dark:bg-[#1f232b]/80 transition-all shadow-sm"
                 >
                     <MdArrowBack />
                     <span>{t("Go Back")}</span>
                 </button>
             </div>
             <div className="p-4 mb-4">
-                <h1 className="text-3xl font-black text-neutral-700 tracking-tight mb-1">Settings</h1>
+                <h1 className="text-3xl font-black text-neutral-700 dark:text-neutral-200 tracking-tight mb-1">Settings</h1>
                 <p className="text-neutral-400 text-sm font-medium">Manage your preferences</p>
             </div>
           
@@ -165,7 +212,7 @@ export default function Settings() {
           </div>
 
           <div className="pt-8 px-4">
-             <button className="w-full py-3 rounded-xl bg-[#eef2f5] text-red-500 font-bold shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] active:scale-95 transition-all flex items-center justify-center gap-2">
+             <button onClick={() => { logout(); navigate('/login'); }} className="w-full py-3 rounded-xl bg-neu dark:bg-neu-dark text-red-500 font-bold shadow-neu-out dark:shadow-neu-out-dark hover:shadow-neu-in dark:shadow-neu-in-dark active:scale-95 transition-all flex items-center justify-center gap-2">
                 <MdLogout /> Sign Out
              </button>
           </div>
@@ -186,18 +233,18 @@ export default function Settings() {
               {activeSection === 'account' && (
                 <div className="space-y-8">
                   <NeuCard>
-                    <h2 className="text-xl font-bold text-neutral-700 mb-6 flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-full bg-[#eef2f5] shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] flex items-center justify-center text-cyan-600">
+                    <h2 className="text-xl font-bold text-neutral-700 dark:text-neutral-200 mb-6 flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-full bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark flex items-center justify-center text-themeAccent-600">
                             <MdPerson />
                          </div>
                         Profile Information
                     </h2>
                     
-                    <div className="flex flex-col md:flex-row gap-8 items-start">
+                        <div className="flex flex-col md:flex-row gap-8 items-start">
                         {/* Avatar Upload */}
                         <div className="flex flex-col items-center gap-4">
-                            <div className="w-32 h-32 rounded-full bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-4 border-[#eef2f5] flex items-center justify-center overflow-hidden relative group cursor-pointer">
-                                <img src="https://ui-avatars.com/api/?name=Mokith+Pranesh&background=0D9488&color=fff" alt="Profile" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                            <div className="w-32 h-32 rounded-full bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark border-4 border-[#eef2f5] flex items-center justify-center overflow-hidden relative group cursor-pointer">
+                                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=0D9488&color=fff`} alt="Profile" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <span className="text-white text-xs font-bold uppercase">Change</span>
                                 </div>
@@ -206,14 +253,14 @@ export default function Settings() {
 
                         {/* Form Fields */}
                         <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <NeuInput label="Full Name" value="Mokith Pranesh" />
-                            <NeuInput label="Username" value="mokith_dev" />
-                            <NeuInput label="Email Address" value="mokith@example.com" type="email" />
-                            <NeuInput label="Phone Number" value="+1 (555) 123-4567" type="tel" />
+                            <NeuInput label="Full Name" value={formData.name} onChange={(val) => setFormData({...formData, name: val})} />
+                            <NeuInput label="Username" value={user?.name ? user.name.toLowerCase().replace(/\s+/g, '_') : ''} readOnly />
+                            <NeuInput label="Email Address" value={user?.email || ''} type="email" readOnly />
+                            <NeuInput label="Phone Number" value={formData.phone} onChange={(val) => setFormData({...formData, phone: val})} type="tel" placeholder="+1 (555) 000-0000" />
                         
                             <div className="col-span-full pt-4 flex gap-4">
-                                <NeuButton className="bg-cyan-500 text-white shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:bg-cyan-600 border-none">
-                                    Save Changes
+                                <NeuButton onClick={handleSaveProfile} className="bg-themeAccent-500 text-white shadow-neu-out dark:shadow-neu-out-dark border-none">
+                                    {isSaving ? "Saving..." : "Save Changes"}
                                 </NeuButton>
                                 <NeuButton className="text-neutral-400">Cancel</NeuButton>
                             </div>
@@ -222,7 +269,7 @@ export default function Settings() {
                   </NeuCard>
 
                   <NeuCard>
-                     <h2 className="text-lg font-bold text-neutral-700 mb-4">Password & Authentication</h2>
+                     <h2 className="text-lg font-bold text-neutral-700 dark:text-neutral-200 mb-4">Password & Authentication</h2>
                      <div className="space-y-4">
                         <NeuButton className="w-full md:w-auto text-sm">Change Password</NeuButton>
                         <NeuButton className="w-full md:w-auto text-sm text-cyan-600">Enable Two-Factor Authentication</NeuButton>
@@ -235,7 +282,7 @@ export default function Settings() {
               {activeSection === 'notifications' && (
                 <div className="space-y-6">
                   <NeuCard>
-                    <h2 className="text-xl font-bold text-neutral-700 mb-6">Notification Preferences</h2>
+                    <h2 className="text-xl font-bold text-neutral-700 dark:text-neutral-200 mb-6">Notification Preferences</h2>
                     <div className="divide-y divide-gray-200">
                         <NeuToggle 
                             label="Email Notifications" 
@@ -266,11 +313,11 @@ export default function Settings() {
               {activeSection === 'privacy' && (
                 <div className="space-y-6">
                   <NeuCard>
-                     <h2 className="text-xl font-bold text-neutral-700 mb-6">Privacy & Data</h2>
+                     <h2 className="text-xl font-bold text-neutral-700 dark:text-neutral-200 mb-6">Privacy & Data</h2>
                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] bg-[#eef2f5]">
+                        <div className="flex items-center justify-between p-4 rounded-xl shadow-neu-in dark:shadow-neu-in-dark bg-neu dark:bg-neu-dark">
                              <div>
-                                <h4 className="font-bold text-neutral-700">Download My Data</h4>
+                                <h4 className="font-bold text-neutral-700 dark:text-neutral-200">Download My Data</h4>
                                 <p className="text-xs text-neutral-400">Get a copy of all your medical records.</p>
                              </div>
                              <button 
@@ -282,9 +329,9 @@ export default function Settings() {
                              </button>
                         </div>
                         
-                        <div className="flex items-center justify-between p-4 rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] bg-[#eef2f5]">
+                        <div className="flex items-center justify-between p-4 rounded-xl shadow-neu-in dark:shadow-neu-in-dark bg-neu dark:bg-neu-dark">
                              <div>
-                                <h4 className="font-bold text-neutral-700">Clear Search History</h4>
+                                <h4 className="font-bold text-neutral-700 dark:text-neutral-200">Clear Search History</h4>
                                 <p className="text-xs text-neutral-400">Remove all local search data.</p>
                              </div>
                              <button className="text-red-500 font-bold text-sm">Clear</button>
@@ -293,13 +340,13 @@ export default function Settings() {
                   </NeuCard>
                   
                   <NeuCard>
-                     <h2 className="text-xl font-bold text-neutral-700 mb-6">Active Sessions</h2>
+                     <h2 className="text-xl font-bold text-neutral-700 dark:text-neutral-200 mb-6">Active Sessions</h2>
                      <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <MdPermDeviceInformation className="text-2xl text-neutral-400" />
                                 <div>
-                                    <p className="font-bold text-sm text-neutral-600">Windows PC - Chrome</p>
+                                    <p className="font-bold text-sm text-neutral-600 dark:text-neutral-300">Windows PC - Chrome</p>
                                     <p className="text-xs text-green-500 font-bold">Active Now</p>
                                 </div>
                             </div>
@@ -308,7 +355,7 @@ export default function Settings() {
                             <div className="flex items-center gap-3">
                                 <MdPermDeviceInformation className="text-2xl text-neutral-400" />
                                 <div>
-                                    <p className="font-bold text-sm text-neutral-600">iPhone 13 - Safari</p>
+                                    <p className="font-bold text-sm text-neutral-600 dark:text-neutral-300">iPhone 13 - Safari</p>
                                     <p className="text-xs text-neutral-400">Last active 2 hrs ago</p>
                                 </div>
                             </div>
@@ -323,17 +370,27 @@ export default function Settings() {
               {activeSection === 'appearance' && (
                  <div className="space-y-6">
                     <NeuCard>
-                        <h2 className="text-xl font-bold text-neutral-700 mb-6">Theme & Display</h2>
+                        <h2 className="text-xl font-bold text-neutral-700 dark:text-neutral-200 mb-6">Theme & Display</h2>
                         <NeuToggle 
                             label="Dark Mode (Beta)" 
-                            enabled={darkMode} 
-                            onChange={setDarkMode} 
+                            enabled={isDarkMode} 
+                            onChange={toggleDarkMode} 
                         />
                          <div className="py-4">
-                            <label className="block text-sm font-bold text-neutral-500 mb-3">Accent Color</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-3">Accent Color</label>
                             <div className="flex gap-4">
-                                {['bg-cyan-500', 'bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-orange-500'].map(color => (
-                                    <button key={color} className={`w-10 h-10 rounded-full ${color} shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] hover:scale-110 transition-transform`}></button>
+                                {[
+                                  { id: 'cyan', class: 'bg-cyan-500' },
+                                  { id: 'blue', class: 'bg-blue-500' },
+                                  { id: 'purple', class: 'bg-purple-500' },
+                                  { id: 'emerald', class: 'bg-emerald-500' },
+                                  { id: 'orange', class: 'bg-orange-500' }
+                                ].map(color => (
+                                    <button 
+                                      key={color.id} 
+                                      onClick={() => setAccentColor(color.id)}
+                                      className={`w-10 h-10 rounded-full ${color.class} ${accentColor === color.id ? 'ring-4 ring-offset-2 ring-offset-neu dark:ring-offset-neu-dark ring-neutral-400 dark:ring-neutral-500 scale-110' : 'shadow-neu-out dark:shadow-neu-out-dark'} hover:scale-110 transition-all`}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -345,7 +402,7 @@ export default function Settings() {
                {activeSection === 'help' && (
                  <div className="space-y-6">
                     <NeuCard>
-                        <h2 className="text-xl font-bold text-neutral-700 mb-6">Frequently Asked Questions</h2>
+                        <h2 className="text-xl font-bold text-neutral-700 dark:text-neutral-200 mb-6">Frequently Asked Questions</h2>
                         <div className="space-y-4">
                             {[
                                 "How do I book an appointment?",
@@ -353,12 +410,12 @@ export default function Settings() {
                                 "Can I export my prescription history?",
                                 "How do I contact support?"
                             ].map((q, i) => (
-                                <details key={i} className="group bg-[#eef2f5] rounded-xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] open:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all duration-300">
-                                    <summary className="font-bold text-neutral-600 p-4 cursor-pointer list-none flex justify-between items-center outline-none">
+                                <details key={i} className="group bg-neu dark:bg-neu-dark rounded-xl shadow-neu-out dark:shadow-neu-out-dark open:shadow-neu-in dark:shadow-neu-in-dark transition-all duration-300">
+                                    <summary className="font-bold text-neutral-600 dark:text-neutral-300 p-4 cursor-pointer list-none flex justify-between items-center outline-none">
                                         {q}
                                         <MdArrowForwardIos className="text-xs transition-transform group-open:rotate-90" />
                                     </summary>
-                                    <div className="px-4 pb-4 text-sm text-neutral-500 leading-relaxed">
+                                    <div className="px-4 pb-4 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
                                         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                                     </div>
                                 </details>
@@ -366,10 +423,10 @@ export default function Settings() {
                         </div>
                     </NeuCard>
                      <NeuCard>
-                        <h2 className="text-lg font-bold text-neutral-700 mb-4">Contact Support</h2>
-                        <p className="text-sm text-neutral-500 mb-4">Need help? Our team is available 24/7.</p>
+                        <h2 className="text-lg font-bold text-neutral-700 dark:text-neutral-200 mb-4">Contact Support</h2>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">Need help? Our team is available 24/7.</p>
                         <div className="flex gap-4">
-                            <NeuButton className="flex-1 bg-cyan-500 text-white shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]">Chat with Support</NeuButton>
+                            <NeuButton className="flex-1 bg-cyan-500 text-white shadow-neu-out dark:shadow-neu-out-dark">Chat with Support</NeuButton>
                             <NeuButton className="flex-1">Email Us</NeuButton>
                         </div>
                     </NeuCard>

@@ -99,10 +99,10 @@ export default function AdminDashboard() {
                 {/* Left Column: Charts & Quick Links (Span 2) */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Simple Visualization: Appointment Status */}
-                    <div className="bg-[#eef2f5] rounded-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] p-6">
+                    <div className="bg-neu dark:bg-neu-dark rounded-3xl shadow-neu-in dark:shadow-neu-in-dark p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-neutral-800">Appointment Status Distribution</h3>
-                            <span className="text-xs font-semibold text-neutral-500 bg-gray-100 px-3 py-1 rounded-full">All Time</span>
+                            <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Appointment Status Distribution</h3>
+                            <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 bg-gray-100 px-3 py-1 rounded-full">All Time</span>
                         </div>
 
                         <div className="flex h-12 rounded-xl overflow-hidden shadow-inner mb-4">
@@ -124,46 +124,46 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center justify-center gap-6">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-xs text-neutral-600 font-medium">Confirmed ({stats?.appointments.confirmed || 0})</span></div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-xs text-neutral-600 font-medium">Pending ({stats?.appointments.pending || 0})</span></div>
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><span className="text-xs text-neutral-600 font-medium">Cancelled ({stats?.appointments.cancelled || 0})</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Confirmed ({stats?.appointments.confirmed || 0})</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Pending ({stats?.appointments.pending || 0})</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Cancelled ({stats?.appointments.cancelled || 0})</span></div>
                         </div>
                     </div>
 
                     {/* Quick Panel Row */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="bg-[#eef2f5] rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] p-6">
-                            <h3 className="font-bold text-neutral-800 mb-4">Quick Stats</h3>
+                        <div className="bg-neu dark:bg-neu-dark rounded-3xl shadow-neu-out dark:shadow-neu-out-dark p-6">
+                            <h3 className="font-bold text-neutral-800 dark:text-neutral-100 mb-4">Quick Stats</h3>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                    <span className="text-neutral-500 text-sm">Pending Appointments</span>
-                                    <span className="font-bold text-neutral-800">{stats?.appointments.pending || 0}</span>
+                                    <span className="text-neutral-500 dark:text-neutral-400 text-sm">Pending Appointments</span>
+                                    <span className="font-bold text-neutral-800 dark:text-neutral-100">{stats?.appointments.pending || 0}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                    <span className="text-neutral-500 text-sm">Doctors Registered</span>
-                                    <span className="font-bold text-neutral-800">{stats?.doctors || 0}</span>
+                                    <span className="text-neutral-500 dark:text-neutral-400 text-sm">Doctors Registered</span>
+                                    <span className="font-bold text-neutral-800 dark:text-neutral-100">{stats?.doctors || 0}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-2">
-                                    <span className="text-neutral-500 text-sm">Hospitals Active</span>
-                                    <span className="font-bold text-neutral-800">{stats?.hospitals || 0}</span>
+                                    <span className="text-neutral-500 dark:text-neutral-400 text-sm">Hospitals Active</span>
+                                    <span className="font-bold text-neutral-800 dark:text-neutral-100">{stats?.hospitals || 0}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-[#eef2f5] rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] p-6 text-neutral-800 relative overflow-hidden flex flex-col justify-between">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none"></div>
+                        <div className="bg-neu dark:bg-neu-dark rounded-3xl shadow-neu-out dark:shadow-neu-out-dark p-6 text-neutral-800 dark:text-neutral-100 relative overflow-hidden flex flex-col justify-between">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-[#1f232b]/40 rounded-full blur-3xl translate-x-10 -translate-y-10 pointer-events-none"></div>
 
                             <div>
-                                <h3 className="font-bold text-lg mb-1 relative z-10 text-cyan-700">Quick Actions</h3>
-                                <p className="text-neutral-500 text-xs mb-4 relative z-10 font-medium">Common management tasks.</p>
+                                <h3 className="font-bold text-lg mb-1 relative z-10 text-themeAccent-700">Quick Actions</h3>
+                                <p className="text-neutral-500 dark:text-neutral-400 text-xs mb-4 relative z-10 font-medium">Common management tasks.</p>
                             </div>
 
                             <div className="flex flex-col gap-3 relative z-10 block mt-2">
-                                <button onClick={() => navigate('/admin/doctors')} className="w-full text-left px-4 py-3 bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] rounded-xl transition-all text-sm font-bold text-neutral-700 flex items-center justify-between group block !text-left">
+                                <button onClick={() => navigate('/admin/doctors')} className="w-full text-left px-4 py-3 bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark hover:shadow-neu-out dark:shadow-neu-out-dark rounded-xl transition-all text-sm font-bold text-neutral-700 dark:text-neutral-200 flex items-center justify-between group block !text-left">
                                     <span>Add New Doctor</span>
                                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                                 </button>
-                                <button onClick={() => navigate('/admin/appointments')} className="w-full text-left px-4 py-3 bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] hover:shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff] rounded-xl transition-all text-sm font-bold text-neutral-700 flex items-center justify-between group block !text-left">
+                                <button onClick={() => navigate('/admin/appointments')} className="w-full text-left px-4 py-3 bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark hover:shadow-neu-out dark:shadow-neu-out-dark rounded-xl transition-all text-sm font-bold text-neutral-700 dark:text-neutral-200 flex items-center justify-between group block !text-left">
                                     <span>Review Appointments</span>
                                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                                 </button>
@@ -173,9 +173,9 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Right Column: Activity Feed */}
-                <div className="bg-[#eef2f5] rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] p-0 overflow-hidden flex flex-col h-full lg:h-[480px]">
+                <div className="bg-neu dark:bg-neu-dark rounded-3xl shadow-neu-out dark:shadow-neu-out-dark p-0 overflow-hidden flex flex-col h-full lg:h-[480px]">
                     <div className="p-6 pb-2 flex justify-between items-center mb-2">
-                        <h3 className="font-bold text-neutral-800">Recent Activity</h3>
+                        <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Recent Activity</h3>
                         <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" title="Live updates active"></div>
                     </div>
 
@@ -188,8 +188,8 @@ export default function AdminDashboard() {
                                             {act.icon}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-neutral-800 truncate">{act.title}</p>
-                                            <p className="text-xs text-neutral-500 truncate mt-0.5">{act.desc}</p>
+                                            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100 truncate">{act.title}</p>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">{act.desc}</p>
                                             <p className="text-[10px] text-neutral-400 font-medium mt-1">{act.date.toLocaleDateString()} at {act.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                                         </div>
                                     </div>
@@ -211,13 +211,13 @@ export default function AdminDashboard() {
 
 function StatCard({ icon: Icon, label, value, color }: { icon: any, label: string, value: number, color: string }) {
     return (
-        <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex items-center gap-4 border-none hover:-translate-y-1 transition-transform cursor-default">
-            <div className={`p-4 rounded-xl shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] bg-[#eef2f5] ${color.replace('bg-', 'text-')} `}>
+        <div className="bg-neu dark:bg-neu-dark p-6 rounded-3xl shadow-neu-out dark:shadow-neu-out-dark flex items-center gap-4 border-none hover:-translate-y-1 transition-transform cursor-default">
+            <div className={`p-4 rounded-xl shadow-neu-in-sm dark:shadow-neu-in-sm-dark bg-neu dark:bg-neu-dark ${color.replace('bg-', 'text-')} `}>
                 <Icon className="text-2xl" />
             </div>
             <div>
-                <div className="text-3xl font-black text-neutral-700">{value}</div>
-                <div className="text-sm font-bold text-neutral-500">{label}</div>
+                <div className="text-3xl font-black text-neutral-700 dark:text-neutral-200">{value}</div>
+                <div className="text-sm font-bold text-neutral-500 dark:text-neutral-400">{label}</div>
             </div>
         </div>
     );

@@ -13,9 +13,9 @@ export default function QuickReplies({
         let btnClass = "bg-primary/5 text-primary border-primary/10";
         const lower = option.toLowerCase();
 
-        if (lower === "yes" || lower === "ok") btnClass = "bg-[#4db6ac] text-white border-transparent";
-        if (lower === "no" || lower === "cancel") btnClass = "bg-[#e57373] text-white border-transparent";
-        if (lower === "not sure") btnClass = "bg-[#eceff1] text-neutral-600 border-transparent";
+        if (lower === "yes" || lower === "ok") btnClass = "bg-[#4db6ac] dark:bg-emerald-600 text-white border-transparent";
+        if (lower === "no" || lower === "cancel") btnClass = "bg-[#e57373] dark:bg-red-600 text-white border-transparent";
+        if (lower === "not sure") btnClass = "bg-[#eceff1] dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 border-transparent";
 
         return (
           <button

@@ -77,7 +77,7 @@ export default function Register() {
     try {
       await register(name, email, password);
       setSuccess(true);
-      setTimeout(() => navigate("/", { replace: true }), 600);
+      setTimeout(() => navigate("/profile", { replace: true, state: { fromOnboarding: true } }), 600);
     } catch (err: any) {
       setError(err.message || "Registration failed");
       setShake(true);
@@ -93,7 +93,7 @@ export default function Register() {
     try {
       await googleLogin(credentialResponse.credential);
       setSuccess(true);
-      setTimeout(() => navigate("/", { replace: true }), 600);
+      setTimeout(() => navigate("/profile", { replace: true, state: { fromOnboarding: true } }), 600);
     } catch (err: any) {
       setError(err.message || "Google sign-in failed");
       setShake(true);
@@ -115,7 +115,7 @@ export default function Register() {
 
         <div className="relative z-10 text-center text-white max-w-md">
           <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow">
+            <div className="w-20 h-20 bg-white dark:bg-[#1f232b]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow">
               <Heart className="w-10 h-10 text-white" fill="currentColor" />
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function Register() {
             ].map((stat, i) => (
               <div
                 key={i}
-                className="bg-white/10 backdrop-blur-sm rounded-xl py-4 px-2 login-stagger-in"
+                className="bg-white dark:bg-[#1f232b]/10 backdrop-blur-sm rounded-xl py-4 px-2 login-stagger-in"
                 style={{ animationDelay: `${0.6 + i * 0.15}s` }}
               >
                 <div className="text-2xl font-bold">{stat.value}</div>
@@ -146,7 +146,7 @@ export default function Register() {
       </div>
 
       {/* Right Register Form Panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-primary-50/30">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-primary-50/30 dark:from-[#111419] dark:to-[#171b22]">
         <div className={`w-full max-w-md login-card-enter ${shake ? "login-shake" : ""}`}>
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-6">
@@ -157,10 +157,10 @@ export default function Register() {
 
           <div className="login-glass rounded-3xl p-8 sm:p-10">
             <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Create Account
               </h2>
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Start your health journey today
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function Register() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name */}
               <div className="login-field-enter" style={{ animationDelay: "0.1s" }}>
-                <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Full Name
                 </label>
                 <div className="relative">
@@ -197,14 +197,14 @@ export default function Register() {
                     autoFocus
                     autoComplete="name"
                     aria-label="Full name"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#14171d] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
                   />
                 </div>
               </div>
 
               {/* Email */}
               <div className="login-field-enter" style={{ animationDelay: "0.15s" }}>
-                <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
@@ -218,14 +218,14 @@ export default function Register() {
                     required
                     autoComplete="email"
                     aria-label="Email address"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#14171d] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div className="login-field-enter" style={{ animationDelay: "0.2s" }}>
-                <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -240,7 +240,7 @@ export default function Register() {
                     minLength={6}
                     autoComplete="new-password"
                     aria-label="Password"
-                    className="w-full pl-11 pr-12 py-3 rounded-xl border border-gray-200 bg-white/80 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
+                    className="w-full pl-11 pr-12 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#14171d] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
                   />
                   <button
                     type="button"
@@ -259,7 +259,7 @@ export default function Register() {
                       {[1, 2, 3, 4].map((level) => (
                         <div
                           key={level}
-                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${level <= strength.score ? strength.color : "bg-gray-200"
+                          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${level <= strength.score ? strength.color : "bg-gray-200 dark:bg-gray-700"
                             }`}
                         />
                       ))}
@@ -277,7 +277,7 @@ export default function Register() {
 
               {/* Confirm Password */}
               <div className="login-field-enter" style={{ animationDelay: "0.25s" }}>
-                <label htmlFor="reg-confirm" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="reg-confirm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -291,11 +291,11 @@ export default function Register() {
                     required
                     autoComplete="new-password"
                     aria-label="Confirm password"
-                    className={`w-full pl-11 pr-12 py-3 rounded-xl border bg-white/80 text-gray-900 placeholder-gray-400 focus:ring-2 outline-none text-sm ${passwordsMismatch
-                        ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                    className={`w-full pl-11 pr-12 py-3 rounded-xl border bg-white dark:bg-[#14171d] text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 outline-none text-sm ${passwordsMismatch
+                        ? "border-red-300 dark:border-red-500/50 focus:border-red-500 focus:ring-red-500/20"
                         : passwordsMatch
-                          ? "border-green-300 focus:border-green-500 focus:ring-green-500/20"
-                          : "border-gray-200 focus:border-primary-500 focus:ring-primary-500/20"
+                          ? "border-green-300 dark:border-green-500/50 focus:border-green-500 focus:ring-green-500/20"
+                          : "border-gray-200 dark:border-gray-700 focus:border-primary-500 focus:ring-primary-500/20"
                       }`}
                   />
                   <button
@@ -344,10 +344,10 @@ export default function Register() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+                <div className="w-full border-t border-gray-200 dark:border-gray-700" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-xs text-gray-400 uppercase tracking-wider">
+                <span className="bg-white dark:bg-[#1f232b] px-4 text-xs text-gray-400 uppercase tracking-wider">
                   or continue with
                 </span>
               </div>
@@ -365,18 +365,18 @@ export default function Register() {
               />
             </div>
 
-            <p className="text-center text-sm text-gray-500 mt-6">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="text-primary-600 hover:text-primary-700 font-semibold hover:underline"
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400 font-semibold hover:underline"
               >
                 Sign in
               </Link>
             </p>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6">
             By creating an account, you agree to our Terms of Service
           </p>
         </div>

@@ -75,51 +75,48 @@ export default function MyAppointments() {
     const displayedAppointments = activeTab === 'upcoming' ? upcomingAppointments : pastAppointments;
 
     const statusColor = (status: string) => {
-        if (status === 'confirmed') return 'bg-green-100 text-green-700';
-        if (status === 'cancelled') return 'bg-red-100 text-red-700';
-        return 'bg-orange-100 text-orange-700';
+        if (status === 'confirmed' || status === 'scheduled') return 'text-orange-500 dark:text-orange-400 shadow-neu-in-sm dark:shadow-neu-in-sm-dark';
+        if (status === 'cancelled') return 'text-red-500 dark:text-red-400 shadow-neu-in-sm dark:shadow-neu-in-sm-dark';
+        return 'text-gray-500 dark:text-gray-400 shadow-neu-in-sm dark:shadow-neu-in-sm-dark';
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-6">
+        <div className="min-h-screen bg-neu dark:bg-neu-dark p-6 font-sans text-neutral-800 dark:text-neutral-100">
             <div className="max-w-5xl mx-auto">
                 <div className="flex items-center mb-4">
                     <button
                         onClick={() => navigate("/")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 text-neutral-600 dark:text-neutral-300 font-bold hover:bg-white dark:bg-[#1f232b]/80 transition-all shadow-sm"
                     >
                         <MdArrowBack />
                         <span>{t("Go Back")}</span>
                     </button>
                 </div>
                 <header className="mb-8">
-                    <h1 className="text-3xl font-bold text-neutral-800 flex items-center gap-3">
-                        <span className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
-                            <HiOutlineClipboardList />
+                    <h1 className="text-3xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-3">
+                        <span className="w-12 h-12 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-neu-out dark:shadow-neu-out-dark">
+                            <HiOutlineClipboardList className="text-2xl" />
                         </span>
                         My Appointments
                     </h1>
-                    <p className="text-neutral-500 mt-2 ml-16">
+                    <p className="text-neutral-500 dark:text-neutral-400 mt-2 ml-16">
                         Manage your upcoming visits and view your medical history.
                     </p>
                 </header>
 
                 {/* Tabs */}
-                <div className="flex gap-4 mb-8 border-b border-gray-200">
+                <div className="flex p-1.5 bg-neu dark:bg-neu-dark rounded-xl shadow-neu-in dark:shadow-neu-in-dark w-fit mb-8">
                     {['upcoming', 'past'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as 'upcoming' | 'past')}
-                            className={`pb-4 px-4 font-bold text-sm transition-all relative ${activeTab === tab ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all flex items-center ${activeTab === tab ? 'bg-neu dark:bg-neu-dark text-indigo-600 dark:text-indigo-400 shadow-neu-out dark:shadow-neu-out-dark' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             {tab === 'upcoming' ? 'Upcoming' : 'History & Cancelled'}
                             {tab === 'upcoming' && (
-                                <span className="ml-2 bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-xs">
+                                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-black ${activeTab === tab ? 'shadow-neu-in-sm dark:shadow-neu-in-sm-dark text-indigo-600 dark:text-indigo-400' : 'bg-gray-200 dark:bg-[#1f232b] text-gray-500'}`}>
                                     {upcomingAppointments.length}
                                 </span>
-                            )}
-                            {activeTab === tab && (
-                                <motion.div layoutId="underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-600" />
                             )}
                         </button>
                     ))}
@@ -130,11 +127,11 @@ export default function MyAppointments() {
                     {loading ? (
                         <div className="text-center py-20 text-neutral-400 italic">Loading your schedule...</div>
                     ) : displayedAppointments.length === 0 ? (
-                        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
-                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300 text-2xl">
+                        <div className="text-center py-20 neu-card max-w-lg mx-auto">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl shadow-neu-in dark:shadow-neu-in-dark">
                                 <HiCalendar />
                             </div>
-                            <h3 className="text-lg font-bold text-neutral-700">No appointments found</h3>
+                            <h3 className="text-lg font-bold text-neutral-700 dark:text-neutral-200">No appointments found</h3>
                             <p className="text-neutral-400 text-sm">You don't have any {activeTab} appointments.</p>
                         </div>
                     ) : (
@@ -145,10 +142,10 @@ export default function MyAppointments() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6 hover:shadow-md transition-all"
+                                    className="neu-card p-6 flex flex-col md:flex-row gap-6 hover:-translate-y-1 transition-all"
                                 >
                                     {/* Date Block */}
-                                    <div className={`flex flex-col items-center justify-center p-4 rounded-2xl min-w-[100px] ${appt.status === 'cancelled' ? 'bg-red-50 text-red-400' : 'bg-indigo-50 text-indigo-600'}`}>
+                                    <div className={`flex flex-col items-center justify-center p-4 rounded-2xl min-w-[100px] shadow-neu-in dark:shadow-neu-in-dark ${appt.status === 'cancelled' ? 'text-red-500 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                                         <span className="text-xs font-bold uppercase tracking-wider">
                                             {new Date(appt.appointmentDate).toLocaleDateString('en-US', { month: 'short' })}
                                         </span>
@@ -164,7 +161,7 @@ export default function MyAppointments() {
                                     <div className="flex-1 space-y-2">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="text-xl font-bold text-neutral-800">
+                                                <h3 className="text-xl font-bold text-neutral-800 dark:text-neutral-100">
                                                     {appt.doctorId?.name || appt.doctorName || 'Doctor'}
                                                 </h3>
                                                 <p className="text-indigo-500 text-sm font-medium">
@@ -178,21 +175,21 @@ export default function MyAppointments() {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                            <div className="flex items-center gap-3 text-neutral-500 text-sm">
-                                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                            <div className="flex items-center gap-3 text-neutral-500 dark:text-neutral-400 text-sm">
+                                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 shadow-neu-in-sm dark:shadow-neu-in-sm-dark">
                                                     <HiLocationMarker />
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-neutral-700">{appt.hospitalId?.name || appt.hospitalName}</p>
+                                                    <p className="font-bold text-neutral-700 dark:text-neutral-200">{appt.hospitalId?.name || appt.hospitalName}</p>
                                                     <p className="text-xs truncate max-w-[200px]">{appt.hospitalId?.location || 'Main Campus'}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3 text-neutral-500 text-sm">
-                                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                            <div className="flex items-center gap-3 text-neutral-500 dark:text-neutral-400 text-sm">
+                                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 shadow-neu-in-sm dark:shadow-neu-in-sm-dark">
                                                     <HiClock />
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-neutral-700">Token #{appt.tokenNumber}</p>
+                                                    <p className="font-bold text-neutral-700 dark:text-neutral-200">Token #{appt.tokenNumber}</p>
                                                     <p className="text-xs">Est. Wait: ~{appt.tokenNumber * 20} mins</p>
                                                 </div>
                                             </div>
@@ -205,18 +202,18 @@ export default function MyAppointments() {
                                             <button
                                                 onClick={() => setCancelAppt(appt)}
                                                 disabled={actionLoading === appt._id}
-                                                className="px-4 py-2 rounded-xl bg-white border border-red-100 text-red-500 text-sm font-bold hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
+                                                className="neu-btn px-4 py-2 text-red-500 hover:text-red-600 text-sm font-bold disabled:opacity-50"
                                             >
                                                 {actionLoading === appt._id ? 'Cancelling...' : 'Cancel Visit'}
                                             </button>
                                         ) : (
-                                            <button disabled className="px-4 py-2 rounded-xl bg-gray-50 text-gray-300 text-sm font-bold cursor-not-allowed uppercase">
+                                            <button disabled className="neu-flat px-4 py-2 text-gray-400 text-sm font-bold cursor-not-allowed uppercase shadow-neu-in dark:shadow-neu-in-dark rounded-xl">
                                                 {appt.status}
                                             </button>
                                         )}
                                         <button
                                             onClick={() => setViewAppt(appt)}
-                                            className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 transition-all"
+                                            className="neu-btn px-4 py-2 text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:text-indigo-700"
                                         >
                                             View Details
                                         </button>
@@ -243,24 +240,24 @@ export default function MyAppointments() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
+                            className="bg-white dark:bg-[#1f232b] rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Modal Header */}
-                            <div className={`p-6 ${viewAppt.status === 'cancelled' ? 'bg-red-50' : 'bg-indigo-50'}`}>
+                            <div className={`p-6 ${viewAppt.status === 'cancelled' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-indigo-50 dark:bg-indigo-900/20'}`}>
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-1">Appointment Details</p>
-                                        <h2 className="text-2xl font-black text-neutral-800">
+                                        <h2 className="text-2xl font-black text-neutral-800 dark:text-neutral-100">
                                             {viewAppt.doctorId?.name || viewAppt.doctorName || 'Doctor'}
                                         </h2>
-                                        <p className="text-indigo-500 font-medium mt-0.5">
+                                        <p className="text-indigo-500 dark:text-indigo-400 font-medium mt-0.5">
                                             {viewAppt.doctorId?.specialty || 'Specialist'}
                                         </p>
                                     </div>
                                     <button
                                         onClick={() => setViewAppt(null)}
-                                        className="p-2 rounded-xl hover:bg-white/60 text-gray-400 hover:text-gray-600 transition-all"
+                                        className="p-2 rounded-xl hover:bg-white dark:bg-[#1f232b]/60 text-gray-400 hover:text-gray-600 transition-all"
                                     >
                                         <HiX className="text-xl" />
                                     </button>
@@ -269,7 +266,7 @@ export default function MyAppointments() {
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${statusColor(viewAppt.status)}`}>
                                         {viewAppt.status}
                                     </span>
-                                    <span className="text-sm text-neutral-500 font-medium">
+                                    <span className="text-sm text-neutral-500 dark:text-neutral-400 font-medium">
                                         {new Date(viewAppt.appointmentDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                     </span>
                                 </div>
@@ -278,32 +275,32 @@ export default function MyAppointments() {
                             {/* Modal Body */}
                             <div className="p-6 space-y-4">
                                 {/* Hospital */}
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                                         <HiLocationMarker className="text-lg" />
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Hospital</p>
-                                        <p className="font-bold text-neutral-800">{viewAppt.hospitalId?.name || viewAppt.hospitalName || 'N/A'}</p>
-                                        <p className="text-sm text-neutral-500">{viewAppt.hospitalId?.location || 'Main Campus'}</p>
+                                        <p className="font-bold text-neutral-800 dark:text-neutral-100">{viewAppt.hospitalId?.name || viewAppt.hospitalName || 'N/A'}</p>
+                                        <p className="text-sm text-neutral-500 dark:text-neutral-400">{viewAppt.hospitalId?.location || 'Main Campus'}</p>
                                     </div>
                                 </div>
 
                                 {/* Token */}
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                                         <HiIdentification className="text-lg" />
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Token Number</p>
-                                        <p className="font-bold text-neutral-800 text-xl">#{viewAppt.tokenNumber}</p>
-                                        <p className="text-sm text-neutral-500">Est. wait: ~{viewAppt.tokenNumber * 20} minutes</p>
+                                        <p className="font-bold text-neutral-800 dark:text-neutral-100 text-xl">#{viewAppt.tokenNumber}</p>
+                                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Est. wait: ~{viewAppt.tokenNumber * 20} minutes</p>
                                     </div>
                                 </div>
 
                                 {/* Patient Info */}
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                                         <HiUser className="text-lg" />
                                     </div>
                                     <div className="flex-1">
@@ -311,32 +308,32 @@ export default function MyAppointments() {
                                         <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
                                             <div>
                                                 <span className="text-neutral-400">Name: </span>
-                                                <span className="font-semibold text-neutral-700">{viewAppt.patientName}</span>
+                                                <span className="font-semibold text-neutral-700 dark:text-neutral-200">{viewAppt.patientName}</span>
                                             </div>
                                             <div>
                                                 <span className="text-neutral-400">Age: </span>
-                                                <span className="font-semibold text-neutral-700">{viewAppt.patientAge} yrs</span>
+                                                <span className="font-semibold text-neutral-700 dark:text-neutral-200">{viewAppt.patientAge} yrs</span>
                                             </div>
                                             <div>
                                                 <span className="text-neutral-400">Gender: </span>
-                                                <span className="font-semibold text-neutral-700">{viewAppt.patientGender}</span>
+                                                <span className="font-semibold text-neutral-700 dark:text-neutral-200">{viewAppt.patientGender}</span>
                                             </div>
                                             <div>
                                                 <span className="text-neutral-400">Address: </span>
-                                                <span className="font-semibold text-neutral-700">{viewAppt.patientAddress}</span>
+                                                <span className="font-semibold text-neutral-700 dark:text-neutral-200">{viewAppt.patientAddress}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Problem */}
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50">
-                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
+                                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                                         <HiClipboardList className="text-lg" />
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-0.5">Reason / Problem</p>
-                                        <p className="font-medium text-neutral-700 capitalize">{viewAppt.problem}</p>
+                                        <p className="font-medium text-neutral-700 dark:text-neutral-200 capitalize">{viewAppt.problem}</p>
                                     </div>
                                 </div>
                             </div>
@@ -370,27 +367,27 @@ export default function MyAppointments() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                            className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center"
+                            className="bg-white dark:bg-[#1f232b] rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5 text-red-500 text-3xl">
+                            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-5 text-red-500 dark:text-red-400 text-3xl">
                                 <HiExclamation />
                             </div>
-                            <h2 className="text-xl font-black text-neutral-800 mb-2">Cancel Appointment?</h2>
-                            <p className="text-neutral-500 text-sm mb-2">
+                            <h2 className="text-xl font-black text-neutral-800 dark:text-neutral-100 mb-2">Cancel Appointment?</h2>
+                            <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-2">
                                 You're about to cancel your appointment with
                             </p>
-                            <p className="font-bold text-neutral-800 text-lg mb-1">
+                            <p className="font-bold text-neutral-800 dark:text-neutral-100 text-lg mb-1">
                                 {cancelAppt.doctorId?.name || cancelAppt.doctorName}
                             </p>
-                            <p className="text-indigo-500 text-sm mb-6">
+                            <p className="text-indigo-500 dark:text-indigo-400 text-sm mb-6">
                                 {new Date(cancelAppt.appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
                             </p>
                             <p className="text-xs text-neutral-400 mb-6">This action cannot be undone.</p>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setCancelAppt(null)}
-                                    className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50 transition-all"
+                                    className="flex-1 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all bg-white dark:bg-[#1a1d24]"
                                 >
                                     Keep It
                                 </button>

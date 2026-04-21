@@ -155,8 +155,8 @@ const Appointments = () => {
         }
     }, [selectedHospital]);
 
-    // Generate next 7 days array
-    const next7Days = Array.from({ length: 7 }, (_, i) => {
+    // Generate next 30 days array
+    const nextDates = Array.from({ length: 30 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() + i);
         const year = d.getFullYear();
@@ -171,8 +171,8 @@ const Appointments = () => {
             const fetchAllAvailability = async () => {
                 setLoadingAvailability(true);
                 try {
-                    // Fetch availability for all 7 dates in parallel
-                    const availabilityPromises = next7Days.map(date =>
+                    // Fetch availability for all 30 dates in parallel
+                    const availabilityPromises = nextDates.map(date =>
                         appointmentApi.checkAvailability(selectedDoctor._id, date)
                             .then(data => ({ date, data }))
                             .catch(err => {
@@ -440,9 +440,9 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
 
     return (
-        <div className="flex w-full min-h-screen bg-[#eef2f5] relative overflow-x-hidden font-sans text-neutral-dark">
+        <div className="flex w-full min-h-screen bg-neu dark:bg-neu-dark relative overflow-x-hidden font-sans text-neutral-dark">
             {/* Minimalist Neumorphic Background Elements */}
-            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-white/40 blur-[100px] pointer-events-none" />
+            <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-white dark:bg-[#1f232b]/40 blur-[100px] pointer-events-none" />
             <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#c8d0e7]/40 blur-[100px] pointer-events-none" />
 
             <main className="relative z-10 w-full max-w-6xl mx-auto px-6 py-12 flex flex-col">
@@ -450,14 +450,14 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                 <div className="flex items-center justify-between mb-8">
                     <button
                         onClick={() => step > 0 && step < 4 ? setStep(step === 3.5 ? 3 : step - 1) : navigate("/")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-neutral-600 font-bold hover:shadow-[inner_4px_4px_8px_#c8d0e7,-inner_4px_4px_8px_#ffffff] transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-neutral-600 dark:text-neutral-300 font-bold hover:shadow-[inner_4px_4px_8px_#c8d0e7,-inner_4px_4px_8px_#ffffff] transition-all"
                     >
                         <MdArrowBack />
                         <span>{step === 4 ? t("Back to Dashboard") : t("Go Back")}</span>
                     </button>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex gap-2 mr-4 bg-[#eef2f5] p-2 rounded-full shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]">
+                        <div className="flex gap-2 mr-4 bg-neu dark:bg-neu-dark p-2 rounded-full shadow-neu-in dark:shadow-neu-in-dark">
                             {[0, 1, 2, 3, 3.5].map(s => (
                                 <div key={s} className={`h-2 w-10 rounded-full transition-all duration-500 ${step >= s ? "bg-primary w-14 shadow-[0_0_8px_var(--primary)]" : "bg-neutral-300"}`} />
                             ))}
@@ -465,14 +465,14 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
                         {/* Language Selector */}
                         <div className="relative" ref={langMenuRef}>
-                            <button onClick={() => setShowLangMenu(!showLangMenu)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-xs font-bold text-neutral-600 cursor-pointer hover:shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] transition-all">
+                            <button onClick={() => setShowLangMenu(!showLangMenu)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-xs font-bold text-neutral-600 dark:text-neutral-300 cursor-pointer hover:shadow-neu-in-sm dark:shadow-neu-in-sm-dark transition-all">
                                 <span className="text-base">{currentLang.emoji}</span>
                                 <span>{currentLang.code.toUpperCase()}</span>
                             </button>
                             {showLangMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-xl border border-white/60 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1f232b]/90 backdrop-blur-xl border border-white/60 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
                                     {languages.map((lang) => (
-                                        <button key={lang.code} onClick={() => { setLanguage(lang.code); i18n.changeLanguage(lang.code); setShowLangMenu(false); }} className={`w-full text-left px-4 py-3 text-xs font-medium flex items-center gap-3 transition-colors ${selectedLanguage === lang.code ? "bg-primary/10 text-primary" : "text-neutral-600 hover:bg-white/50"}`}>
+                                        <button key={lang.code} onClick={() => { setLanguage(lang.code); i18n.changeLanguage(lang.code); setShowLangMenu(false); }} className={`w-full text-left px-4 py-3 text-xs font-medium flex items-center gap-3 transition-colors ${selectedLanguage === lang.code ? "bg-primary/10 text-primary" : "text-neutral-600 dark:text-neutral-300 hover:bg-white dark:bg-[#1f232b]/50"}`}>
                                             <span className="text-lg">{lang.emoji}</span>
                                             <span>{lang.native}</span>
                                         </button>
@@ -492,20 +492,20 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                 {/* STEP 0: Location Entry Point */}
                 {step === 0 && (
                     <div className="animate-fadeIn flex flex-col items-center">
-                        <div className="w-20 h-20 rounded-3xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex items-center justify-center text-4xl text-primary mb-6">
+                        <div className="w-20 h-20 rounded-3xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark flex items-center justify-center text-4xl text-primary mb-6">
                             <MdLocationOn />
                         </div>
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2 text-center tracking-tight">{t("book_appointment_title")}</h1>
-                        <p className="text-neutral-500 mb-10 font-medium text-center max-w-md">{t("book_appointment_desc")}</p>
+                        <h1 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-100 mb-2 text-center tracking-tight">{t("book_appointment_title")}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 mb-10 font-medium text-center max-w-md">{t("book_appointment_desc")}</p>
 
-                        <div className="w-full max-w-2xl bg-white/40 border border-white/60 backdrop-blur-xl rounded-[3rem] p-10 shadow-2xl flex flex-col md:flex-row gap-4">
+                        <div className="w-full max-w-2xl neu-card rounded-[3rem] p-10 flex flex-col md:flex-row gap-4 border border-white/20 dark:border-white/5">
                             {/* Search Box */}
                             <div className="relative flex-1">
                                 <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-neutral-400" />
                                 <input
                                     type="text"
                                     placeholder={t("search_location_placeholder") || "Search location..."}
-                                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border border-white/80 focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm font-medium"
+                                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm font-medium text-neutral-800 dark:text-neutral-100"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={(e) => {
@@ -525,7 +525,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                             {/* Dropdown */}
                             <div className="relative min-w-[200px]">
                                 <select
-                                    className="w-full appearance-none p-4 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] focus:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] outline-none transition-all font-bold text-neutral-700 pr-10"
+                                    className="w-full appearance-none p-4 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark focus:shadow-neu-in dark:shadow-neu-in-dark outline-none transition-all font-bold text-neutral-700 dark:text-neutral-200 pr-10"
                                     value={selectedDistrict}
                                     onChange={(e) => {
                                         if (e.target.value) {
@@ -552,8 +552,8 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                     <div className="animate-fadeIn">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                             <div>
-                                <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("hospitals_in", { district: t(selectedDistrict) })}</h1>
-                                <p className="text-neutral-500 font-medium">{t("select_facility")}</p>
+                                <h1 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-100 mb-2">{t("hospitals_in", { district: t(selectedDistrict) })}</h1>
+                                <p className="text-neutral-500 dark:text-neutral-400 font-medium">{t("select_facility")}</p>
                             </div>
 
                             {/* Filter within district */}
@@ -562,7 +562,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                 <input
                                     type="text"
                                     placeholder={t("filter_hospitals_placeholder") || "Filter hospitals by name..."}
-                                    className="w-full pl-12 pr-4 py-3 rounded-2xl bg-[#eef2f5] shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#c8d0e7,inset_-6px_-6px_12px_#ffffff] outline-none transition-all font-medium text-neutral-700"
+                                    className="w-full pl-12 pr-4 py-3 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark focus:shadow-neu-in-lg dark:shadow-neu-in-lg-dark outline-none transition-all font-medium text-neutral-700 dark:text-neutral-200"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -572,25 +572,25 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {loading ? (
                                 Array(3).fill(0).map((_, i) => (
-                                    <div key={i} className="h-40 rounded-[2rem] bg-white/30 animate-pulse border border-white/60" />
+                                    <div key={i} className="h-40 rounded-[2rem] bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark animate-pulse border border-white/20 dark:border-white/5" />
                                 ))
                             ) : filteredHospitals.map(h => (
                                 <div
                                     key={h._id}
                                     onClick={() => { setSelectedHospital(h); setStep(2); }}
-                                    className="group bg-[#eef2f5] rounded-[2.5rem] p-8 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[10px_10px_20px_#c8d0e7,-10px_-10px_20px_#ffffff] hover:-translate-y-2 transition-all duration-300 cursor-pointer overflow-hidden border border-white/20"
+                                    className="group bg-neu dark:bg-neu-dark rounded-[2.5rem] p-8 shadow-neu-out dark:shadow-neu-out-dark hover:shadow-[10px_10px_20px_#c8d0e7,-10px_-10px_20px_#ffffff] hover:-translate-y-2 transition-all duration-300 cursor-pointer overflow-hidden border border-white/20"
                                 >
-                                    <div className="w-12 h-12 rounded-2xl bg-[#eef2f5] shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] flex items-center justify-center text-primary mb-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark flex items-center justify-center text-primary mb-4">
                                         <MdHome size={24} />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-neutral-800 mb-2 truncate">{t(h.name || "")}</h3>
-                                    <div className="flex items-start text-neutral-500 text-sm leading-relaxed mb-4">
+                                    <h3 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 mb-2 truncate">{t(h.name || "")}</h3>
+                                    <div className="flex items-start text-neutral-500 dark:text-neutral-400 text-sm leading-relaxed mb-4">
                                         <MdLocationOn className="mt-0.5 mr-2 shrink-0 text-primary" />
                                         <span>{t(h.location || "")}</span>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {h.specialties.map(s => (
-                                            <span key={s} className="px-3 py-1 bg-[#eef2f5] shadow-[2px_2px_4px_#c8d0e7,-2px_-2px_4px_#ffffff] text-primary rounded-lg text-[10px] font-black uppercase tracking-wider">{t(s || "")}</span>
+                                            <span key={s} className="px-3 py-1 bg-neu dark:bg-neu-dark shadow-[2px_2px_4px_#c8d0e7,-2px_-2px_4px_#ffffff] text-primary rounded-lg text-[10px] font-black uppercase tracking-wider">{t(s || "")}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -602,29 +602,29 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                 {/* STEP 2: Doctor Selection */}
                 {step === 2 && selectedHospital && (
                     <div className="animate-fadeIn">
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("choose_doctor")}</h1>
-                        <p className="text-neutral-500 mb-8 font-medium">{t("available_specialists", { hospital: selectedHospital.name })}</p>
+                        <h1 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-100 mb-2">{t("choose_doctor")}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 mb-8 font-medium">{t("available_specialists", { hospital: selectedHospital.name })}</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {loading ? (
                                 Array(2).fill(0).map((_, i) => (
-                                    <div key={i} className="h-32 rounded-[2rem] bg-white/30 animate-pulse border border-white/60" />
+                                    <div key={i} className="h-32 rounded-[2rem] bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark animate-pulse border border-white/20 dark:border-white/5" />
                                 ))
                             ) : doctors.map(d => (
                                 <div
                                     key={d._id}
                                     onClick={() => { setSelectedDoctor(d); setStep(3); }}
-                                    className="flex items-center gap-6 p-8 bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] hover:bg-white/60 hover:-translate-y-1 transition-all cursor-pointer shadow-lg"
+                                    className="flex items-center gap-6 p-8 neu-card rounded-[2.5rem] hover:-translate-y-1 hover:shadow-[10px_10px_20px_#c8d0e7,-10px_-10px_20px_#ffffff] dark:hover:shadow-[5px_5px_10px_#14171d,-5px_-5px_10px_#2a2f39] transition-all cursor-pointer border border-white/20 dark:border-white/5"
                                 >
-                                    <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-3xl">
+                                    <div className="w-20 h-20 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark flex items-center justify-center text-primary text-3xl">
                                         <MdPerson />
                                     </div>
                                     <div className="flex-1 overflow-hidden">
-                                        <h3 className="text-2xl font-bold text-neutral-800 truncate">{t(d.name || "")}</h3>
+                                        <h3 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100 truncate">{t(d.name || "")}</h3>
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded-md uppercase">{t(d.specialty || "")}</span>
                                         </div>
-                                        <p className="text-neutral-500 text-sm line-clamp-2 leading-relaxed italic">"{t(d.bio || "")}"</p>
+                                        <p className="text-neutral-500 dark:text-neutral-400 text-sm line-clamp-2 leading-relaxed italic">"{t(d.bio || "")}"</p>
                                     </div>
                                 </div>
                             ))}
@@ -635,27 +635,27 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                 {/* STEP 3: Date Select */}
                 {step === 3 && selectedHospital && selectedDoctor && (
                     <div className="animate-fadeIn max-w-2xl mx-auto">
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("Select Appointment Date")}</h1>
-                        <p className="text-neutral-500 mb-8 font-medium">{t("select_preferred_date")}</p>
+                        <h1 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-100 mb-2">{t("Select Appointment Date")}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 mb-8 font-medium">{t("select_preferred_date")}</p>
 
                         {/* Doctor Info Card - Outside main container */}
-                        <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-lg mb-6 flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
+                        <div className="neu-card rounded-[2.5rem] p-6 mb-6 flex items-center gap-4 border border-white/20 dark:border-white/5">
+                            <div className="w-16 h-16 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark flex items-center justify-center text-primary text-2xl">
                                 <MdPerson />
                             </div>
                             <div>
-                                <h4 className="font-bold text-xl text-neutral-800">{t(selectedDoctor.name || "")}</h4>
+                                <h4 className="font-bold text-xl text-neutral-800 dark:text-neutral-100">{t(selectedDoctor.name || "")}</h4>
                                 <p className="text-primary font-bold text-xs tracking-wide uppercase">{t(selectedDoctor.specialty || "")}</p>
-                                <p className="text-neutral-500 text-sm font-medium">{t(selectedHospital.name || "")}</p>
+                                <p className="text-neutral-500 dark:text-neutral-400 text-sm font-medium">{t(selectedHospital.name || "")}</p>
                             </div>
                         </div>
 
                         {/* Date Selection Card */}
-                        <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-xl">
+                        <div className="neu-card border border-white/20 dark:border-white/5 rounded-[2.5rem] p-10">
                             <label className="text-sm font-bold text-neutral-400 uppercase tracking-widest mb-6 block">{t("select_preferred_date")}</label>
                             
                             <div className="grid grid-cols-4 md:grid-cols-7 gap-4 mb-8">
-                                {next7Days.map((date: string) => {
+                                {nextDates.map((date: string) => {
                                     const d = new Date(date);
                                     const isSelected = selectedDate === date;
                                     const availability = availabilityMap[date];
@@ -680,26 +680,26 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                     // Color classes based on status
                                     const getColorClasses = () => {
                                         if (isSelected && !isSunday) {
-                                            return "bg-primary border-primary text-white shadow-lg shadow-primary/30";
+                                            return "bg-primary border-primary text-white shadow-neu-out dark:shadow-neu-out-dark shadow-primary/50";
                                         }
                                         
                                         if (isSunday) {
-                                            return "bg-gray-100 border-gray-300 text-gray-400 opacity-50 cursor-not-allowed";
+                                            return "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 opacity-50 cursor-not-allowed";
                                         }
                                         
                                         if (isLoading) {
-                                            return "bg-white/30 border-white/60 text-neutral-400 animate-pulse";
+                                            return "bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark border-white/20 dark:border-white/5 text-neutral-400 animate-pulse";
                                         }
 
                                         switch (availabilityStatus) {
                                             case 'available':
-                                                return "bg-emerald-50 border-emerald-400 text-emerald-700 hover:bg-emerald-100";
+                                                return "bg-emerald-50 dark:bg-emerald-900/40 border-emerald-400 dark:border-emerald-500/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60";
                                             case 'limited':
-                                                return "bg-amber-50 border-amber-400 text-amber-700 hover:bg-amber-100";
+                                                return "bg-amber-50 dark:bg-amber-900/40 border-amber-400 dark:border-amber-500/50 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60";
                                             case 'full':
-                                                return "bg-red-50 border-red-300 text-red-400 opacity-60 cursor-not-allowed";
+                                                return "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800/50 text-red-500 dark:text-red-400 opacity-60 cursor-not-allowed";
                                             default:
-                                                return "bg-white/50 border-white/80 text-neutral-600";
+                                                return "bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark border-white/20 dark:border-white/5 text-neutral-600 dark:text-neutral-300";
                                         }
                                     };
 
@@ -719,10 +719,13 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                             title={getTooltip()}
                                             className={`flex flex-col items-center p-4 rounded-2xl border transition-all ${getColorClasses()}`}
                                         >
-                                            <span className="text-[10px] font-bold uppercase opacity-60 mb-1">
+                                            <span className="text-[10px] font-bold uppercase opacity-80 mb-0.5">
+                                                {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : i18n.language, { month: 'short' })}
+                                            </span>
+                                            <span className="text-xl font-extrabold">{d.getDate()}</span>
+                                            <span className="text-[10px] font-bold uppercase opacity-60 mt-0.5">
                                                 {d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : i18n.language, { weekday: 'short' })}
                                             </span>
-                                            <span className="text-lg font-extrabold">{d.getDate()}</span>
                                         </button>
                                     );
                                 })}
@@ -743,23 +746,23 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                 {/* STEP 3.5: Patient Form */}
                 {step === 3.5 && (
                     <div className="animate-fadeIn max-w-3xl">
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("patient_details_title")}</h1>
-                        <p className="text-neutral-500 mb-10 font-medium">{t("patient_details_desc")}</p>
+                        <h1 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-100 mb-2">{t("patient_details_title")}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 mb-10 font-medium">{t("patient_details_desc")}</p>
 
-                        <div className="bg-white/40 border border-white/60 backdrop-blur-xl rounded-[3rem] p-10 shadow-2xl">
+                        <div className="neu-card border border-white/20 dark:border-white/5 rounded-[3rem] p-10">
                             
                             {/* Booking For Toggle */}
                             <div className="mb-8 flex justify-center">
-                                <div className="bg-white/50 p-1 rounded-xl flex gap-2 border border-white/60">
+                                <div className="bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark p-1.5 rounded-xl flex gap-2">
                                     <button
                                         onClick={() => setBookingFor('self')}
-                                        className={`px-6 py-2 rounded-lg font-bold transition-all ${bookingFor === 'self' ? 'bg-primary text-white shadow-lg' : 'text-neutral-500 hover:bg-white/50'}`}
+                                        className={`px-6 py-2 rounded-lg font-bold transition-all ${bookingFor === 'self' ? 'bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-primary' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}`}
                                     >
                                         {t("For Me")}
                                     </button>
                                     <button
                                         onClick={() => setBookingFor('other')}
-                                        className={`px-6 py-2 rounded-lg font-bold transition-all ${bookingFor === 'other' ? 'bg-primary text-white shadow-lg' : 'text-neutral-500 hover:bg-white/50'}`}
+                                        className={`px-6 py-2 rounded-lg font-bold transition-all ${bookingFor === 'other' ? 'bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-primary' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'}`}
                                     >
                                         {t("For Someone Else")}
                                     </button>
@@ -768,20 +771,20 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"><MdPerson /> {t("full_name")}</label>
+                                    <label className="text-sm font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-2"><MdPerson /> {t("full_name")}</label>
                                     <input
                                         type="text"
-                                        className="w-full p-4 rounded-2xl bg-white/60 border border-white/80 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                        className="w-full p-4 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark border border-white/10 dark:border-white/5 focus:ring-2 focus:ring-primary outline-none transition-all text-neutral-800 dark:text-neutral-100"
                                         placeholder={t("full_name") || "Full Name"}
                                         value={patientForm.name}
                                         onChange={(e) => setPatientForm({ ...patientForm, name: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"> Email Address {bookingFor === 'self' && <span className="text-xs font-normal opacity-50">(Auto-filled)</span>}</label>
+                                    <label className="text-sm font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-2"> Email Address {bookingFor === 'self' && <span className="text-xs font-normal opacity-50">(Auto-filled)</span>}</label>
                                     <input
                                         type="email"
-                                        className={`w-full p-4 rounded-2xl border outline-none transition-all ${bookingFor === 'self' ? 'bg-gray-100 text-gray-500 border-transparent cursor-not-allowed' : 'bg-white/60 border-white/80 focus:ring-2 focus:ring-primary'}`}
+                                        className={`w-full p-4 rounded-2xl border outline-none transition-all text-neutral-800 dark:text-neutral-100 ${bookingFor === 'self' ? 'bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:!text-gray-400 border-transparent cursor-not-allowed' : 'bg-white dark:bg-[#1f232b]/60 border-white/80 dark:border-white/5 focus:ring-2 focus:ring-primary'}`}
                                         placeholder="email@example.com"
                                         value={patientForm.email}
                                         readOnly={bookingFor === 'self'}
@@ -792,23 +795,23 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"> {t("age")}</label>
+                                    <label className="text-sm font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-2"> {t("age")}</label>
                                     <input
                                         type="number"
-                                        className="w-full p-4 rounded-2xl bg-white/60 border border-white/80 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                        className="w-full p-4 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark border border-white/10 dark:border-white/5 focus:ring-2 focus:ring-primary outline-none transition-all text-neutral-800 dark:text-neutral-100"
                                         placeholder={t("age") || "Age"}
                                         value={patientForm.age}
                                         onChange={(e) => setPatientForm({ ...patientForm, age: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500">{t("gender")}</label>
+                                    <label className="text-sm font-bold text-neutral-500 dark:text-neutral-400">{t("gender")}</label>
                                     <div className="flex gap-4">
                                         {["Male", "Female", "Other"].map(g => (
                                             <button
                                                 key={g}
                                                 onClick={() => setPatientForm({ ...patientForm, gender: g })}
-                                                className={`flex-1 py-3 rounded-xl border font-bold transition-all ${patientForm.gender === g ? "bg-primary text-white border-primary" : "bg-white/50 text-neutral-500 border-white/80"}`}
+                                                className={`flex-1 py-3 rounded-xl border font-bold transition-all ${patientForm.gender === g ? "bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark text-primary border-primary/20" : "bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-neutral-500 dark:text-neutral-400 border-white/20 dark:border-white/5"}`}
                                             >
                                                 {t(g.toLowerCase())}
                                             </button>
@@ -816,10 +819,10 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"><MdHome /> {t("address")}</label>
+                                    <label className="text-sm font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-2"><MdHome /> {t("address")}</label>
                                     <input
                                         type="text"
-                                        className="w-full p-4 rounded-2xl bg-white/60 border border-white/80 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                        className="w-full p-4 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark border border-white/10 dark:border-white/5 focus:ring-2 focus:ring-primary outline-none transition-all text-neutral-800 dark:text-neutral-100"
                                         placeholder={t("address") || "Address"}
                                         value={patientForm.address}
                                         onChange={(e) => setPatientForm({ ...patientForm, address: e.target.value })}
@@ -827,9 +830,9 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                                 </div>
                             </div>
                             <div className="space-y-2 mb-10">
-                                <label className="text-sm font-bold text-neutral-500 flex items-center gap-2"><MdOutlineQuestionAnswer /> {t("health_problem")}</label>
+                                <label className="text-sm font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-2"><MdOutlineQuestionAnswer /> {t("health_problem")}</label>
                                 <textarea
-                                    className="w-full p-6 rounded-3xl bg-white/60 border border-white/80 focus:ring-2 focus:ring-primary outline-none transition-all h-32 resize-none"
+                                    className="w-full p-6 rounded-3xl bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark border border-white/10 dark:border-white/5 focus:ring-2 focus:ring-primary outline-none transition-all h-32 resize-none text-neutral-800 dark:text-neutral-100"
                                     placeholder={t("problem_placeholder") || "Describe issue..."}
                                     value={patientForm.problem}
                                     onChange={(e) => setPatientForm({ ...patientForm, problem: e.target.value })}
@@ -853,23 +856,23 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                         <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center text-5xl text-emerald-500 mb-6 shadow-inner border border-emerald-50">
                             <MdCheckCircle />
                         </div>
-                        <h1 className="text-4xl font-extrabold text-neutral-800 mb-2">{t("booking_success")}</h1>
-                        <p className="text-neutral-500 mb-10 font-medium">{t("appointment_confirmation")}</p>
+                        <h1 className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-100 mb-2">{t("booking_success")}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 mb-10 font-medium">{t("appointment_confirmation")}</p>
 
-                        <div className="bg-white/60 border border-white/80 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-2xl max-w-md w-full relative overflow-hidden mb-10">
+                        <div className="neu-card border border-white/20 dark:border-white/5 rounded-[2.5rem] p-10 max-w-md w-full relative overflow-hidden mb-10">
                             <div className="absolute top-0 right-0 p-4 bg-primary/10 rounded-bl-[2rem] text-primary font-black text-2xl">
                                 #{bookingResult.tokenNumber}
                             </div>
 
                             <div className="text-left mb-6">
                                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t("doctor")}</p>
-                                <h4 className="text-xl font-bold text-neutral-800">{t(selectedDoctor?.name || "")}</h4>
+                                <h4 className="text-xl font-bold text-neutral-800 dark:text-neutral-100">{t(selectedDoctor?.name || "")}</h4>
                             </div>
 
                             <div className="grid grid-cols-2 text-left gap-6 mb-6">
                                 <div>
                                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t("date")}</p>
-                                    <p className="font-bold text-neutral-700">{new Date(bookingResult.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                    <p className="font-bold text-neutral-700 dark:text-neutral-200">{new Date(bookingResult.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">{t("booking_token")}</p>
@@ -879,7 +882,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
                             <button
                                 onClick={generatePDF}
-                                className="w-full py-4 flex items-center justify-center gap-3 bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-neutral-800 rounded-2xl font-black hover:shadow-[inset_3px_3px_6px_#c8d0e7,inset_-3px_-3px_6px_#ffffff] transition-all uppercase tracking-widest text-xs"
+                                className="w-full py-4 flex items-center justify-center gap-3 bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-neutral-800 dark:text-neutral-100 rounded-2xl font-black hover:shadow-neu-in-sm dark:shadow-neu-in-sm-dark transition-all uppercase tracking-widest text-xs"
                             >
                                 <MdDownload className="text-xl" />
                                 {t("download_slip")}
@@ -888,7 +891,7 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
 
                         <button
                             onClick={() => navigate("/")}
-                            className="px-12 py-5 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] text-neutral-700 font-extrabold hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] transition-all active:scale-[0.98] uppercase tracking-widest text-sm"
+                            className="px-12 py-5 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark text-neutral-700 dark:text-neutral-200 font-extrabold hover:shadow-neu-in dark:shadow-neu-in-dark transition-all active:scale-[0.98] uppercase tracking-widest text-sm"
                         >
                             {t("Back to Dashboard")}
                         </button>

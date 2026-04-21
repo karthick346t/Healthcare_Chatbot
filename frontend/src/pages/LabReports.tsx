@@ -65,12 +65,12 @@ export default function LabReports() {
 
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-6 font-sans text-neutral-800">
+        <div className="min-h-screen bg-gray-50/50 p-6 font-sans text-neutral-800 dark:text-neutral-100">
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center mb-4">
                     <button
                         onClick={() => navigate("/")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 text-neutral-600 dark:text-neutral-300 font-bold hover:bg-white dark:bg-[#1f232b]/80 transition-all shadow-sm"
                     >
                         <MdArrowBack />
                         <span>{t("Go Back")}</span>
@@ -86,7 +86,7 @@ export default function LabReports() {
                             </span>
                             Lab Reports
                         </h1>
-                        <p className="text-neutral-500 mt-2 ml-16">Centralize and analyze your medical records.</p>
+                        <p className="text-neutral-500 dark:text-neutral-400 mt-2 ml-16">Centralize and analyze your medical records.</p>
                     </div>
                     
                     <div className="flex gap-3 w-full md:w-auto">
@@ -95,10 +95,10 @@ export default function LabReports() {
                             <input 
                                 type="text" 
                                 placeholder="Search reports..." 
-                                className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-gray-100 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm"
+                                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1f232b] rounded-xl border border-gray-100 focus:ring-2 focus:ring-purple-500 outline-none shadow-sm"
                             />
                         </div>
-                        <button className="p-3 bg-white rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-500 shadow-sm transition-colors">
+                        <button className="p-3 bg-white dark:bg-[#1f232b] rounded-xl border border-gray-100 hover:bg-gray-50 text-gray-500 shadow-sm transition-colors">
                             <HiFilter className="text-xl" />
                         </button>
                     </div>
@@ -111,7 +111,7 @@ export default function LabReports() {
                     onDrop={handleDrop}
                     className={`
                         mb-10 w-full rounded-3xl border-2 border-dashed transition-all p-10 text-center cursor-pointer group relative overflow-hidden
-                        ${dragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-gray-50'}
+                        ${dragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white dark:bg-[#1f232b] hover:border-purple-300 hover:bg-gray-50'}
                     `}
                 >
                     <div className="relative z-10 flex flex-col items-center gap-4">
@@ -119,7 +119,7 @@ export default function LabReports() {
                             <HiUpload />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-neutral-700">Upload New Report</h3>
+                            <h3 className="text-lg font-bold text-neutral-700 dark:text-neutral-200">Upload New Report</h3>
                             <p className="text-sm text-neutral-400 mt-1">Drag & drop files here, or <span className="text-purple-600 font-bold underline">browse files</span></p>
                         </div>
                          <p className="text-xs text-gray-400 mt-4 uppercase tracking-wider font-bold">Supports PDF, JPG, PNG up to 10MB</p>
@@ -165,7 +165,7 @@ export default function LabReports() {
                             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                         >
                             {reports.map((report) => (
-                                <div key={report.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group flex flex-col justify-between h-48">
+                                <div key={report.id} className="bg-white dark:bg-[#1f232b] p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group flex flex-col justify-between h-48">
                                     <div className="flex justify-between items-start">
                                         <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-500 font-bold text-xs uppercase tracking-wider border border-purple-100">
                                             {report.type}
@@ -177,7 +177,7 @@ export default function LabReports() {
                                     </div>
                                     
                                     <div>
-                                        <h3 className="font-bold text-neutral-800 line-clamp-1">{report.name}</h3>
+                                        <h3 className="font-bold text-neutral-800 dark:text-neutral-100 line-clamp-1">{report.name}</h3>
                                         <p className="text-sm text-neutral-400 mt-1">{report.date} • {report.size}</p>
                                     </div>
 
@@ -199,12 +199,12 @@ export default function LabReports() {
                             className="grid grid-cols-1 lg:grid-cols-2 gap-8"
                         >
                             {trends.map((trend, idx) => (
-                                <div key={idx} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                                <div key={idx} className="bg-white dark:bg-[#1f232b] p-8 rounded-3xl shadow-sm border border-gray-100">
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
-                                            <h3 className="font-bold text-neutral-700">{trend.title}</h3>
+                                            <h3 className="font-bold text-neutral-700 dark:text-neutral-200">{trend.title}</h3>
                                             <div className="flex items-baseline gap-2 mt-2">
-                                                <span className="text-4xl font-black text-neutral-800">{trend.data[trend.data.length-1]}</span>
+                                                <span className="text-4xl font-black text-neutral-800 dark:text-neutral-100">{trend.data[trend.data.length-1]}</span>
                                                 <span className="text-sm font-medium text-gray-400">{trend.unit}</span>
                                             </div>
                                         </div>

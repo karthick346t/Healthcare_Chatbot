@@ -131,38 +131,38 @@ export default function StaffAppointments() {
     <div className="flex flex-col h-[calc(100vh-140px)] pb-6">
       <div className="flex justify-between items-center mb-8 shrink-0">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-neutral-800 drop-shadow-sm">Live Patient Queue</h1>
-          <p className="text-neutral-500 mt-2 font-medium text-lg">Manage today's appointments and check-ins.</p>
+          <h1 className="text-4xl font-black tracking-tight text-neutral-800 dark:text-neutral-100 drop-shadow-sm">Live Patient Queue</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-2 font-medium text-lg">Manage today's appointments and check-ins.</p>
         </div>
         <div className="flex items-center gap-6">
           <input 
             type="text" 
             placeholder="Search patient or doctor..." 
-            className="w-72 px-5 py-4 bg-[#eef2f5] rounded-2xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] text-neutral-800 font-medium placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 transition-all border-none"
+            className="w-72 px-5 py-4 bg-neu dark:bg-neu-dark rounded-2xl shadow-neu-in dark:shadow-neu-in-dark text-neutral-800 dark:text-neutral-100 font-medium placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-themeAccent-400/50 transition-all border-none"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
           <button 
             onClick={fetchAppointments}
-            className="px-6 py-4 bg-[#eef2f5] text-teal-600 font-bold rounded-2xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] active:scale-95 transition-all flex items-center gap-2 group border-none"
+            className="px-6 py-4 bg-neu dark:bg-neu-dark text-themeAccent-600 font-bold rounded-2xl shadow-neu-out dark:shadow-neu-out-dark hover:shadow-neu-in dark:shadow-neu-in-dark active:scale-95 transition-all flex items-center gap-2 group border-none"
           >
             <MdRefresh className={`text-2xl ${loading ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"}`} /> Refresh
           </button>
         </div>
       </div>
 
-      <div className="flex-1 bg-[#eef2f5] rounded-3xl p-6 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex flex-col overflow-hidden">
-        <div className="overflow-x-auto flex-1 rounded-2xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] bg-[#eef2f5]">
+      <div className="flex-1 bg-neu dark:bg-neu-dark rounded-3xl p-6 shadow-neu-out dark:shadow-neu-out-dark flex flex-col overflow-hidden">
+        <div className="overflow-x-auto flex-1 rounded-2xl shadow-neu-in dark:shadow-neu-in-dark bg-neu dark:bg-neu-dark">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-[#eef2f5] sticky top-0 z-10 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <thead className="bg-neu dark:bg-neu-dark sticky top-0 z-10 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
               <tr>
-                <th className="px-8 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest pl-10 border-b border-gray-200/50">Token</th>
-                <th className="px-6 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest border-b border-gray-200/50">Patient</th>
-                <th className="px-6 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest border-b border-gray-200/50">Doctor</th>
-                <th className="px-6 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest border-b border-gray-200/50">Type</th>
-                <th className="px-6 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest border-b border-gray-200/50">Status</th>
-                <th className="px-6 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest border-b border-gray-200/50">Payment</th>
-                <th className="px-6 py-6 font-bold text-sm text-neutral-500 uppercase tracking-widest text-right pr-10 border-b border-gray-200/50">Action</th>
+                <th className="px-8 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest pl-10 border-b border-gray-200/50">Token</th>
+                <th className="px-6 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-gray-200/50">Patient</th>
+                <th className="px-6 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-gray-200/50">Doctor</th>
+                <th className="px-6 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-gray-200/50">Type</th>
+                <th className="px-6 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-gray-200/50">Status</th>
+                <th className="px-6 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest border-b border-gray-200/50">Payment</th>
+                <th className="px-6 py-6 font-bold text-sm text-neutral-500 dark:text-neutral-400 uppercase tracking-widest text-right pr-10 border-b border-gray-200/50">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200/50">
@@ -170,7 +170,7 @@ export default function StaffAppointments() {
                 <tr>
                   <td colSpan={7} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center justify-center gap-4 text-neutral-400">
-                      <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-10 h-10 border-4 border-themeAccent-500 border-t-transparent rounded-full animate-spin"></div>
                       <span className="font-bold tracking-wide">Loading queue...</span>
                     </div>
                   </td>
@@ -184,17 +184,17 @@ export default function StaffAppointments() {
                 </tr>
               ) : (
                 filteredAppointments.map((a: any) => (
-                  <tr key={a._id} className="hover:bg-white/40 transition-colors group">
+                  <tr key={a._id} className="hover:bg-white dark:bg-[#1f232b]/40 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap pl-10">
-                      <div className="w-12 h-12 rounded-2xl bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] flex items-center justify-center font-black text-teal-600 text-lg">
+                      <div className="w-12 h-12 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark flex items-center justify-center font-black text-themeAccent-600 text-lg">
                         {a.tokenNumber}
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="font-black text-neutral-800 text-lg group-hover:text-teal-700 transition-colors">{a.patientName}</div>
-                      <div className="text-xs font-bold text-neutral-500 uppercase tracking-widest mt-1">{a.patientAge}y • {a.patientGender}</div>
+                      <div className="font-black text-neutral-800 dark:text-neutral-100 text-lg group-hover:text-themeAccent-700 transition-colors">{a.patientName}</div>
+                      <div className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest mt-1">{a.patientAge}y • {a.patientGender}</div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap font-semibold text-neutral-600">
+                    <td className="px-6 py-5 whitespace-nowrap font-semibold text-neutral-600 dark:text-neutral-300">
                       {a.doctorId?.name || 'Unknown'}
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap">

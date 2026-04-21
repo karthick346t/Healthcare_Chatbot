@@ -104,7 +104,7 @@ export default function Login() {
 
         <div className="relative z-10 text-center text-white max-w-md">
           <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow">
+            <div className="w-20 h-20 bg-white dark:bg-[#1f232b]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow">
               <Heart className="w-10 h-10 text-white" fill="currentColor" />
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function Login() {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 login-stagger-in"
+                className="flex items-center gap-3 bg-white dark:bg-[#1f232b]/10 backdrop-blur-sm rounded-xl px-5 py-3 login-stagger-in"
                 style={{ animationDelay: `${0.6 + i * 0.15}s` }}
               >
                 <feature.icon className="w-5 h-5 text-white/90 flex-shrink-0" />
@@ -136,7 +136,7 @@ export default function Login() {
       </div>
 
       {/* Right Login Form Panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-primary-50/30">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-primary-50/30 dark:from-[#111419] dark:to-[#171b22]">
         <div
           className={`w-full max-w-md login-card-enter ${shake ? "login-shake" : ""}`}
         >
@@ -150,10 +150,10 @@ export default function Login() {
           {/* Glass card */}
           <div className="login-glass rounded-3xl p-8 sm:p-10">
             <div className="text-center mb-8">
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Welcome Back
               </h2>
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Sign in to access your health dashboard
               </p>
             </div>
@@ -177,7 +177,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Field */}
               <div className="login-field-enter" style={{ animationDelay: "0.1s" }}>
-                <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
@@ -192,14 +192,14 @@ export default function Login() {
                     autoFocus
                     autoComplete="email"
                     aria-label="Email address"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white/80 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#14171d] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
                   />
                 </div>
               </div>
 
               {/* Password Field */}
               <div className="login-field-enter" style={{ animationDelay: "0.2s" }}>
-                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -213,7 +213,7 @@ export default function Login() {
                     required
                     autoComplete="current-password"
                     aria-label="Password"
-                    className="w-full pl-11 pr-12 py-3 rounded-xl border border-gray-200 bg-white/80 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
+                    className="w-full pl-11 pr-12 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#14171d] text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none text-sm"
                   />
                   <button
                     type="button"
@@ -236,11 +236,11 @@ export default function Login() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-4.5 h-4.5 rounded border-2 border-gray-300 peer-checked:border-primary-500 peer-checked:bg-primary-500 flex items-center justify-center transition-all duration-200">
+                    <div className="w-4.5 h-4.5 rounded border-2 border-gray-300 dark:border-gray-600 peer-checked:border-primary-500 peer-checked:bg-primary-500 flex items-center justify-center transition-all duration-200">
                       {rememberMe && <Check className="w-3 h-3 text-white" />}
                     </div>
                   </div>
-                  <span className="text-sm text-gray-600 group-hover:text-gray-900 select-none">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 select-none">
                     Remember me
                   </span>
                 </label>
@@ -279,10 +279,10 @@ export default function Login() {
             {/* Divider */}
             <div className="relative my-7">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
+                <div className="w-full border-t border-gray-200 dark:border-gray-700" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-xs text-gray-400 uppercase tracking-wider">
+                <span className="bg-white dark:bg-[#1f232b] px-4 text-xs text-gray-400 uppercase tracking-wider">
                   or continue with
                 </span>
               </div>
@@ -301,11 +301,11 @@ export default function Login() {
             </div>
 
             {/* Register link */}
-            <p className="text-center text-sm text-gray-500 mt-7">
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-7">
               Don't have an account?{" "}
               <Link
                 to="/register"
-                className="text-primary-600 hover:text-primary-700 font-semibold hover:underline"
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400 font-semibold hover:underline"
               >
                 Create one
               </Link>
@@ -313,7 +313,7 @@ export default function Login() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-400 mt-6">
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-6">
             Protected by enterprise-grade security
           </p>
         </div>

@@ -47,20 +47,20 @@ export default function AdminAppointments() {
     );
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto text-neutral-800 p-6">
+        <div className="space-y-8 max-w-7xl mx-auto text-neutral-800 dark:text-neutral-100 p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-neutral-800">Appointment Management</h1>
-                    <p className="text-neutral-500 text-sm mt-1">View and manage all appointments.</p>
+                    <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">Appointment Management</h1>
+                    <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">View and manage all appointments.</p>
                 </div>
-                <div className="flex items-center gap-3 bg-[#eef2f5] p-1.5 rounded-xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff]">
+                <div className="flex items-center gap-3 bg-neu dark:bg-neu-dark p-1.5 rounded-xl shadow-neu-in dark:shadow-neu-in-dark">
                     {['all', 'pending', 'confirmed', 'cancelled'].map(status => (
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === status
-                                    ? 'bg-[#eef2f5] text-cyan-600 shadow-[4px_4px_8px_#c8d0e7,-4px_-4px_8px_#ffffff]'
-                                    : 'text-neutral-400 hover:text-cyan-600'
+                                    ? 'bg-neu dark:bg-neu-dark text-themeAccent-600 shadow-neu-out dark:shadow-neu-out-dark'
+                                    : 'text-neutral-400 hover:text-themeAccent-600'
                                 }`}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -69,7 +69,7 @@ export default function AdminAppointments() {
                 </div>
             </div>
 
-            <div className="bg-[#eef2f5] p-6 rounded-3xl shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] border-none overflow-hidden">
+            <div className="bg-neu dark:bg-neu-dark p-6 rounded-3xl shadow-neu-in dark:shadow-neu-in-dark border-none overflow-hidden">
                 <div className="p-4 mb-4 flex items-center gap-4">
                     <div className="relative flex-1 max-w-md">
                         <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -78,17 +78,17 @@ export default function AdminAppointments() {
                             placeholder="Search patients or doctors..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-medium text-sm text-neutral-700 placeholder:text-neutral-400"
+                            className="w-full pl-10 pr-4 py-3 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark border-none focus:outline-none focus:ring-2 focus:ring-themeAccent-500/20 transition-all font-medium text-sm text-neutral-700 dark:text-neutral-200 placeholder:text-neutral-400"
                         />
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] rounded-xl overflow-hidden">
+                        <thead className="bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark rounded-xl overflow-hidden">
                             <tr>
                                 {['Patient', 'Doctor', 'Date', 'Type', 'Status', 'Actions'].map(h => (
-                                    <th key={h} className="px-6 py-4 text-xs font-bold text-neutral-500 uppercase tracking-wider">{h}</th>
+                                    <th key={h} className="px-6 py-4 text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{h}</th>
                                 ))}
                             </tr>
                         </thead>
@@ -100,15 +100,15 @@ export default function AdminAppointments() {
                             ) : (
                                 filteredAppointments.map((appt) => (
                                     <tr key={appt._id} className="hover:bg-gray-50/50 transition-colors group">
-                                        <td className="px-6 py-4 font-semibold text-neutral-700">{appt.patientName}</td>
+                                        <td className="px-6 py-4 font-semibold text-neutral-700 dark:text-neutral-200">{appt.patientName}</td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-neutral-800">{appt.doctorId?.name}</div>
+                                            <div className="text-sm font-medium text-neutral-800 dark:text-neutral-100">{appt.doctorId?.name}</div>
                                             <div className="text-xs text-neutral-400">{appt.hospitalId?.name}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-neutral-500">
+                                        <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">
                                             {new Date(appt.appointmentDate).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-neutral-500 max-w-[150px] truncate">{appt.problem}</td>
+                                        <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400 max-w-[150px] truncate">{appt.problem}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${appt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
                                                     appt.status === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :

@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -22,6 +22,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Strict onboarding lock: Check if user profile is incomplete (must have phone, dob, bloodgroup, address)
+  const isProfileComplete = Boolean(user?.phone && user?.dateOfBirth && user?.bloodGroup && user?.address);
+  // And ensure we don't infinitely loop if they are already on /profile
+  if (isAuthenticated && !isProfileComplete && window.location.pathname !== "/profile") {
+    return <Navigate to="/profile" state={{ fromOnboarding: true }} replace />;
   }
 
   return <>{children}</>;

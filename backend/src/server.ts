@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import app from "./app";
 import config from "./config";
+import { initReminderCron } from "./services/reminderService";
 
 
 // Load environment variables immediately
@@ -39,6 +40,9 @@ async function initializeServer() {
       "ℹ️  Chatbot will continue without RAG. You can add documents later."
     );
   }
+
+  // --- STEP 3: Initialize Background Tasks ---
+  initReminderCron();
 }
 
 // --- STEP 3: Start Express Server ---

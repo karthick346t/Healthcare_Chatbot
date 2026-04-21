@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { fetchWithAuth } from '../services/authApi';
@@ -9,11 +9,12 @@ import { MdMedicalServices, MdWarning, MdEmergency, MdBloodtype, MdArrowBack } f
 export default function Profile() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { user, token } = useAuth();
+    const location = useLocation();
+    const { user, token, refreshUser } = useAuth();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(location.state?.fromOnboarding || false);
     const [imageError, setImageError] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -84,7 +85,14 @@ export default function Profile() {
 
             setSuccess('Profile updated successfully! Refresh to see changes.');
             setIsEditing(false);
-            // Optionally trigger a user re-fetch here if context supports it
+            
+            if (refreshUser) {
+                await refreshUser();
+            }
+
+            if (location.state?.fromOnboarding) {
+                navigate('/', { replace: true });
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -97,16 +105,16 @@ export default function Profile() {
             <div className="flex items-center mb-4">
                 <button
                     onClick={() => navigate("/")}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-white/80 text-neutral-600 font-bold hover:bg-white/80 transition-all shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-[#1f232b] border border-white/80 dark:border-white/5 text-neutral-600 dark:text-neutral-300 font-bold hover:bg-white dark:bg-[#1f232b]/80 transition-all shadow-sm"
                 >
                     <MdArrowBack />
                     <span>{t("Go Back")}</span>
                 </button>
             </div>
             {/* Header */}
-            <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between bg-white dark:bg-[#1f232b] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800/50">
                 <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-themeAccent-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
                         {user?.avatar && !imageError ? (
                             <img
                                 src={user.avatar}
@@ -120,9 +128,9 @@ export default function Profile() {
                         )}
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-neutral-800">{user?.name}</h1>
-                        <p className="text-neutral-500">{user?.email}</p>
-                        <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100 uppercase tracking-wide">
+                        <h1 className="text-2xl font-bold text-neutral-800 dark:text-neutral-100">{user?.name}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400">{user?.email}</p>
+                        <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-themeAccent-50 dark:bg-themeAccent-500/20 text-themeAccent-700 dark:text-themeAccent-400 border border-themeAccent-100 dark:border-themeAccent-400/20 uppercase tracking-wide">
                             {user?.role} Account
                         </div>
                     </div>
@@ -130,7 +138,7 @@ export default function Profile() {
                 {!isEditing && (
                     <button
                         onClick={() => setIsEditing(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-neutral-800 text-white rounded-xl hover:bg-neutral-900 transition-all font-medium"
+                        className="flex items-center gap-2 px-4 py-2 bg-neutral-800 dark:bg-neutral-700 text-white rounded-xl hover:bg-neutral-900 dark:hover:bg-neutral-600 transition-all font-medium"
                     >
                         <HiOutlinePencil /> Edit Profile
                     </button>
@@ -143,14 +151,14 @@ export default function Profile() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div className="bg-white dark:bg-[#1f232b] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800/50 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-                    <h2 className="text-xl font-bold text-neutral-800 mb-6 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-6 flex items-center gap-2">
                         <HiUser className="text-blue-500" /> Personal Information
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Phone Number</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Phone Number</label>
                             <div className="relative">
                                 <HiPhone className="absolute left-3 top-3 text-gray-400" />
                                 <input
@@ -159,19 +167,19 @@ export default function Profile() {
                                     disabled={!isEditing}
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                     placeholder="+1 234 567 890"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Gender</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Gender</label>
                             <select
                                 name="gender"
                                 disabled={!isEditing}
                                 value={formData.gender}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50"
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                             >
                                 <option>Male</option>
                                 <option>Female</option>
@@ -179,7 +187,7 @@ export default function Profile() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Date of Birth</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Date of Birth</label>
                             <div className="relative">
                                 <HiCalendar className="absolute left-3 top-3 text-gray-400" />
                                 <input
@@ -188,12 +196,12 @@ export default function Profile() {
                                     disabled={!isEditing}
                                     value={formData.dateOfBirth}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Blood Group</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Blood Group</label>
                             <div className="relative">
                                 <MdBloodtype className="absolute left-3 top-3 text-gray-400" />
                                 <select
@@ -201,7 +209,7 @@ export default function Profile() {
                                     disabled={!isEditing}
                                     value={formData.bloodGroup}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 appearance-none bg-white"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100 appearance-none bg-white dark:bg-[#1f232b]"
                                 >
                                     <option value="">Select Group</option>
                                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
@@ -211,7 +219,7 @@ export default function Profile() {
                             </div>
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Address</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Address</label>
                             <div className="relative">
                                 <HiLocationMarker className="absolute left-3 top-3 text-gray-400" />
                                 <input
@@ -220,7 +228,7 @@ export default function Profile() {
                                     disabled={!isEditing}
                                     value={formData.address}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                     placeholder="123 Wellness Street, Health City"
                                 />
                             </div>
@@ -229,14 +237,14 @@ export default function Profile() {
                 </div>
 
                 {/* Medical History */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div className="bg-white dark:bg-[#1f232b] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800/50 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-2 h-full bg-red-500"></div>
-                    <h2 className="text-xl font-bold text-neutral-800 mb-6 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-6 flex items-center gap-2">
                         <MdMedicalServices className="text-red-500" /> Medical History
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Allergies (Comma separated)</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Allergies (Comma separated)</label>
                             <div className="relative">
                                 <MdWarning className="absolute left-3 top-3 text-gray-400" />
                                 <input
@@ -245,20 +253,20 @@ export default function Profile() {
                                     disabled={!isEditing}
                                     value={formData.allergies}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none disabled:bg-gray-50"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                     placeholder="Peanuts, Penicillin..."
                                 />
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Chronic Conditions</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Chronic Conditions</label>
                             <input
                                 type="text"
                                 name="chronicConditions"
                                 disabled={!isEditing}
                                 value={formData.chronicConditions}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none disabled:bg-gray-50"
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-red-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                 placeholder="Diabetes, Hypertension..."
                             />
                         </div>
@@ -266,45 +274,45 @@ export default function Profile() {
                 </div>
 
                 {/* Emergency Contact */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div className="bg-white dark:bg-[#1f232b] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800/50 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-2 h-full bg-orange-500"></div>
-                    <h2 className="text-xl font-bold text-neutral-800 mb-6 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-6 flex items-center gap-2">
                         <MdEmergency className="text-orange-500" /> Emergency Contact
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Name</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Name</label>
                             <input
                                 type="text"
                                 name="emergencyContactName"
                                 disabled={!isEditing}
                                 value={formData.emergencyContactName}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50"
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                 placeholder="Contact Name"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Phone</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Phone</label>
                             <input
                                 type="tel"
                                 name="emergencyContactPhone"
                                 disabled={!isEditing}
                                 value={formData.emergencyContactPhone}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50"
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                 placeholder="Contact Phone"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Relation</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Relation</label>
                             <input
                                 type="text"
                                 name="emergencyContactRelation"
                                 disabled={!isEditing}
                                 value={formData.emergencyContactRelation}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50"
+                                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none disabled:bg-gray-50 disabled:dark:bg-[#1a1d24] dark:bg-[#1f232b] dark:border-neutral-700 dark:text-neutral-100"
                                 placeholder="e.g. Spouse, Parent"
                             />
                         </div>
@@ -320,7 +328,7 @@ export default function Profile() {
                         <button
                             type="button"
                             onClick={() => setIsEditing(false)}
-                            className="px-6 py-3 rounded-xl border border-gray-300 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+                            className="px-6 py-3 rounded-xl border border-gray-300 dark:border-neutral-700 font-bold text-gray-500 dark:text-neutral-400 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-all"
                         >
                             Cancel
                         </button>

@@ -182,7 +182,7 @@ export default function Chatbot() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col w-full h-full bg-[#eef2f5] text-neutral-dark overflow-hidden selection:bg-primary/20 z-50">
+    <div className="fixed inset-0 flex flex-col w-full h-full bg-neu dark:bg-neu-dark text-neutral-dark overflow-hidden selection:bg-primary/20 z-50">
 
       {/* Medical Disclaimer Modal — once per session */}
       <DisclaimerModal onAccept={() => setDisclaimerAccepted(true)} />
@@ -203,7 +203,7 @@ export default function Chatbot() {
       )}
 
       {/* Background Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-themeAccent-400/20 to-themeAccent-300/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none" />
 
       {/* HEADER */}
@@ -225,7 +225,7 @@ export default function Chatbot() {
                alt="NEXA" 
                className="h-4 w-auto drop-shadow-sm pointer-events-none select-none opacity-80 brightness-0"
             />
-            <div className="text-[7px] font text-neutral-500 -mt-0.5 whitespace-nowrap tracking-wider">{t("Your wellness companion")}</div>
+            <div className="text-[7px] font text-neutral-500 dark:text-neutral-400 -mt-0.5 whitespace-nowrap tracking-wider">{t("Your wellness companion")}</div>
           </div>
         </div>
 
@@ -259,11 +259,11 @@ export default function Chatbot() {
         className={`absolute inset-0 z-40 flex transition-transform duration-300 ease-in-out ${showHistory ? "translate-x-0" : "-translate-x-full"}`}
         style={{ marginTop: '72px' }}
       >
-        <div className="w-64 h-full border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex flex-col bg-[#eef2f5]">
+        <div className="w-64 h-full border-none shadow-neu-out dark:shadow-neu-out-dark flex flex-col bg-neu dark:bg-neu-dark">
           <div className="p-4 border-b border-neutral-200">
             <button
               onClick={() => { handleNewChat(); setShowHistory(false); }}
-              className="w-full flex items-center gap-2 bg-[#eef2f5] text-primary px-4 py-3 rounded-xl hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-all border-none justify-center"
+              className="w-full flex items-center gap-2 bg-neu dark:bg-neu-dark text-primary px-4 py-3 rounded-xl hover:shadow-neu-in dark:shadow-neu-in-dark shadow-neu-out dark:shadow-neu-out-dark transition-all border-none justify-center"
             >
               <MdAdd className="text-xl" />
               <span className="text-sm font-bold tracking-wide">{t("New Chat")}</span>
@@ -286,8 +286,8 @@ export default function Chatbot() {
                 key={session.sessionId}
                 onClick={() => switchChat(session.sessionId)}
                 className={`w-full text-left px-3 py-3 rounded-lg flex items-start gap-3 transition-colors ${sessionId === session.sessionId
-                  ? 'bg-[#eef2f5] shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] border-none'
-                  : 'hover:shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] border-none'
+                  ? 'bg-neu dark:bg-neu-dark shadow-neu-in dark:shadow-neu-in-dark border-none'
+                  : 'hover:shadow-neu-in-sm dark:shadow-neu-in-sm-dark border-none'
                   }`}
               >
                 <MdChatBubbleOutline className={`mt-0.5 shrink-0 ${sessionId === session.sessionId ? 'text-primary' : 'text-gray-500'}`} />

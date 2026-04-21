@@ -10,9 +10,7 @@ import logo from "../assets/logo.png";
 import NexaLogo from "../assets/NEXA.png";
 
 const menuItems = [
-  { icon: HiVideoCamera, label: 'Telemedicine', path: '/telemedicine' },
   { icon: HiDocumentText, label: 'Medical Records', path: '/records' },
-  { icon: MdFavorite, label: "My Vitals", path: "/vitals" },
   { icon: MdSettings, label: "Settings", path: "/settings" },
 ];
 
@@ -25,7 +23,7 @@ export default function Sidebar() {
       {/* Brand Name */}
       <div className="flex items-center gap-4 px-6 mb-10 cursor-pointer select-none group" onClick={() => navigate('/')}>
         <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-[#eef2f5] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex items-center justify-center text-cyan-600">
+            <div className="w-12 h-12 rounded-2xl bg-neu dark:bg-neu-dark shadow-neu-out dark:shadow-neu-out-dark flex items-center justify-center text-themeAccent-600">
                <img
                 src={logo}
                 alt="NEXA icon"
@@ -57,13 +55,13 @@ export default function Sidebar() {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
                 isActive
-                  ? "bg-[#eef2f5] text-cyan-600 font-bold shadow-[inset_5px_5px_10px_rgba(163,177,198,0.6),inset_-5px_-5px_10px_rgba(255,255,255,0.8)]"
-                  : "hover:bg-[#eef2f5] text-neutral-500 hover:text-cyan-600 font-medium hover:shadow-[5px_5px_10px_rgba(163,177,198,0.4),-5px_-5px_10px_rgba(255,255,255,0.8)] hover:-translate-y-0.5"
+                  ? "bg-neu dark:bg-neu-dark text-themeAccent-600 font-bold shadow-[inset_5px_5px_10px_rgba(163,177,198,0.6),inset_-5px_-5px_10px_rgba(255,255,255,0.8)]"
+                  : "hover:bg-neu dark:bg-neu-dark text-neutral-500 dark:text-neutral-400 hover:text-themeAccent-600 font-medium hover:shadow-[5px_5px_10px_rgba(163,177,198,0.4),-5px_-5px_10px_rgba(255,255,255,0.8)] hover:-translate-y-0.5"
               }`}
             >
               <item.icon 
                 className={`text-xl transition-colors ${
-                  isActive ? "text-cyan-600" : "text-neutral-400 group-hover:text-cyan-500"
+                  isActive ? "text-themeAccent-600" : "text-neutral-400 group-hover:text-themeAccent-500"
                 }`} 
               />
               <span className="text-sm tracking-wide">{item.label}</span>

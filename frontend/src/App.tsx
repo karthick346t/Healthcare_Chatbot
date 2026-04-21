@@ -34,10 +34,10 @@ import WalkInBooking from "./pages/staff/WalkInBooking";
 function InnerApp() {
   return (
     <Router>
-      <div className="min-h-screen font-sans text-neutral-dark relative bg-[#eef2f5]">
+      <div className="min-h-screen font-sans text-neutral-dark relative bg-neu dark:bg-neu-dark transition-colors duration-500">
         {/* Universal Background Ambience */}
-        <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vh] rounded-full bg-gradient-to-br from-cyan-400/20 to-teal-300/20 blur-[120px] pointer-events-none z-0" />
-        <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] rounded-full bg-gradient-to-tl from-blue-500/20 to-indigo-400/20 blur-[100px] pointer-events-none z-0" />
+        <div className="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vh] rounded-full bg-gradient-to-br from-themeAccent-400/20 dark:from-cyan-900/10 to-themeAccent-300/20 dark:to-teal-800/10 blur-[120px] pointer-events-none z-0 transition-colors duration-500" />
+        <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] rounded-full bg-gradient-to-tl from-blue-500/20 dark:from-blue-900/10 to-indigo-400/20 dark:to-indigo-800/10 blur-[100px] pointer-events-none z-0 transition-colors duration-500" />
         
         <div className="relative z-10 w-full h-full">
           <Routes>

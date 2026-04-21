@@ -14,7 +14,7 @@ export class GoogleTtsService {
     
     // Always assign a value to satisfy TypeScript's non-null check
     this.client = new TextToSpeechClient(
-      apiKey && apiKey !== 'YOUR_GOOGLE_API_KEY' ? { apiKey } : {}
+      apiKey && apiKey !== 'YOUR_GOOGLE_API_KEY' ? { apiKey, fallback: 'rest' } : { fallback: 'rest' }
     );
 
     if (apiKey && apiKey !== 'YOUR_GOOGLE_API_KEY') {
@@ -36,51 +36,76 @@ export class GoogleTtsService {
       // 1. Determine the best voice for the language
       const voice = this.getBestVoice(languageCode);
 
-      // 2. Build the request
-      const request = {
-        input: { text },
-        // Select the language and SSML voice gender (optional)
-        voice: { 
-          languageCode, 
-          name: voice,
-          ssmlGender: 'NEUTRAL' as const
-        },
-        // select the type of audio encoding
-        audioConfig: { audioEncoding: 'MP3' as const },
-      };
-
-      // 3. Perform the text-to-speech request
-      console.log(`[TTS] Synthesizing speech (${text.length} chars) for ${languageCode} using voice ${voice}...`);
+      // 2. Chunk text to respect Google's 5000 byte limit
+      // Using 1500 chars to be safe with multibyte characters (e.g. Indic languages)
+      const MAX_LENGTH = 1500;
+      const textChunks: string[] = [];
+      let currentText = text;
       
-      try {
-        const [response] = await this.client.synthesizeSpeech(request);
-        
-        if (!response.audioContent) {
-          throw new Error('No audio content received from Google TTS');
+      while (currentText.length > 0) {
+        if (currentText.length <= MAX_LENGTH) {
+          textChunks.push(currentText);
+          break;
         }
-
-        // 4. Return as base64
-        const audioBuffer = response.audioContent as Buffer;
-        return audioBuffer.toString('base64');
-      } catch (innerError: any) {
-        console.warn(`[TTS] Voice ${voice} failed, trying standard fallback...`, innerError.message);
         
-        // Fallback to a safe standard voice
-        const fallbackRequest = {
-          ...request,
+        let splitIndex = currentText.lastIndexOf(' ', MAX_LENGTH);
+        // Look for natural sentence boundaries to prefer over just spaces
+        const punctuationIndex = Math.max(
+          currentText.lastIndexOf('. ', MAX_LENGTH),
+          currentText.lastIndexOf(', ', MAX_LENGTH),
+          currentText.lastIndexOf('\n', MAX_LENGTH)
+        );
+        
+        if (punctuationIndex > MAX_LENGTH / 2) {
+           splitIndex = punctuationIndex + 1; // Include punctuation
+        } else if (splitIndex === -1) {
+           splitIndex = MAX_LENGTH; // Word is longer than MAX_LENGTH, hard split
+        }
+        
+        textChunks.push(currentText.substring(0, splitIndex));
+        currentText = currentText.substring(splitIndex).trim();
+      }
+
+      const audioBuffers: Buffer[] = [];
+
+      // 3. Perform text-to-speech requests for each chunk
+      for (const [index, chunk] of textChunks.entries()) {
+        const request = {
+          input: { text: chunk },
           voice: { 
             languageCode, 
-            ssmlGender: 'NEUTRAL' as const
-          }
+            name: voice
+          },
+          audioConfig: { audioEncoding: 'MP3' as const },
         };
+
+        console.log(`[TTS] Synthesizing chunk ${index + 1}/${textChunks.length} (${chunk.length} chars) for ${languageCode}...`);
         
-        const [fallbackResponse] = await this.client.synthesizeSpeech(fallbackRequest);
-        if (fallbackResponse.audioContent) {
-          const audioBuffer = fallbackResponse.audioContent as Buffer;
-          return audioBuffer.toString('base64');
+        try {
+          const [response] = await this.client.synthesizeSpeech(request);
+          if (!response.audioContent) {
+            throw new Error('No audio content received from Google TTS chunk');
+          }
+          audioBuffers.push(response.audioContent as Buffer);
+        } catch (innerError: any) {
+          console.warn(`[TTS] Voice ${voice} failed on chunk ${index + 1}, trying standard fallback...`, innerError.message);
+          
+          const fallbackRequest = {
+            ...request,
+            voice: { languageCode }
+          };
+          
+          const [fallbackResponse] = await this.client.synthesizeSpeech(fallbackRequest);
+          if (fallbackResponse.audioContent) {
+            audioBuffers.push(fallbackResponse.audioContent as Buffer);
+          } else {
+            throw innerError;
+          }
         }
-        throw innerError;
       }
+
+      // 4. Return as concatenated base64 (MP3 buffers can simply be concatenated)
+      return Buffer.concat(audioBuffers).toString('base64');
     } catch (error) {
       console.error('[TTS] Synthesis failed:', error);
       return null;

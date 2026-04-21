@@ -103,5 +103,69 @@ export const notificationService = {
         } catch (error) {
             console.error("Error sending cancellation email:", error);
         }
+    },
+    sendAppointmentReminder: async (email: string, appointmentDetails: any) => {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.warn("Email credentials missing in .env. Skipping reminder email.");
+            return;
+        }
+
+        const mailOptions = {
+            from: `"NEXA Healthcare" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Reminder: Your Appointment at NEXA Healthcare Tomorrow',
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #f0f0f0; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="text-align: center; padding-bottom: 25px; border-bottom: 2px solid #f8fafc;">
+                        <h1 style="color: #0891b2; margin: 0; font-size: 28px; letter-spacing: -0.5px;">NEXA <span style="font-weight: 300; color: #64748b;">HEALTHCARE</span></h1>
+                        <p style="color: #64748b; margin: 5px 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Appointment Reminder</p>
+                    </div>
+                    
+                    <div style="padding: 30px 0;">
+                        <h2 style="color: #1e293b; margin: 0 0 15px; font-size: 22px;">Hello ${appointmentDetails.patientName},</h2>
+                        <p style="color: #475569; line-height: 1.6; margin: 0 0 20px;">This is a friendly reminder that you have an appointment scheduled for <strong>tomorrow</strong>. We look forward to seeing you!</p>
+                        
+                        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; margin: 25px 0; border: 1px solid #bae6fd;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px 0; color: #7dd3fc; font-weight: bold; width: 100px; vertical-align: top;">DOCTOR</td>
+                                    <td style="padding: 8px 0; color: #0c4a6e; font-weight: bold; font-size: 16px;">${appointmentDetails.doctorName}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #7dd3fc; font-weight: bold; width: 100px; vertical-align: top;">DATE</td>
+                                    <td style="padding: 8px 0; color: #0c4a6e; font-weight: bold;">Tomorrow, ${new Date(appointmentDetails.appointmentDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #7dd3fc; font-weight: bold; width: 100px; vertical-align: top;">TOKEN</td>
+                                    <td style="padding: 8px 0; color: #0c4a6e; font-weight: bold;">#${appointmentDetails.tokenNumber}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; color: #7dd3fc; font-weight: bold; width: 100px; vertical-align: top;">FACILITY</td>
+                                    <td style="padding: 8px 0; color: #0c4a6e; font-weight: bold;">${appointmentDetails.hospitalName}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div style="background-color: #fff7ed; padding: 15px; border-radius: 8px; border-left: 4px solid #f97316; margin-bottom: 25px;">
+                            <p style="color: #9a3412; margin: 0; font-size: 14px;"><strong>Note:</strong> Please arrive at least 15 minutes before your scheduled time for seamless check-in.</p>
+                        </div>
+                        
+                        <p style="color: #64748b; font-size: 14px; margin: 0;">If you need to reschedule or cancel, please visit your dashboard or contact us immediately.</p>
+                    </div>
+
+                    <div style="text-align: center; padding-top: 25px; border-top: 2px solid #f8fafc; color: #94a3b8; font-size: 12px;">
+                        <p style="margin: 0 0 5px;">&copy; ${new Date().getFullYear()} NEXA Healthcare Systems. All rights reserved.</p>
+                        <p style="margin: 0;">Providing world-class healthcare through technology.</p>
+                    </div>
+                </div>
+            `,
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`Reminder email sent to ${email}`);
+        } catch (error) {
+            console.error("Error sending reminder email:", error);
+        }
     }
 };

@@ -56,15 +56,15 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       aria-label={title}
     >
       <div
-        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden animate-scaleIn`}
+        className={`relative w-full ${sizeClasses[size]} mx-4 bg-white dark:bg-[#1f232b] rounded-2xl shadow-2xl overflow-hidden animate-scaleIn`}
       >
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-neutral-800">{title}</h2>
+            <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">{title}</h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 transition-colors"
               aria-label="Close modal"
             >
               <MdClose size={18} />
@@ -76,7 +76,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
         {!title && (
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors z-10"
+            className="absolute top-3 right-3 p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 transition-colors z-10"
             aria-label="Close modal"
           >
             <MdClose size={18} />

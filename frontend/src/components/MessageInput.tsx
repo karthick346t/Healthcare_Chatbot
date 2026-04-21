@@ -138,7 +138,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload, quickRep
     <div className="w-full max-w-3xl mx-auto px-4">
       <form
         onSubmit={handleSubmit}
-        className={`relative flex items-end gap-2 px-4 py-3 rounded-3xl bg-[#eef2f5] transition-all duration-200 border-none shadow-[inset_6px_6px_12px_#c8d0e7,inset_-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] ${isListening ? "ring-2 ring-red-400" : ""}`}
+        className={`relative flex items-end gap-2 px-4 py-3 rounded-3xl bg-neu dark:bg-neu-dark transition-all duration-200 border-none shadow-neu-in-lg dark:shadow-neu-in-lg-dark hover:shadow-neu-in dark:shadow-neu-in-dark ${isListening ? "ring-2 ring-red-400" : ""}`}
       >
         {/* Left side buttons */}
         <div className="flex items-center gap-1 pb-1">
@@ -186,7 +186,7 @@ const MessageInput = memo(function MessageInput({ onSend, onFileUpload, quickRep
           // LOGIC: If listening, say "Listening...", otherwise use typewriter state
           placeholder={isListening ? "Listening..." : placeholder}
           className="flex-1 max-h-[200px] py-2 bg-transparent outline-none border-none 
-                     text-gray-900 placeholder-gray-400 
+                     text-gray-900 dark:text-gray-100 placeholder-gray-400 
                      text-[15px] leading-6 resize-none overflow-y-auto focus:ring-0"
           style={{ boxShadow: 'none' }}
           rows={1}

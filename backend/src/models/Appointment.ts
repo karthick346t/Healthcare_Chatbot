@@ -13,6 +13,7 @@ export interface IAppointment extends Document {
     status: 'pending' | 'scheduled' | 'checked_in' | 'in_consultation' | 'completed' | 'cancelled';
     paymentStatus: 'pending' | 'paid' | 'refunded';
     userId?: mongoose.Types.ObjectId; // Link to User model
+    reminderSent: boolean;
 }
 
 const AppointmentSchema: Schema = new Schema({
@@ -27,7 +28,8 @@ const AppointmentSchema: Schema = new Schema({
     tokenNumber: { type: Number, required: true },
     status: { type: String, enum: ['pending', 'scheduled', 'checked_in', 'in_consultation', 'completed', 'cancelled'], default: 'pending' },
     paymentStatus: { type: String, enum: ['pending', 'paid', 'refunded'], default: 'pending' },
-    userId: { type: Schema.Types.ObjectId, ref: 'User' } // Optional for guest bookings, but we'll use it for logged-in users
+    userId: { type: Schema.Types.ObjectId, ref: 'User' }, // Optional for guest bookings, but we'll use it for logged-in users
+    reminderSent: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Avoid duplicate token issue + improve query performance

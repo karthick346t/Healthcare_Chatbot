@@ -142,7 +142,7 @@ export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }
             "relative px-6 py-4 rounded-3xl text-[15px] leading-relaxed break-words border-none",
             isUser 
               ? "bg-[#4C5BD8] text-white rounded-br-[4px] shadow-sm" 
-              : "bg-[#eef2f5] text-neutral-800 rounded-bl-[4px] border-none shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff]"
+              : "bg-neu dark:bg-neu-dark text-neutral-800 dark:text-neutral-100 rounded-bl-[4px] border-none shadow-neu-out dark:shadow-neu-out-dark"
           )}
         >
            {/* ⚠️ Non-health warning (Styled Box) */}
@@ -165,7 +165,7 @@ export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }
               ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
               li: ({ children }) => <li>{children}</li>,
               a: ({ href, children }) => (
-                <a href={href} className="text-cyan-600 underline hover:text-cyan-700" target="_blank" rel="noopener noreferrer">
+                <a href={href} className="text-themeAccent-600 underline hover:text-themeAccent-700" target="_blank" rel="noopener noreferrer">
                   {children}
                 </a>
               ),
@@ -181,20 +181,20 @@ export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }
               code: ({ className, children, ...props }) => {
                 const isInline = !className;
                 return isInline ? (
-                  <code className="bg-neutral-100 text-neutral-800 px-1.5 py-0.5 rounded textxs font-mono border border-neutral-200" {...props}>{children}</code>
+                  <code className="bg-neutral-100 text-neutral-800 dark:text-neutral-100 px-1.5 py-0.5 rounded textxs font-mono border border-neutral-200" {...props}>{children}</code>
                 ) : (
                   <code className={className} {...props}>{children}</code>
                 );
               },
               table: ({ children }) => (
-                <div className="overflow-x-auto my-3 rounded-lg border border-neutral-200">
+                <div className="overflow-x-auto my-3 rounded-lg border border-neutral-200 dark:border-neutral-700">
                   <table className="w-full text-sm text-left">{children}</table>
                 </div>
               ),
-              thead: ({ children }) => <thead className="bg-neutral-50 text-neutral-700 font-semibold">{children}</thead>,
-              tbody: ({ children }) => <tbody className="divide-y divide-neutral-100">{children}</tbody>,
-              tr: ({ children }) => <tr className="hover:bg-neutral-50/50 transition-colors">{children}</tr>,
-              th: ({ children }) => <th className="px-4 py-2 border-b border-neutral-200">{children}</th>,
+              thead: ({ children }) => <thead className="bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 font-semibold">{children}</thead>,
+              tbody: ({ children }) => <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/50">{children}</tbody>,
+              tr: ({ children }) => <tr className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/50 transition-colors">{children}</tr>,
+              th: ({ children }) => <th className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700">{children}</th>,
               td: ({ children }) => <td className="px-4 py-2">{children}</td>,
             }}
           >
@@ -212,8 +212,8 @@ export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }
                 className={clsx(
                   "p-2 rounded-full transition-all duration-200 shadow-sm border",
                   isSpeaking 
-                    ? "bg-red-50 text-red-500 border-red-100 animate-pulse" 
-                    : "bg-white text-neutral-400 hover:text-primary hover:border-primary/20 hover:bg-primary/5 border-transparent"
+                    ? "bg-red-50 dark:bg-red-500/20 text-red-500 dark:text-red-400 border-red-100 dark:border-red-400/20 animate-pulse" 
+                    : "bg-white dark:bg-[#1f232b] text-neutral-400 hover:text-primary hover:border-primary/20 hover:bg-primary/5 dark:hover:bg-primary/20 border-transparent"
                 )}
                 title={isSpeaking ? "Stop speaking" : "Read out loud"}
               >
@@ -227,8 +227,8 @@ export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }
                 className={clsx(
                   "p-1.5 rounded-full transition-all duration-200 shadow-sm border",
                   feedback === 1
-                    ? "bg-green-50 text-green-600 border-green-200"
-                    : "bg-white text-neutral-400 hover:text-green-600 hover:border-green-200 hover:bg-green-50 border-transparent"
+                    ? "bg-green-50 dark:bg-green-500/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-400/20"
+                    : "bg-white dark:bg-[#1f232b] text-neutral-400 hover:text-green-600 hover:border-green-200 hover:bg-green-50 dark:hover:bg-green-500/10 border-transparent"
                 )}
                 title="Helpful"
               >
@@ -239,8 +239,8 @@ export default function ChatBubble({ sender, text, isHealthRelated, onFeedback }
                 className={clsx(
                   "p-1.5 rounded-full transition-all duration-200 shadow-sm border",
                   feedback === -1
-                    ? "bg-red-50 text-red-600 border-red-200"
-                    : "bg-white text-neutral-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 border-transparent"
+                    ? "bg-red-50 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-400/20"
+                    : "bg-white dark:bg-[#1f232b] text-neutral-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10 border-transparent"
                 )}
                 title="Not helpful"
               >

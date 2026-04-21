@@ -73,7 +73,7 @@ export default function TypingInput({
 
   return (
     <div className="relative w-full max-w-4xl mx-auto">
-      <div className="relative flex items-center gap-2 p-2 bg-white border border-gray-300 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+      <div className="relative flex items-center gap-2 p-2 bg-white dark:bg-[#1f232b] border border-gray-300 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-blue-500 transition-all">
         
         {/* File Upload Button */}
         <button

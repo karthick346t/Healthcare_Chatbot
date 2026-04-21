@@ -59,37 +59,12 @@ const TypewriterText = () => {
   return (
     <>
       {displayText}
-      <span className="animate-pulse ml-0.5 font-light text-cyan-500">|</span>
+      <span className="animate-pulse ml-0.5 font-light text-themeAccent-500">|</span>
     </>
   );
 };
 
-// --- COMPONENTS: SMOOTH GRAPHS ---
-const HeartRateGraph = () => (
-  <svg viewBox="0 0 100 40" className="w-full h-20 overflow-visible">
-    <defs>
-      <linearGradient id="heartGradient" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3" />
-        <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-      </linearGradient>
-    </defs>
-    <path d="M0 30 Q15 30 25 15 T40 25 T60 10 T80 25 T100 20 V40 H0 Z" fill="url(#heartGradient)" />
-    <path d="M0 30 Q15 30 25 15 T40 25 T60 10 T80 25 T100 20" fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 
-const OxygenGraph = () => (
-  <svg viewBox="0 0 100 40" className="w-full h-20 overflow-visible">
-    <defs>
-      <linearGradient id="oxygenGradient" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.3" />
-        <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
-      </linearGradient>
-    </defs>
-    <path d="M0 25 Q20 35 40 15 T80 25 T100 20 V40 H0 Z" fill="url(#oxygenGradient)" />
-    <path d="M0 25 Q20 35 40 15 T80 25 T100 20" fill="none" stroke="#14b8a6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
 
 
 export default function Dashboard() {
@@ -117,10 +92,8 @@ export default function Dashboard() {
     setShowLangMenu(false);
   }
 
-  // <--- 3. DEFINE CARDS WITH PATHS
   const quickActions = [
-    { title: "My Appointments", path: "/my-appointments", desc: "Manage visits", color: "from-blue-400 to-cyan-300", shadow: "shadow-blue-500/30", icon: "📅" },
-    { title: "Lab Reports", path: "/labs", desc: "Analyze reports", color: "from-purple-400 to-indigo-400", shadow: "shadow-purple-500/30", icon: "🧪" },
+    { title: "My Appointments", path: "/my-appointments", desc: "Manage visits", color: "from-blue-400 to-themeAccent-300", shadow: "shadow-blue-500/30", icon: "📅" },
     { title: "Medication", path: "/medications", desc: "Track your meds", color: "from-orange-400 to-red-400", shadow: "shadow-orange-500/30", icon: "💊" },
     { title: "Book Appointment", path: "/appointments", desc: "Schedule a visit", color: "from-emerald-400 to-teal-400", shadow: "shadow-emerald-500/30", icon: "📅" },
   ];
@@ -149,8 +122,7 @@ export default function Dashboard() {
             steps: [
                 { element: '#dashboard-welcome', popover: { title: 'Welcome to Healthcare Chatbot', description: 'This is your central command dashboard. Let\'s get you familiar with the key features!', side: "bottom", align: 'center' } },
                 { element: '#chatbot-input', popover: { title: 'AI Health Assistant', description: 'Describe your symptoms, ask about medications, or inquire about side effects here. Our AI is ready 24/7.', side: "bottom", align: 'center' } },
-                { element: '#quick-actions', popover: { title: 'Quick Access', description: 'Jump right into your Appointments, Lab Reports, or Medication Tracker with these shortcuts.', side: "top", align: 'center' } },
-                { element: '#vitals-sidebar', popover: { title: 'Vitals Monitoring', description: 'Keep an eye on key health metrics like Heart Rate and Blood Oxygen over here.', side: "left", align: 'center' } },
+                { element: '#quick-actions', popover: { title: 'Quick Access', description: 'Jump right into your Appointments or Medication Tracker with these shortcuts.', side: "top", align: 'center' } },
             ],
             onDestroyStarted: () => {
                 localStorage.setItem(tourKey, 'true');
@@ -187,92 +159,68 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           <div id="dashboard-welcome" className="flex justify-between items-end mb-6">
             <div>
-              <h2 className="text-4xl font-bold text-neutral-800 tracking-tight drop-shadow-sm">{t("Welcome, how can we help today?")}</h2>
-              <p className="text-neutral-500 mt-2 font-medium text-lg">{t("Ask HealthBot about your symptoms, medications, or lab reports.")}</p>
+              <h2 className="text-4xl font-bold text-neutral-800 dark:text-neutral-100 tracking-tight drop-shadow-sm">{t("Welcome, how can we help today?")}</h2>
+              <p className="text-neutral-500 dark:text-neutral-400 mt-2 font-medium text-lg">{t("Ask HealthBot about your symptoms, medications, or lab reports.")}</p>
             </div>
             <button className="bg-gradient-to-r from-red-500 to-orange-500 hover:shadow-red-500/40 text-white px-6 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 group border border-white/20">
               <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white dark:bg-[#1f232b] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white dark:bg-[#1f232b]"></span>
               </span>
               <span className="font-bold text-sm tracking-wide">SOS: Emergency</span>
             </button>
           </div>
 
-          <div className="flex flex-col xl:flex-row gap-6 h-full pb-4">
+          <div className="flex flex-col gap-6 h-full pb-4">
 
-            <div className="flex-[2] flex flex-col gap-6">
+            <div className="w-full flex flex-col gap-8">
 
-              <div className="relative bg-[#eef2f5] border-none rounded-3xl p-10 shadow-[8px_8px_16px_#c8d0e7,-8px_-8px_16px_#ffffff] flex flex-col justify-center min-h-[280px] group transition-all overflow-hidden">
-                <div className="absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br from-cyan-400/20 to-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+              <div className="relative bg-neu dark:bg-neu-dark border-none rounded-3xl p-10 shadow-neu-out-lg dark:shadow-neu-out-lg-dark flex flex-col justify-center min-h-[280px] group transition-all overflow-hidden">
+                <div className="absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-br from-themeAccent-400/20 to-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute top-8 right-10 animate-bounce" style={{ animationDuration: '3s' }}>
-                  <div className="w-24 h-24 bg-gradient-to-b from-white to-blue-50 rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/80 transform rotate-6 hover:rotate-0 transition-all duration-500">
+                  <div className="w-24 h-24 bg-gradient-to-b from-white to-blue-50 rounded-3xl flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-white/80 dark:border-white/5 transform rotate-6 hover:rotate-0 transition-all duration-500">
                     <span className="text-5xl drop-shadow-md">🤖</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-cyan-700 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></div>
+                <div className="flex items-center gap-2 text-themeAccent-700 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-themeAccent-500 animate-pulse"></div>
                   <span className="font-bold uppercase tracking-widest text-xs opacity-80">Health Assistant</span>
                 </div>
-                <h3 className="text-3xl text-neutral-800 mb-8 font-semibold max-w-md leading-tight">{t("greeting")}</h3>
+                <h3 className="text-3xl text-neutral-800 dark:text-neutral-100 mb-8 font-semibold max-w-md leading-tight">{t("greeting")}</h3>
 
-                <div id="chatbot-input" onClick={() => navigate("/chat")} className="bg-[#eef2f5] border-none rounded-2xl p-2 pl-6 flex items-center justify-between shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] cursor-text transition-all duration-300 group/input">
+                <div id="chatbot-input" onClick={() => navigate("/chat")} className="bg-neu dark:bg-neu-dark border-none rounded-2xl p-2 pl-6 flex items-center justify-between shadow-neu-in dark:shadow-neu-in-dark cursor-text transition-all duration-300 group/input">
                   <div className="flex items-center gap-6 text-neutral-400 text-sm font-medium w-full">
-                    <span className="group-hover/input:text-neutral-600 transition-colors min-w-[200px]">
+                    <span className="group-hover/input:text-neutral-600 dark:text-neutral-300 transition-colors min-w-[200px]">
                       <TypewriterText />
                     </span>
                   </div>
-                  <button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-3.5 rounded-xl hover:shadow-lg hover:shadow-cyan-500/30 transition-all transform active:scale-95">
+                  <button className="bg-gradient-to-r from-themeAccent-500 to-blue-500 text-white p-3.5 rounded-xl hover:shadow-lg hover:shadow-themeAccent-500/30 transition-all transform active:scale-95">
                     <MdArrowForward className="text-xl" />
                   </button>
                 </div>
               </div>
 
               {/* === BOTTOM CARDS GRID (UPDATED) === */}
-              <div id="quick-actions" className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div id="quick-actions" className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {quickActions.map((card, idx) => (
                   <button
                     key={idx}
                     onClick={() => navigate(card.path)} // <--- 4. NAVIGATE ON CLICK
-                    className="bg-[#eef2f5] border-none p-5 rounded-3xl text-left transition-all hover:-translate-y-1 shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] flex flex-col justify-between h-44 group"
+                    className="bg-neu dark:bg-neu-dark border-none p-5 rounded-3xl text-left transition-all hover:-translate-y-1 shadow-neu-out dark:shadow-neu-out-dark flex flex-col justify-between h-44 group"
                   >
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center text-2xl text-white mb-2 ${card.shadow} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                       {card.icon}
                     </div>
                     <div>
-                      <h4 className="font-bold text-neutral-800 text-sm mb-1">{t(card.title) || card.title}</h4>
-                      <p className="text-[11px] text-neutral-500 font-medium leading-relaxed">{card.desc}</p>
+                      <h4 className="font-bold text-neutral-800 dark:text-neutral-100 text-sm mb-1">{t(card.title) || card.title}</h4>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium leading-relaxed">{card.desc}</p>
                     </div>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div id="vitals-sidebar" className="flex-1 xl:max-w-[320px] flex flex-col gap-5">
-              <div className="bg-[#eef2f5] border-none p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-shadow relative overflow-hidden">
-                <div className="flex justify-between items-center mb-6 relative z-10">
-                  <span className="font-bold text-neutral-700 text-sm">Heart Rate</span>
-                  <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500"><span className="text-xs">❤️</span></div>
-                </div>
-                <div className="flex items-baseline gap-1 mb-2 relative z-10">
-                  <span className="text-4xl font-bold text-neutral-800">98</span>
-                  <span className="text-sm font-medium text-neutral-500">bpm</span>
-                </div>
-                <HeartRateGraph />
-              </div>
 
-              <div className="bg-[#eef2f5] border-none p-6 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] transition-shadow relative overflow-hidden">
-                <div className="flex justify-between items-center mb-6 relative z-10">
-                  <span className="font-bold text-neutral-700 text-sm">Blood Oxygen</span>
-                  <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-500"><span className="text-xs">💧</span></div>
-                </div>
-                <div className="flex items-baseline gap-1 mb-2 relative z-10">
-                  <span className="text-4xl font-bold text-neutral-800">98</span>
-                  <span className="text-sm font-medium text-neutral-500">%</span>
-                </div>
-                <OxygenGraph />
-              </div>
-            </div>
 
           </div>
         </div>

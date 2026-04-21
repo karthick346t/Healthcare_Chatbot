@@ -65,9 +65,9 @@ export default function AdminProfile() {
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between bg-[#eef2f5] p-8 rounded-[2rem] shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none gap-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between bg-neu dark:bg-neu-dark p-8 rounded-[2rem] shadow-neu-out dark:shadow-neu-out-dark border-none gap-6">
                 <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-4xl font-bold overflow-hidden shadow-lg shadow-cyan-500/20">
+                    <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-themeAccent-400 to-blue-500 flex items-center justify-center text-white text-4xl font-bold overflow-hidden shadow-lg shadow-themeAccent-500/20">
                         {user?.avatar && !imageError ? (
                             <img
                                 src={user.avatar}
@@ -81,11 +81,11 @@ export default function AdminProfile() {
                         )}
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-neutral-800 tracking-tight">{user?.name}</h1>
-                        <p className="text-neutral-500 font-medium flex items-center gap-2 mt-1">
+                        <h1 className="text-3xl font-bold text-neutral-800 dark:text-neutral-100 tracking-tight">{user?.name}</h1>
+                        <p className="text-neutral-500 dark:text-neutral-400 font-medium flex items-center gap-2 mt-1">
                             <HiMail className="text-gray-400" /> {user?.email}
                         </p>
-                        <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md shadow-blue-500/20 uppercase tracking-widest">
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-blue-500 to-themeAccent-500 text-white shadow-md shadow-blue-500/20 uppercase tracking-widest">
                             <MdAdminPanelSettings className="text-sm" /> System Administrator
                         </div>
                     </div>
@@ -107,30 +107,30 @@ export default function AdminProfile() {
             <form onSubmit={handleSubmit} className="space-y-6">
 
                 {/* Administrative Role Details (Read-Only) */}
-                <div className="bg-[#eef2f5] p-8 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none relative overflow-hidden">
-                    <h2 className="text-xl font-bold text-neutral-800 mb-6 flex items-center gap-2">
+                <div className="bg-neu dark:bg-neu-dark p-8 rounded-3xl shadow-neu-out dark:shadow-neu-out-dark border-none relative overflow-hidden">
+                    <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-6 flex items-center gap-2">
                         <HiBriefcase className="text-blue-500 text-2xl" /> Access & Permissions
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] border-none p-4 rounded-2xl">
+                        <div className="bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark border-none p-4 rounded-2xl">
                             <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Account Type</label>
-                            <p className="text-neutral-800 font-semibold text-lg">{user?.role?.toUpperCase() || 'ADMIN'}</p>
+                            <p className="text-neutral-800 dark:text-neutral-100 font-semibold text-lg">{user?.role?.toUpperCase() || 'ADMIN'}</p>
                         </div>
-                        <div className="bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] border-none p-4 rounded-2xl">
+                        <div className="bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark border-none p-4 rounded-2xl">
                             <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Access Level</label>
-                            <p className="text-neutral-800 font-semibold text-lg">Full System Access</p>
+                            <p className="text-neutral-800 dark:text-neutral-100 font-semibold text-lg">Full System Access</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Contact Information */}
-                <div className="bg-[#eef2f5] p-8 rounded-3xl shadow-[6px_6px_12px_#c8d0e7,-6px_-6px_12px_#ffffff] border-none relative overflow-hidden">
-                    <h2 className="text-xl font-bold text-neutral-800 mb-6 flex items-center gap-2">
+                <div className="bg-neu dark:bg-neu-dark p-8 rounded-3xl shadow-neu-out dark:shadow-neu-out-dark border-none relative overflow-hidden">
+                    <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 mb-6 flex items-center gap-2">
                         <HiUser className="text-indigo-500 text-2xl" /> Contact Information
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Primary Phone Number</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Primary Phone Number</label>
                             <div className="relative">
                                 <HiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
                                 <input
@@ -139,14 +139,14 @@ export default function AdminProfile() {
                                     disabled={!isEditing}
                                     value={formData.phone}
                                     onChange={handleChange}
-                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] border-none focus:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] outline-none disabled:opacity-75 transition-all font-medium"
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark border-none focus:shadow-neu-in dark:shadow-neu-in-dark outline-none disabled:opacity-75 transition-all font-medium"
                                     placeholder="+1 234 567 890"
                                 />
                             </div>
                         </div>
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-neutral-500 mb-2">Office / Mailing Address</label>
+                            <label className="block text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-2">Office / Mailing Address</label>
                             <div className="relative">
                                 <HiLocationMarker className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
                                 <input
@@ -155,7 +155,7 @@ export default function AdminProfile() {
                                     disabled={!isEditing}
                                     value={formData.address}
                                     onChange={handleChange}
-                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-[#eef2f5] shadow-[inset_2px_2px_4px_#c8d0e7,inset_-2px_-2px_4px_#ffffff] border-none focus:shadow-[inset_4px_4px_8px_#c8d0e7,inset_-4px_-4px_8px_#ffffff] outline-none disabled:opacity-75 transition-all font-medium"
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl bg-neu dark:bg-neu-dark shadow-neu-in-sm dark:shadow-neu-in-sm-dark border-none focus:shadow-neu-in dark:shadow-neu-in-dark outline-none disabled:opacity-75 transition-all font-medium"
                                     placeholder="123 Admin Office, Health City"
                                 />
                             </div>
@@ -175,7 +175,7 @@ export default function AdminProfile() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold hover:shadow-lg hover:shadow-blue-500/30 active:scale-95 transition-all flex items-center gap-2"
+                            className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-themeAccent-500 text-white font-bold hover:shadow-lg hover:shadow-blue-500/30 active:scale-95 transition-all flex items-center gap-2"
                         >
                             <HiSave className="text-lg" /> {loading ? 'Saving securely...' : 'Save Profile Details'}
                         </button>

@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedToken = localStorage.getItem(TOKEN_KEY);
     if (savedToken) {
-      apiGetMe(savedToken)
+      apiGetMe()
         .then((data) => {
           setUser(adaptUser(data.user));
           setToken(savedToken);
@@ -59,6 +59,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(TOKEN_KEY);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    const savedToken = localStorage.getItem(TOKEN_KEY);
+    if (!savedToken) return;
+    try {
+      const data = await apiGetMe(); // Assuming no token param needed based on new interceptor logic
+      setUser(adaptUser(data.user));
+    } catch (err) {
+      console.error("Failed to refresh user data", err);
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -70,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         googleLogin,
         logout,
+        refreshUser,
       }}
     >
       {children}
