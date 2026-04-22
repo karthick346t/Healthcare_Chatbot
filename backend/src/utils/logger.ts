@@ -34,7 +34,6 @@ if (process.env.MONGO_URI) {
   logger.add(
     new winston.transports.MongoDB({
       db: process.env.MONGO_URI,
-      options: { useUnifiedTopology: true },
       collection: 'server_logs',
       level: 'warn', // Only log warnings and errors to DB
       format: combine(timestamp(), json())

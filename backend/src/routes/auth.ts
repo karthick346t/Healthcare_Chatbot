@@ -75,7 +75,7 @@ router.post(
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
             res.json({ user, token: accessToken });
@@ -105,7 +105,7 @@ router.post(
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
             });
             res.json({ user, token: accessToken });
@@ -122,8 +122,10 @@ router.post(
  * Validates against the DB to detect revoked tokens.
  */
 router.post('/refresh', async (req: Request, res: Response) => {
+    console.log('🔄 Refresh attempt. Cookies present:', Object.keys(req.cookies || {}));
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
+        console.warn('❌ Refresh failed: No refreshToken cookie found in request.');
         return res.status(401).json({ error: 'No refresh token provided' });
     }
 

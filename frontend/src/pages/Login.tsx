@@ -104,7 +104,7 @@ export default function Login() {
 
         <div className="relative z-10 text-center text-white max-w-md">
           <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 bg-white dark:bg-[#1f232b]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow">
+            <div className="w-20 h-20 bg-white/10 dark:bg-[#1f232b]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow border border-white/20">
               <Heart className="w-10 h-10 text-white" fill="currentColor" />
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function Login() {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 bg-white dark:bg-[#1f232b]/10 backdrop-blur-sm rounded-xl px-5 py-3 login-stagger-in"
+                className="flex items-center gap-3 bg-white/10 dark:bg-[#1f232b]/10 backdrop-blur-sm rounded-xl px-5 py-3 login-stagger-in border border-white/10"
                 style={{ animationDelay: `${0.6 + i * 0.15}s` }}
               >
                 <feature.icon className="w-5 h-5 text-white/90 flex-shrink-0" />

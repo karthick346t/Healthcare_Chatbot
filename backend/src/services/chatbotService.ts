@@ -83,6 +83,7 @@ interface RequestContext {
   userId?: string;
   userContext: string;
   doctorContext: string;
+  appointmentContext: string;
 }
 
 async function buildDoctorContext(): Promise<string> {
@@ -130,6 +131,45 @@ async function buildUserContext(userId?: string): Promise<string> {
   } catch (err) {
     console.error("Failed to fetch user context", err);
     return "Error fetching user profile.";
+  }
+}
+
+async function buildAppointmentContext(userId?: string): Promise<string> {
+  if (!userId) return "### 📅 Upcoming Appointments\nNo upcoming appointments found (user not logged in).";
+
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const appointments = await Appointment.find({
+      userId,
+      appointmentDate: { $gte: today },
+      status: { $in: ['scheduled', 'pending', 'checked_in', 'in_consultation'] }
+    })
+      .populate("doctorId", "name specialty")
+      .populate("hospitalId", "name location")
+      .sort({ appointmentDate: 1 })
+      .lean();
+
+    if (!appointments || appointments.length === 0) {
+      return "### 📅 Upcoming Appointments\nYou have no upcoming appointments scheduled in our records.";
+    }
+
+    let apptStr = "### 📅 Upcoming Appointments\nYou have the following upcoming appointments:\n";
+    appointments.forEach((appt: any, idx) => {
+      const date = new Date(appt.appointmentDate).toLocaleDateString();
+      const doctor = appt.doctorId?.name || "Unknown Doctor";
+      const specialty = appt.doctorId?.specialty || "General Medicine";
+      const hospital = appt.hospitalId?.name || "Unknown Hospital";
+      const location = appt.hospitalId?.location || "Unknown Location";
+      
+      apptStr += `${idx + 1}. **Dr. ${doctor}** (${specialty}) on **${date}** at **${hospital}** (${location}). [Status: ${appt.status.toUpperCase()}, Token #${appt.tokenNumber}]\n`;
+    });
+
+    return apptStr;
+  } catch (err) {
+    console.error("Failed to fetch appointment context", err);
+    return "Error fetching upcoming appointments.";
   }
 }
 
@@ -234,7 +274,7 @@ You are a digital health companion built to help people feel informed, understoo
 
   return {
     role: "system",
-    content: (ragContext ? basePrompt + ragContext : basePrompt) + "\n\n" + reqCtx.userContext + "\n\n" + reqCtx.doctorContext,
+    content: (ragContext ? basePrompt + ragContext : basePrompt) + "\n\n" + reqCtx.userContext + "\n\n" + reqCtx.doctorContext + "\n\n" + reqCtx.appointmentContext,
   };
 }
 
@@ -486,6 +526,7 @@ export async function handleMessage(
     userId,
     doctorContext: await buildDoctorContext(),
     userContext: await buildUserContext(userId),
+    appointmentContext: await buildAppointmentContext(userId),
   };
 
   const ragEnabled = config.RAG_ENABLED !== false;
@@ -528,6 +569,7 @@ export async function handleTriage(
     userId,
     doctorContext: await buildDoctorContext(),
     userContext: await buildUserContext(userId),
+    appointmentContext: await buildAppointmentContext(userId),
   };
 
   try {
@@ -557,6 +599,7 @@ export async function handleImageMessage(
     userId,
     doctorContext: await buildDoctorContext(),
     userContext: await buildUserContext(userId),
+    appointmentContext: await buildAppointmentContext(userId),
   };
   return callWithFallback(message, reqCtx, recentHistory, imageUrl);
 }

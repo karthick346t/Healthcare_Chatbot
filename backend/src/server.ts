@@ -9,7 +9,6 @@ import { initReminderCron } from "./services/reminderService";
 dotenv.config();
 
 const PORT = process.env.PORT || 4000;
-// Use 127.0.0.1 to avoid Node.js/IPv6 issues on Windows
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/healthbot";
 
 async function initializeServer() {

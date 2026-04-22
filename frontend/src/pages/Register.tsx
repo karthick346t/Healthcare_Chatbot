@@ -115,7 +115,7 @@ export default function Register() {
 
         <div className="relative z-10 text-center text-white max-w-md">
           <div className="mb-8 flex justify-center">
-            <div className="w-20 h-20 bg-white dark:bg-[#1f232b]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow">
+            <div className="w-20 h-20 bg-white/10 dark:bg-[#1f232b]/20 backdrop-blur-sm rounded-2xl flex items-center justify-center login-pulse-slow border border-white/20">
               <Heart className="w-10 h-10 text-white" fill="currentColor" />
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function Register() {
             ].map((stat, i) => (
               <div
                 key={i}
-                className="bg-white dark:bg-[#1f232b]/10 backdrop-blur-sm rounded-xl py-4 px-2 login-stagger-in"
+                className="bg-white/10 dark:bg-[#1f232b]/10 backdrop-blur-sm rounded-xl py-4 px-2 login-stagger-in border border-white/10"
                 style={{ animationDelay: `${0.6 + i * 0.15}s` }}
               >
                 <div className="text-2xl font-bold">{stat.value}</div>

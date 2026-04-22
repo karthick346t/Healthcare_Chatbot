@@ -16,6 +16,7 @@ export default function MyAppointments() {
     const { user, token } = useAuth();
     const [appointments, setAppointments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -31,12 +32,16 @@ export default function MyAppointments() {
 
     const fetchAppointments = async () => {
         try {
+            setError(null);
             const userId = user?.userId || (user as any)?._id;
             const res = await fetchWithAuth(`/api/appointments/my-appointments?userId=${userId}`);
+            if (!res.ok) throw new Error("Failed to load appointments");
             const data = await res.json();
             if (Array.isArray(data)) setAppointments(data);
-        } catch (error) {
-            console.error("Failed to fetch appointments", error);
+        } catch (err: any) {
+            console.error("Failed to fetch appointments", err);
+            const isAuthError = err.message?.includes("expired") || err.message?.includes("401") || err.message?.includes("Unauthorized");
+            setError(isAuthError ? "SESSION_EXPIRED" : (err.message || "Failed to load appointments"));
         } finally {
             setLoading(false);
         }
@@ -126,6 +131,25 @@ export default function MyAppointments() {
                 <div className="space-y-4">
                     {loading ? (
                         <div className="text-center py-20 text-neutral-400 italic">Loading your schedule...</div>
+                    ) : error ? (
+                        <div className="text-center py-20 neu-card max-w-lg mx-auto border-red-500/20">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-red-400 text-2xl shadow-neu-in dark:shadow-neu-in-dark">
+                                <HiExclamation />
+                            </div>
+                            <h3 className="text-lg font-bold text-red-500">
+                                {error === "SESSION_EXPIRED" ? "Session Expired" : "Connection Issue"}
+                            </h3>
+                            <p className="text-neutral-500 text-sm mb-4">
+                                {error === "SESSION_EXPIRED" 
+                                    ? "Your session has timed out. Please sign in again to view your appointments." 
+                                    : error}
+                            </p>
+                            {error === "SESSION_EXPIRED" ? (
+                                <button onClick={() => navigate("/login")} className="neu-btn px-8 py-2 text-indigo-600 font-bold border-2 border-indigo-500/20">Sign In</button>
+                            ) : (
+                                <button onClick={fetchAppointments} className="neu-btn px-6 py-2 text-indigo-600 font-bold">Try Again</button>
+                            )}
+                        </div>
                     ) : displayedAppointments.length === 0 ? (
                         <div className="text-center py-20 neu-card max-w-lg mx-auto">
                             <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl shadow-neu-in dark:shadow-neu-in-dark">

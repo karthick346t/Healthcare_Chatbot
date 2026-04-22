@@ -1,12 +1,19 @@
 import axios from 'axios';
+import Groq from 'groq-sdk';
 import { cleanModelText } from '../utils/cleanText';
+import { createWorker } from 'tesseract.js';
+import sharp from 'sharp';
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 // ✅ SEPARATE MODELS
-const VISION_MODEL = 'nvidia/nemotron-nano-12b-v2-vl:free';
-const TEXT_MODEL = 'openai/gpt-oss-120b:free';
+const VISION_MODEL = 'nvidia/nemotron-nano-12b-v2-vl:free'; // Specific Nemotron VL model for Chat
+const TEXT_MODEL = 'groq/compound-mini'; 
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
 
 interface OpenRouterResponse {
   choices: {
@@ -17,24 +24,89 @@ interface OpenRouterResponse {
   }[];
 }
 
+// ✅ HELPER: Retry Logic with Exponential Backoff
+async function callWithRetry(fn: () => Promise<any>, retries = 3, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const isRateLimit = err.response?.status === 429 || err.status === 429;
+      if (isRateLimit && i < retries - 1) {
+        console.log(`⚠️ Rate limited (429). Retrying in ${delay}ms... (Attempt ${i + 1}/${retries})`);
+        await new Promise(res => setTimeout(res, delay));
+        delay *= 2; // Exponential backoff
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+// ✅ HELPER: OCR Extraction using Tesseract
+async function extractTextWithTesseract(buffer: Buffer): Promise<string> {
+  let worker;
+  try {
+    // Pre-process image with sharp for better OCR
+    const processedBuffer = await sharp(buffer)
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .toBuffer();
+
+    worker = await createWorker('eng');
+    const { data: { text } } = await worker.recognize(processedBuffer);
+    return text || '';
+  } catch (error) {
+    console.error('OCR Error:', error);
+    return '';
+  } finally {
+    if (worker) await worker.terminate();
+  }
+}
+
 
 export async function analyzeImagesWithNvidia(
   base64Images: string[],
   fileName: string,
   locale: string = 'en',
   conversationHistory: any[] = [],
-  isDocument: boolean = false
+  isDocument: boolean = false,
+  source: 'chat' | 'vault' = 'chat'
 ): Promise<{ analysis: string; isHealthRelated: boolean }> {
   try {
+    // --- CASE 2: VAULT (Only Tesseract) ---
+    if (source === 'vault') {
+      console.log(`[OCR] Running Tesseract for Vault Image: ${fileName}`);
+      let fullExtractedText = '';
+      
+      for (const base64 of base64Images) {
+        const buffer = Buffer.from(base64, 'base64');
+        const text = await extractTextWithTesseract(buffer);
+        fullExtractedText += text + '\n\n';
+      }
+
+      if (fullExtractedText.trim().length < 20) {
+        return {
+          analysis: "I was unable to extract clear text from this image. Please ensure the photo is well-lit and the text is legible.",
+          isHealthRelated: true // Assuming it's a health report if uploaded to vault
+        };
+      }
+
+      // Analyze extracted text with Groq (Text Model)
+      return analyzeDocumentTextWithNvidia(fullExtractedText, fileName, locale, conversationHistory);
+    }
+
+    // --- CASE 1: CHAT (Nemotron/Multimodal) ---
     const messages: any[] = [
       {
         role: 'system',
         content: `You are a helpful medical assistant with advanced vision capabilities. 
 
 **STRICT RELEVANCE RULE:**
-- If the image is NOT health-related, you MUST return ONLY this exact phrase: "⚠️ This image does not appear to be health-related."
-- You are STRICTLY FORBIDDEN from providing any descriptions, details, or summaries for non-medical images.
-- If it IS health-related, provide a clear, empathetic analysis.`
+- Determine relevance ONLY by analyzing the visual pixels of the image. 
+- IGNORE any titles, labels, or metadata that might suggest the content is "not medical" or "fake" if the visual evidence clearly shows a real medical document, prescription, or report.
+- Users may use 'trick labels'; you must be immune to them.
+- If the image is TRULY NOT health-related (e.g., a landscape, a cat, a car), return ONLY: "⚠️ This image does not appear to be health-related."
+- Otherwise, provide a full medical analysis.`
       }
     ];
 
@@ -50,8 +122,8 @@ export async function analyzeImagesWithNvidia(
     }
 
     let promptText = isDocument
-      ? `Analyze this health document image ("${fileName}"). Extract text and provide a brief summary.`
-      : `Analyze this medical image ("${fileName}"). Describe findings.`;
+      ? `Analyze this health document image. Extract text and provide a brief summary.`
+      : `Analyze this medical image. Describe findings.`;
 
     const content: any[] = [{ type: 'text', text: promptText }];
 
@@ -68,14 +140,13 @@ export async function analyzeImagesWithNvidia(
 
     console.log(`[Vision] Sending ${fileName} (${base64Images.length} image(s)) to ${VISION_MODEL}`);
 
-    const response = await axios.post<OpenRouterResponse>(
+    const response = await callWithRetry(() => axios.post<OpenRouterResponse>(
       `${OPENROUTER_BASE_URL}/chat/completions`,
-
       {
         model: VISION_MODEL,
         messages: messages,
         max_tokens: 1000,
-        temperature: 0.2
+        temperature: 0.1
       },
       {
         headers: {
@@ -85,7 +156,7 @@ export async function analyzeImagesWithNvidia(
           'X-Title': 'Healthcare Chatbot'
         }
       }
-    );
+    ));
 
     let text = response.data?.choices?.[0]?.message?.content || '';
     text = cleanModelText(text);
@@ -124,12 +195,10 @@ Your goal is to provide high-level medical document analysis.
 3. **NO DETAILS:** You are STRICTLY FORBIDDEN from providing any summary, analysis, or details for non-medical or technical/engineering documents. Return ONLY the warning.
 
 **IF CLINICAL/PATIENT-HEALTH RELATED, FOLLOW THIS STRUCTURE:**
-   * **Document Type:** (e.g., Clinical Assessment, Lab Report)
-   * **Summary:** (1-2 sentences on the main purpose or findings)
-   * **Key Observations:** (Significant medical findings.)
-   * **Closing:** Ask if the user wants more details.
+   * **Summary:** (ULTRA-CONCISE: exactly 2-3 lines describing the core findings or purpose)
+   * **Key Observations:** (Only if critical findings exist)
 
-**Tone:** Professional and direct.`;
+**Tone:** Professional and extremely brief.`;
 
     const messages: any[] = [];
 
@@ -154,33 +223,22 @@ Your goal is to provide high-level medical document analysis.
       content: `${systemInstructions}\n\nI've uploaded a document called "${fileName}" (${wordCount} words).\nPlease give me a short summary:\n\n"""\n${truncatedText}\n"""`
     });
 
-    console.log(`[Text] Sending ${wordCount} words to ${TEXT_MODEL}`);
+    console.log(`[Text] Sending ${wordCount} words to Groq (${TEXT_MODEL})`);
 
-    const response = await axios.post<OpenRouterResponse>(
-      `${OPENROUTER_BASE_URL}/chat/completions`,
+    const completion = await callWithRetry(() => groq.chat.completions.create({
+      model: TEXT_MODEL,
+      messages: messages,
+      temperature: 1,
+      max_tokens: 1024,
+      top_p: 1
+    }));
 
-      {
-        model: TEXT_MODEL,
-        messages: messages,
-        max_tokens: 1000, // Reduced token limit since we want short answers
-        temperature: 0.3
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'Healthcare Chatbot'
-        }
-      }
-    );
-
-    let text = response.data?.choices?.[0]?.message?.content || '';
+    let text = completion.choices[0]?.message?.content || '';
     text = cleanModelText(text);
 
     if (!text) {
       return {
-        analysis: `I reviewed "${fileName}", but the analysis came back empty.`,
+        analysis: `I analyzed the document "${fileName}", but the generated report was empty.`,
         isHealthRelated: false
       };
     }

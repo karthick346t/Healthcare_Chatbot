@@ -110,9 +110,14 @@ async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
       return null;
     }
 
+    // Use venv python if available, fallback to system python
+    const venvPath = path.join(__dirname, '../../venv/Scripts/python.exe');
+    const pythonCmd = fs.existsSync(venvPath) ? `"${venvPath}"` : 'python';
+
     // Run the Python script with sanitized paths (quoted for safety)
     const { stdout, stderr } = await execPromise(
-      `python "${scriptPath.replace(/"/g, '')}" "${resolvedPath.replace(/"/g, '')}"`
+      `${pythonCmd} "${scriptPath.replace(/"/g, '')}" "${resolvedPath.replace(/"/g, '')}"`,
+      { maxBuffer: 50 * 1024 * 1024 }
     );
 
     if (stderr && !stdout) {
@@ -140,6 +145,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
   }
 
   const file = req.file;
+  const shouldSkipAI = req.body.skipAI === 'true' || req.body.skipAI === true;
 
   try {
     const { locale = 'en', sessionId, conversationHistory } = req.body;
@@ -157,68 +163,109 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
     // --- 1. AI ANALYSIS ---
     let responseMessage = '';
     let isHealthRelated = false;
+    let localFilePath: string | null = file.path;
 
-    const isPDF = file.mimetype === 'application/pdf';
-    const isImage = file.mimetype.startsWith('image/');
-    const isDocx = file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    const isDoc = file.mimetype === 'application/msword';
-    const isText = file.mimetype === 'text/plain';
+    if (!shouldSkipAI) {
+      const isPDF = file.mimetype === 'application/pdf';
+      const isImage = file.mimetype.startsWith('image/');
+      const isDocx = file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const isDoc = file.mimetype === 'application/msword';
+      const isText = file.mimetype === 'text/plain';
 
-    if (isPDF) {
-      const pdfText = await extractPdfText(file.path);
+      if (isPDF) {
+        const pdfText = await extractPdfText(file.path);
 
-      if (pdfText.startsWith("Error: Could not extract")) {
-        responseMessage = `I encountered a technical error reading your PDF. Please ensure it is a valid text PDF.`;
-      } else if (!pdfText.trim()) {
-        // --- ADVANCED FALLBACK: PDF has no text (likely scanned) ---
-        const base64Image = await extractPdfAsImage(file.path);
-        
-        if (base64Image) {
-          console.log('🚀 Sending scanned PDF image to Vision AI...');
-          const result = await analyzeImagesWithNvidia([base64Image], file.originalname, locale, history, true);
+        if (pdfText.startsWith("Error: Could not extract")) {
+          responseMessage = `I encountered a technical error reading your PDF. Please ensure it is a valid text PDF.`;
+        } else if (!pdfText.trim()) {
+          // --- ADVANCED FALLBACK: PDF has no text (likely scanned) ---
+          const base64Image = await extractPdfAsImage(file.path);
+          
+          if (base64Image) {
+            console.log('🚀 Sending scanned PDF image to Vision AI...');
+            const result = await analyzeImagesWithNvidia([base64Image], file.originalname, locale, history, true, 'chat');
+            responseMessage = result.analysis;
+            isHealthRelated = result.isHealthRelated;
+          } else {
+            responseMessage = `I could not read any text from PDF "${file.originalname}". It might be a scanned image without OCR.`;
+          }
+        } else {
+          const result = await analyzeDocumentTextWithNvidia(pdfText, file.originalname, locale, history);
           responseMessage = result.analysis;
           isHealthRelated = result.isHealthRelated;
-        } else {
-          responseMessage = `I could not read any text from PDF "${file.originalname}". It might be a scanned image without OCR.`;
         }
-      } else {
-        const result = await analyzeDocumentTextWithNvidia(pdfText, file.originalname, locale, history);
-        responseMessage = result.analysis;
-        isHealthRelated = result.isHealthRelated;
-      }
 
-    } else if (isDocx || isDoc) {
-      const docText = await extractDocxText(file.path);
-      if (!docText.trim()) {
-        responseMessage = `Document "${file.originalname}" appears empty.`;
-      } else {
-        const result = await analyzeDocumentTextWithNvidia(docText, file.originalname, locale, history);
+      } else if (isDocx || isDoc) {
+        const docText = await extractDocxText(file.path);
+        if (!docText.trim()) {
+          responseMessage = `Document "${file.originalname}" appears empty.`;
+        } else {
+          const result = await analyzeDocumentTextWithNvidia(docText, file.originalname, locale, history);
+          responseMessage = result.analysis;
+          isHealthRelated = result.isHealthRelated;
+        }
+      } else if (isText) {
+        const textContent = await fsPromises.readFile(file.path, 'utf-8');
+        if (!textContent.trim()) {
+          responseMessage = `Text file "${file.originalname}" appears empty.`;
+        } else {
+          const result = await analyzeDocumentTextWithNvidia(textContent, file.originalname, locale, history);
+          responseMessage = result.analysis;
+          isHealthRelated = result.isHealthRelated;
+        }
+      } else if (isImage) {
+        const base64Image = await imageToBase64Async(file.path);
+        const result = await analyzeImagesWithNvidia([base64Image], file.originalname, locale, history, false, 'chat');
         responseMessage = result.analysis;
         isHealthRelated = result.isHealthRelated;
-      }
-    } else if (isText) {
-      const textContent = await fsPromises.readFile(file.path, 'utf-8');
-      if (!textContent.trim()) {
-        responseMessage = `Text file "${file.originalname}" appears empty.`;
       } else {
-        const result = await analyzeDocumentTextWithNvidia(textContent, file.originalname, locale, history);
-        responseMessage = result.analysis;
-        isHealthRelated = result.isHealthRelated;
+        responseMessage = `File type ${file.mimetype} is not supported.`;
       }
-    } else if (isImage) {
-      const base64Image = await imageToBase64Async(file.path);
-      const result = await analyzeImagesWithNvidia([base64Image], file.originalname, locale, history, false);
-      responseMessage = result.analysis;
-      isHealthRelated = result.isHealthRelated;
-    } else {
-      responseMessage = `File type ${file.mimetype} is not supported.`;
     }
 
-    // --- 2. UPLOAD TO S3 (User Scoped) ---
+    // --- 2. UPLOAD TO S3 (Background) ---
+    // We don't wait for S3 anymore to speed up the response
     let s3Url: string | null = null;
+    if (shouldSkipAI) {
+      // Logic for Vault: Securely upload to S3 first, then return URL
+      // We wait for S3 now to ensure the follow-up /api/reports has a valid URL
+      try {
+        console.log("☁️ [Vault] Uploading file to S3...");
+        s3Url = await uploadFileToS3(file.path, file.originalname, file.mimetype, userId);
+        
+        if (!s3Url) {
+           throw new Error("S3 Upload returned null URL");
+        }
+        console.log("✅ [Vault] S3 Upload complete:", s3Url);
+      } catch (err) {
+        console.error("❌ [Vault] S3 Upload failed:", err);
+        // Cleanup local file on failure before returning error
+        if (file.path && fs.existsSync(file.path)) {
+            await fsPromises.unlink(file.path).catch(() => {});
+        }
+        return res.status(500).json({ error: "Failed to upload file to cloud storage. Please check your connection." });
+      }
+
+      // Cleanup local file immediately after SUCCESSFUL S3 upload
+      if (file.path && fs.existsSync(file.path)) {
+        fsPromises.unlink(file.path)
+          .then(() => console.log(`🗑️ [Vault] Cleaned up temp file: ${file.filename}`))
+          .catch(err => console.error(`⚠️ [Vault] Cleanup failed:`, err));
+      }
+
+      return res.json({
+        message: "File received, processing in background.",
+        fileId: file.filename,
+        fileUrl: s3Url, 
+        fileType: 'document',
+        originalName: file.originalname,
+        isHealthRelated: true 
+      });
+    }
+
+    // Original logic for Chat (needs immediate response)
     try {
       console.log("Uploading original file to S3...");
-      // ✅ Pass userId for isolated folder
       s3Url = await uploadFileToS3(file.path, file.originalname, file.mimetype, userId);
     } catch (uploadErr) {
       console.error("Failed to backup file to S3, but continuing...", uploadErr);
@@ -271,10 +318,11 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
 
   } finally {
     // --- 5. CLEANUP ---
-    if (file && file.path) {
-      fsPromises.unlink(file.path)
-        .then(() => console.log(`🗑️ Cleaned up temp file: ${file.filename}`))
-        .catch(err => console.error(`⚠️ Failed to delete temp file ${file.filename}:`, err));
+    // Only cleanup here if it wasn't handled by the background task
+    if (!shouldSkipAI && file && file.path) {
+        fsPromises.unlink(file.path)
+          .then(() => console.log(`🗑️ Cleaned up temp file: ${file.filename}`))
+          .catch(err => console.error(`⚠️ Failed to delete temp file ${file.filename}:`, err));
     }
   }
 });

@@ -17,7 +17,7 @@ def pdf_to_base64(pdf_path):
 
         # Render first page to a pixmap (image)
         page = doc[0]
-        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x scale for better clarity
+        pix = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))  # 1.5x scale is balanced for speed vs quality
         
         # Convert pixmap to bytes (PNG)
         img_bytes = pix.tobytes("png")
