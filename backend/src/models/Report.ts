@@ -9,6 +9,7 @@ export interface IReport extends Document {
     title: string;
     description?: string;
     insight?: string; // Short AI-generated or manually added insight (e.g. "Vitamin D low")
+    shortInsight?: string; // Concise 10-15 word insight for quick review
     tags: string[];
     status: 'Normal' | 'Abnormal' | 'Critical' | 'Pending Review';
     fileUrl: string;
@@ -32,6 +33,7 @@ const ReportSchema: Schema = new Schema({
     title: { type: String, required: true },
     description: { type: String },
     insight: { type: String },
+    shortInsight: { type: String },
     tags: { type: [String], default: [] },
     status: {
         type: String,

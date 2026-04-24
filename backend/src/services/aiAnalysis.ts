@@ -3,6 +3,12 @@ import Groq from 'groq-sdk';
 import { cleanModelText } from '../utils/cleanText';
 import { createWorker } from 'tesseract.js';
 import sharp from 'sharp';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+
+const execAsync = promisify(exec);
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
@@ -14,6 +20,10 @@ const TEXT_MODEL = 'groq/compound-mini';
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
+
+// ✅ VAULT SPECIALIZED OCR (Local)
+const VAULT_OCR_ENDPOINT = process.env.VAULT_OCR_ENDPOINT || 'http://localhost:8000/v1';
+const VAULT_OCR_MODEL = process.env.VAULT_OCR_MODEL || 'lightonai/LightOnOCR-1B-1025';
 
 interface OpenRouterResponse {
   choices: {
@@ -63,6 +73,42 @@ async function extractTextWithTesseract(buffer: Buffer): Promise<string> {
   }
 }
 
+// ✅ HELPER: EasyOCR Extraction via Python script
+async function extractTextWithEasyOCR(buffer: Buffer): Promise<string> {
+  const tempId = Math.random().toString(36).substring(7);
+  const tempDir = path.join(process.cwd(), 'tmp');
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+  
+  const tempPath = path.join(tempDir, `ocr_${tempId}.png`);
+  
+  try {
+    // Write buffer to temp file
+    await fs.promises.writeFile(tempPath, buffer);
+    
+    // Call Python script
+    const scriptPath = path.join(process.cwd(), 'src', 'scripts', 'easy_ocr.py');
+    const pythonPath = 'python'; 
+    
+    console.log(`[EasyOCR] Running extraction for: ${tempPath}`);
+    const { stdout, stderr } = await execAsync(`"${pythonPath}" "${scriptPath}" "${tempPath}"`, {
+       maxBuffer: 1024 * 1024 * 5 // 5MB buffer
+    });
+    
+    if (stderr.trim()) {
+      console.warn('[EasyOCR Python Warning/Stderr]:', stderr);
+    }
+    
+    console.log(`[EasyOCR Result]: ${stdout.substring(0, 100)}...`);
+    return stdout.trim() || '';
+  } catch (error) {
+    console.error('EasyOCR Error:', error);
+    return '';
+  } finally {
+    // Cleanup temp file
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+  }
+}
+
 
 export async function analyzeImagesWithNvidia(
   base64Images: string[],
@@ -73,25 +119,25 @@ export async function analyzeImagesWithNvidia(
   source: 'chat' | 'vault' = 'chat'
 ): Promise<{ analysis: string; isHealthRelated: boolean }> {
   try {
-    // --- CASE 2: VAULT (Only Tesseract) ---
+    // --- CASE 2: VAULT (EasyOCR via local Python) ---
     if (source === 'vault') {
-      console.log(`[OCR] Running Tesseract for Vault Image: ${fileName}`);
+      console.log(`[EasyOCR] Extracting text from ${fileName} for Health Vault...`);
       let fullExtractedText = '';
       
       for (const base64 of base64Images) {
         const buffer = Buffer.from(base64, 'base64');
-        const text = await extractTextWithTesseract(buffer);
+        const text = await extractTextWithEasyOCR(buffer);
         fullExtractedText += text + '\n\n';
       }
 
-      if (fullExtractedText.trim().length < 20) {
+      if (fullExtractedText.trim().length < 10) {
         return {
-          analysis: "I was unable to extract clear text from this image. Please ensure the photo is well-lit and the text is legible.",
-          isHealthRelated: true // Assuming it's a health report if uploaded to vault
+          analysis: "I was unable to extract clear text from this image using local EasyOCR. Please ensure the photo is well-lit and the text is legible.",
+          isHealthRelated: true 
         };
       }
 
-      // Analyze extracted text with Groq (Text Model)
+      // Analyze extracted text with Groq (Text Model) for a proper medical summary
       return analyzeDocumentTextWithNvidia(fullExtractedText, fileName, locale, conversationHistory);
     }
 

@@ -3,10 +3,10 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { promises as fsPromises } from 'fs';
-import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../services/aiAnalysis';
 import { uploadFileToS3 } from '../services/awsService';
 import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth'; // ✅ Corrected import
+import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../services/aiAnalysis';
 import { exec } from 'child_process';
 import util from 'util';
 

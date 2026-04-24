@@ -277,7 +277,7 @@ export default function MedicalRecords() {
                 category: detectedCategory,
                 description: newReport.description,
                 status: 'Normal',
-                insight: 'AI is analyzing your document...',
+                insight: '',
                 tags: [],
                 fileUrl: uploadData.fileUrl || `/uploads/${uploadData.fileId}`,
                 doctorId: selDrId && selDrId !== 'general' ? selDrId : undefined,
