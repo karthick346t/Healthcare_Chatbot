@@ -9,10 +9,21 @@ export interface IMessage {
   attachmentUrl?: string; // ✅ Added to store S3 URL
 }
 
+export interface IDocumentEntry {
+  fileId: string;
+  originalName: string;
+  fileType?: string;
+  summary: string;
+  extractedText?: string;
+  attachmentUrl?: string;
+  createdAt: Date;
+}
+
 export interface IChatSession extends Document {
   sessionId: string;
   userId?: string;
   messages: IMessage[];
+  documents?: IDocumentEntry[];
   lastUpdated: Date;
   locale?: string; // Added based on earlier context
 }
@@ -27,6 +38,17 @@ const ChatSessionSchema: Schema = new Schema({
       timestamp: { type: Date, default: Date.now },
       attachmentUrl: { type: String }
     },
+  ],
+  documents: [
+    {
+      fileId: { type: String, required: true },
+      originalName: { type: String, required: true },
+      fileType: { type: String },
+      summary: { type: String, required: true },
+      extractedText: { type: String },
+      attachmentUrl: { type: String },
+      createdAt: { type: Date, default: Date.now }
+    }
   ],
   lastUpdated: { type: Date, default: Date.now },
   locale: { type: String, default: 'en' }

@@ -2,6 +2,7 @@ import axios from "axios";
 import config from "../config";
 import { cleanModelText } from "../utils/cleanText";
 import { retrieveContext, vectorStore } from "./ragService";
+import { analyzeDocumentTextWithNvidia } from "./aiAnalysis";
 import ragContextManager from "./ragContextManager";
 import Doctor from "../models/Doctor";
 import Hospital from "../models/Hospital";
@@ -84,6 +85,39 @@ interface RequestContext {
   userContext: string;
   doctorContext: string;
   appointmentContext: string;
+}
+
+interface DocumentEntry {
+  fileId: string;
+  originalName: string;
+  fileType?: string;
+  summary: string;
+  extractedText?: string;
+  attachmentUrl?: string;
+  createdAt?: Date;
+}
+
+function isDocumentFollowUp(message: string): boolean {
+  return /(uploaded|uploaded\s+document|uploaded\s+file|this\s+document|that\s+document|this\s+report|that\s+report|the\s+report|the\s+file|medical\s+report|previous\s+document|previous\s+file|detailed\s+version|more\s+details|more\s+detail|detailed\s+summary|give\s+me\s+details|tell\s+me\s+more|what\s+is\s+there\s+in|what\s+does\s+the\s+document\s+say|what\s+does\s+it\s+say)/i.test(message);
+}
+
+function buildDocumentContext(documents: DocumentEntry[], message: string): string | undefined {
+  if (!documents || documents.length === 0) return undefined;
+  if (!isDocumentFollowUp(message)) return undefined;
+
+  const sections = documents.slice(-3).map(doc => {
+    const excerpt = doc.extractedText ? doc.extractedText.slice(0, 2000).trim() : '';
+    return `### Uploaded Document: ${doc.originalName}
+Summary: ${doc.summary}
+${excerpt ? `Excerpt:
+${excerpt}
+` : ''}`;
+  }).join('\n\n');
+
+  return `\n\n### 📄 Uploaded Document Context
+The user is asking about their uploaded document. Use the uploaded document details below to answer this question directly.
+Do not say you cannot access the uploaded file. Use the summary and extracted text provided.
+\n${sections}`;
 }
 
 async function buildDoctorContext(): Promise<string> {
@@ -512,13 +546,22 @@ async function callWithFallback(
 // ----------------------------------------
 // 🔹 Public API
 // ----------------------------------------
-export async function handleMessage(
-  message: string,
-  sessionId: string,
-  conversationHistory: any[] = [],
-  locale = "en",
-  userId?: string
-): Promise<string> {
+export async function handleMessage(options: {
+  message: string;
+  sessionId: string;
+  conversationHistory?: any[];
+  locale?: string;
+  userId?: string;
+  sessionDocuments?: DocumentEntry[];
+}): Promise<string> {
+  const {
+    message,
+    sessionId,
+    conversationHistory = [],
+    locale = "en",
+    userId,
+    sessionDocuments = []
+  } = options;
   const recentHistory = conversationHistory ? conversationHistory.slice(-20) : [];
   console.log(`[handleMessage] History length: ${recentHistory.length}`);
 
@@ -530,27 +573,48 @@ export async function handleMessage(
   };
 
   const ragEnabled = config.RAG_ENABLED !== false;
+  const docContext = buildDocumentContext(sessionDocuments, message);
+  const userMessage = docContext
+    ? `The user is referring to a previously uploaded medical document. Answer based only on the uploaded document details below, and provide a detailed summary if requested.\n\n${message}`
+    : message;
+
+  if (docContext && sessionDocuments.length > 0) {
+    const latestDoc = sessionDocuments[sessionDocuments.length - 1];
+    const documentText = latestDoc.extractedText?.trim() || latestDoc.summary?.trim();
+
+    if (documentText) {
+      console.log("[handleMessage] Direct document follow-up detected. Running document text analysis.");
+      try {
+        const documentResult = await analyzeDocumentTextWithNvidia(documentText, latestDoc.originalName, locale, recentHistory);
+        if (documentResult.analysis) {
+          return documentResult.analysis;
+        }
+      } catch (error: any) {
+        console.error("[handleMessage] Document text analysis fallback failed:", error.message);
+      }
+    }
+  }
 
   if (!ragEnabled) {
     console.log("[handleMessage] RAG disabled, using direct model call");
-    return callWithFallback(message, reqCtx, recentHistory);
+    return callWithFallback(userMessage, reqCtx, recentHistory, undefined, docContext);
   }
 
   try {
     console.log("[RAG] Retrieving context for query...");
-    const ragContext = await retrieveContext(message, recentHistory);
+    const ragContext = await retrieveContext(userMessage, recentHistory);
 
     const urgency = symptomChecker.checkSymptomUrgency(message);
     const urgencyAdvice = symptomChecker.buildUrgencyContext(urgency);
 
     console.log(`[RAG] Retrieved ${ragContext.retrievedDocs.length} relevant documents`);
 
-    const formattedContext = urgencyAdvice + formatRAGContext(ragContext.retrievedDocs);
+    const formattedContext = `${docContext ? docContext + '\n\n' : ''}${urgencyAdvice}${formatRAGContext(ragContext.retrievedDocs)}`;
 
-    return await callWithFallback(message, reqCtx, recentHistory, undefined, formattedContext);
+    return await callWithFallback(userMessage, reqCtx, recentHistory, undefined, formattedContext);
   } catch (error: any) {
     console.error("[handleMessage] RAG retrieval failed, falling back to direct call:", error.message);
-    return callWithFallback(message, reqCtx, recentHistory);
+    return callWithFallback(userMessage, reqCtx, recentHistory, undefined, docContext);
   }
 }
 

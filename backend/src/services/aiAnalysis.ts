@@ -110,6 +110,25 @@ async function extractTextWithEasyOCR(buffer: Buffer): Promise<string> {
 }
 
 
+async function extractTextFromBase64Images(base64Images: string[]): Promise<string> {
+  let fullExtractedText = '';
+
+  for (const base64 of base64Images) {
+    const buffer = Buffer.from(base64, 'base64');
+    let text = await extractTextWithTesseract(buffer);
+
+    if (!text.trim()) {
+      text = await extractTextWithEasyOCR(buffer);
+    }
+
+    fullExtractedText += text.trim() ? `${text.trim()}
+
+` : '';
+  }
+
+  return fullExtractedText.trim();
+}
+
 export async function analyzeImagesWithNvidia(
   base64Images: string[],
   fileName: string,
@@ -137,8 +156,18 @@ export async function analyzeImagesWithNvidia(
         };
       }
 
-      // Analyze extracted text with Groq (Text Model) for a proper medical summary
       return analyzeDocumentTextWithNvidia(fullExtractedText, fileName, locale, conversationHistory);
+    }
+
+    // Attempt local OCR first for scanned documents to avoid remote Vision failures.
+    if (isDocument) {
+      console.log(`[OCR] Attempting local OCR for scanned document ${fileName} before remote Vision.`);
+      const ocrText = await extractTextFromBase64Images(base64Images);
+      if (ocrText.length >= 20) {
+        console.log(`[OCR] Extracted ${ocrText.length} characters from local OCR for ${fileName}.`);
+        return analyzeDocumentTextWithNvidia(ocrText, fileName, locale, conversationHistory);
+      }
+      console.log(`[OCR] Local OCR produced insufficient text (${ocrText.length} chars). Falling back to Vision.`);
     }
 
     // --- CASE 1: CHAT (Nemotron/Multimodal) ---
@@ -219,7 +248,18 @@ export async function analyzeImagesWithNvidia(
     return { analysis: text, isHealthRelated };
 
   } catch (error: any) {
-    console.error('Vision analysis error:', error.message);
+    console.error('Vision analysis error:', error.response?.data || error.message);
+
+    // Rate limit fallback: try local OCR on scanned docs before giving up.
+    const isRateLimit = error.response?.status === 429 || error.status === 429;
+    if (isDocument && isRateLimit) {
+      console.log(`[Fallback] Vision rate limited for ${fileName}, attempting local OCR fallback.`);
+      const ocrText = await extractTextFromBase64Images(base64Images);
+      if (ocrText.length >= 20) {
+        return analyzeDocumentTextWithNvidia(ocrText, fileName, locale, conversationHistory);
+      }
+    }
+
     return { analysis: "I encountered an error analyzing this image.", isHealthRelated: false };
   }
 }

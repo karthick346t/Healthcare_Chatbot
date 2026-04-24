@@ -164,6 +164,8 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
     let responseMessage = '';
     let isHealthRelated = false;
     let localFilePath: string | null = file.path;
+    let extractedText: string = '';
+    let fileType: string = '';
 
     if (!shouldSkipAI) {
       const isPDF = file.mimetype === 'application/pdf';
@@ -174,6 +176,8 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
 
       if (isPDF) {
         const pdfText = await extractPdfText(file.path);
+        extractedText = pdfText.trim().slice(0, 15000);
+        fileType = 'pdf';
 
         if (pdfText.startsWith("Error: Could not extract")) {
           responseMessage = `I encountered a technical error reading your PDF. Please ensure it is a valid text PDF.`;
@@ -197,6 +201,8 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
 
       } else if (isDocx || isDoc) {
         const docText = await extractDocxText(file.path);
+        extractedText = docText.trim().slice(0, 15000);
+        fileType = 'doc';
         if (!docText.trim()) {
           responseMessage = `Document "${file.originalname}" appears empty.`;
         } else {
@@ -206,6 +212,8 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
         }
       } else if (isText) {
         const textContent = await fsPromises.readFile(file.path, 'utf-8');
+        extractedText = textContent.trim().slice(0, 15000);
+        fileType = 'text';
         if (!textContent.trim()) {
           responseMessage = `Text file "${file.originalname}" appears empty.`;
         } else {
@@ -218,6 +226,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
         const result = await analyzeImagesWithNvidia([base64Image], file.originalname, locale, history, false, 'chat');
         responseMessage = result.analysis;
         isHealthRelated = result.isHealthRelated;
+        fileType = 'image';
       } else {
         responseMessage = `File type ${file.mimetype} is not supported.`;
       }
@@ -271,6 +280,16 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
       console.error("Failed to backup file to S3, but continuing...", uploadErr);
     }
 
+    const documentEntry = {
+      fileId: file.filename,
+      originalName: file.originalname,
+      fileType: fileType || file.mimetype,
+      summary: responseMessage,
+      extractedText: extractedText || undefined,
+      attachmentUrl: s3Url || undefined,
+      createdAt: new Date()
+    };
+
     // --- 3. SAVE TO DB (Chat History) ---
     if (sessionId) {
       await ChatSession.findOneAndUpdate(
@@ -290,7 +309,8 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
                 content: responseMessage,
                 timestamp: new Date()
               }
-            ]
+            ],
+            documents: documentEntry
           },
           $set: { lastUpdated: new Date() }
         },

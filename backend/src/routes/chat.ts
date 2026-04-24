@@ -99,6 +99,7 @@ router.post(
       // This prevents prompt injection attacks via manipulated conversationHistory
       let conversationHistory: { role: string; content: string }[] = [];
       const existingSession = await ChatSession.findOne({ sessionId, userId });
+      const sessionDocuments = existingSession?.documents || [];
       if (existingSession && existingSession.messages.length > 0) {
         // Use last 20 messages from the trusted DB record (sliding window)
         conversationHistory = existingSession.messages
@@ -117,7 +118,14 @@ router.post(
       if (/triage/i.test(translatedInput)) {
         response = await handleTriage(translatedInput, sessionId, conversationHistory, 'en', userId);
       } else {
-        response = await handleMessage(translatedInput, sessionId, conversationHistory, 'en', userId);
+        response = await handleMessage({
+          message: translatedInput,
+          sessionId,
+          conversationHistory,
+          locale: 'en',
+          userId,
+          sessionDocuments
+        });
       }
 
       // --- D. TRANSLATION (Output) ---
