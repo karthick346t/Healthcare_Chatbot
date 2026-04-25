@@ -95,10 +95,19 @@ router.put('/appointments/:id/status', async (req: Request, res: Response) => {
     }
 });
 
-// POST /api/admin/doctors (Simplified for now)
+// POST /api/admin/doctors
+const ALLOWED_DOCTOR_FIELDS = ['name', 'specialty', 'hospitalId', 'bio', 'image', 'availability'] as const;
 router.post('/doctors', async (req: Request, res: Response) => {
     try {
-        const newDoctor = new Doctor(req.body);
+        const doctorData: Record<string, any> = {};
+        for (const key of ALLOWED_DOCTOR_FIELDS) {
+            if (key in req.body) doctorData[key] = req.body[key];
+        }
+        // Validate hospitalId is a valid ObjectId if provided
+        if (doctorData.hospitalId && !mongoose.Types.ObjectId.isValid(doctorData.hospitalId)) {
+            return res.status(400).json({ message: 'Invalid hospitalId' });
+        }
+        const newDoctor = new Doctor(doctorData);
         await newDoctor.save();
         res.status(201).json(newDoctor);
     } catch (error: any) {
@@ -106,10 +115,15 @@ router.post('/doctors', async (req: Request, res: Response) => {
     }
 });
 
-// POST /api/admin/hospitals (Simplified for now)
+// POST /api/admin/hospitals
+const ALLOWED_HOSPITAL_FIELDS = ['name', 'location', 'district', 'image', 'description', 'specialties'] as const;
 router.post('/hospitals', async (req: Request, res: Response) => {
     try {
-        const newHospital = new Hospital(req.body);
+        const hospitalData: Record<string, any> = {};
+        for (const key of ALLOWED_HOSPITAL_FIELDS) {
+            if (key in req.body) hospitalData[key] = req.body[key];
+        }
+        const newHospital = new Hospital(hospitalData);
         await newHospital.save();
         res.status(201).json(newHospital);
     } catch (error: any) {

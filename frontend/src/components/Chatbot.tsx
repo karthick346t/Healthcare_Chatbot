@@ -8,6 +8,7 @@ import TyperIndicator from "./TyperIndicator";
 import DisclaimerModal from "./DisclaimerModal";
 
 import { sendChatMessage, uploadFile, getChatSessions, getSessionHistory, type ChatSessionSummary, sendChatFeedback } from "../services/chatApi";
+import { SESSION_EXPIRED_ERROR } from "../services/authApi";
 import { LanguageContext } from "../context/LanguageContext";
 
 import { MdHistory, MdArrowBack, MdAdd, MdChatBubbleOutline, MdClose, MdWarning } from "react-icons/md";
@@ -149,8 +150,10 @@ export default function Chatbot() {
       const reply = typeof data === 'string' ? data : (data as any).message ?? String(data);
       setMessages((prev) => [...prev, { sender: "bot", text: reply }]);
       setConversationHistory([...currentHistory, { role: "assistant", content: reply }]);
-    } catch {
-      const errMsg = t("error_something_went_wrong");
+    } catch (error: any) {
+      const errMsg = error?.message === SESSION_EXPIRED_ERROR
+        ? t("error_session_expired")
+        : t("error_something_went_wrong");
       setMessages((prev) => [...prev, { sender: "bot", text: errMsg }]);
     } finally {
       setIsTyping(false);
@@ -311,13 +314,13 @@ export default function Chatbot() {
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto px-5 pt-4 pb-2 space-y-4 bg-transparent z-10"
       >
-        {messages.map((m, i) => (
+      {messages.map((m, i) => (
           <ChatBubble 
-            key={i} 
+            key={`${sessionId}-${i}-${m.text.slice(0, 20)}`} 
             sender={m.sender} 
             text={m.text} 
             isHealthRelated={m.isHealthRelated} 
-            onFeedback={(rating) => sendChatFeedback(sessionId, rating, i.toString())}
+            onFeedback={(rating) => sendChatFeedback(sessionId, rating, `${Date.now()}-${i}`)}
           />
         ))}
         {isTyping && <TyperIndicator />}

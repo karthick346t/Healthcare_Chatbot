@@ -2,9 +2,6 @@ import { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand, Ser
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
@@ -104,7 +101,7 @@ export const uploadFileToS3 = async (
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: key,
     });
-    const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+    const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 7 * 24 * 60 * 60 }); // 7 days
 
     console.log(`✅ [AWS] File uploaded with presigned URL (key: ${key})`);
     return presignedUrl;

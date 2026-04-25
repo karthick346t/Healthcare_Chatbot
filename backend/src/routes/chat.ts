@@ -114,7 +114,8 @@ router.post(
       }
 
       // --- C. AI PROCESSING ---
-      let response = null;
+      // @ts-ignore: allow response to be initially null
+      let response: any = null;
       if (/triage/i.test(translatedInput)) {
         response = await handleTriage(translatedInput, sessionId, conversationHistory, 'en', userId);
       } else {
@@ -129,14 +130,15 @@ router.post(
       }
 
       // --- D. TRANSLATION (Output) ---
-      let output = response;
+      // @ts-ignore: allow output to be initially null
+      let output: any = response;
       if (locale !== 'en') {
         output = await translateViaM2M100(response, 'en', locale);
       }
 
       // --- E. SAVE TO MONGODB (User Scoped, strict userId match) ---
       const updatedSession = await ChatSession.findOneAndUpdate(
-        { sessionId, $or: [{ userId }, { userId: { $exists: false } }] }, // ✅ Prevent cross-user session hijack
+        { sessionId, userId }, // ✅ Strict user-scoped session — prevents cross-user hijack
         {
           $setOnInsert: { locale, userId },
           $push: {

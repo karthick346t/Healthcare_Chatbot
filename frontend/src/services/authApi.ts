@@ -3,6 +3,14 @@ import { API_BASE_URL } from './apiConfig';
 const API_BASE = `${API_BASE_URL}/api/auth`;
 let refreshPromise: Promise<string | null> | null = null;
 
+export const SESSION_EXPIRED_ERROR = "SESSION_EXPIRED";
+
+function clearStoredAuth() {
+    localStorage.removeItem("healthbot_token");
+    localStorage.removeItem("healthbot_user");
+    window.dispatchEvent(new CustomEvent("auth:expired"));
+}
+
 interface AuthResponse {
     user: {
         _id: string;
@@ -94,7 +102,7 @@ export async function refreshAuthToken(): Promise<string | null> {
                 localStorage.setItem("healthbot_token", newToken);
                 return newToken;
             } else {
-                localStorage.removeItem("healthbot_token");
+                clearStoredAuth();
                 return null;
             }
         } catch (error) {
@@ -144,10 +152,10 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
         } else {
             // Refresh failed - session is truly dead
             console.warn("🔐 Session expired and refresh failed. Clearing credentials.");
-            localStorage.removeItem("healthbot_token");
-            localStorage.removeItem("healthbot_user");
+            clearStoredAuth();
             // Optional: if this was a navigation or critical data fetch, 
             // the next render of ProtectedRoute will handle the redirect.
+            throw new Error(SESSION_EXPIRED_ERROR);
         }
     }
 

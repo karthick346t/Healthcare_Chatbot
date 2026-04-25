@@ -246,6 +246,7 @@ export default function Login() {
                 </label>
                 <button
                   type="button"
+                  onClick={() => setError("Password reset: Please contact your system administrator to reset your password.")}
                   className="text-sm text-primary-600 hover:text-primary-700 font-medium hover:underline"
                 >
                   Forgot password?

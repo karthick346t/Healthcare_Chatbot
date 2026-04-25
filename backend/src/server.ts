@@ -1,12 +1,7 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import app from "./app";
 import config from "./config";
 import { initReminderCron } from "./services/reminderService";
-
-
-// Load environment variables immediately
-dotenv.config();
 
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/healthbot";
@@ -16,12 +11,16 @@ async function initializeServer() {
 
   // --- STEP 1: Connect to MongoDB ---
   try {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
     console.log("✅ Connected to MongoDB");
   } catch (err) {
     console.error("❌ MongoDB Connection Error:", err);
     // Critical failure: Stop the server if DB is down
-    throw err; 
+    throw err;
   }
 
   // --- STEP 2: Initialize RAG System ---
@@ -44,10 +43,11 @@ async function initializeServer() {
   initReminderCron();
 }
 
-// --- STEP 3: Start Express Server ---
+// --- STEP 4: Start Express Server ---
+let server: any;
 initializeServer()
   .then(() => {
-    app.listen(PORT, () => {
+    server = app.listen(PORT, () => {
       console.log(`\n✅ Healthcare Chatbot server running on port ${PORT}`);
       console.log(`📡 API endpoints:`);
       console.log(`   - POST /api/chat`);
@@ -58,3 +58,22 @@ initializeServer()
     console.error("❌ Server initialization failed:", error);
     process.exit(1);
   });
+
+// --- STEP 5: Graceful Shutdown ---
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  if (server) {
+    server.close(() => console.log('HTTP server closed'));
+  }
+  await mongoose.disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully');
+  if (server) {
+    server.close(() => console.log('HTTP server closed'));
+  }
+  await mongoose.disconnect();
+  process.exit(0);
+});

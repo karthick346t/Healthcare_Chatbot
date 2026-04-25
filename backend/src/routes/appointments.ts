@@ -27,7 +27,7 @@ const router = Router();
  *       200:
  *         description: A list of hospitals
  */
-router.get('/hospitals', async (req: Request, res: Response) => {
+router.get('/hospitals', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { district } = req.query;
         const filter = district ? { district: district as string } : {};
@@ -39,7 +39,7 @@ router.get('/hospitals', async (req: Request, res: Response) => {
 });
 
 // GET /api/appointments/hospitals/:id/doctors
-router.get('/hospitals/:id/doctors', async (req: Request, res: Response) => {
+router.get('/hospitals/:id/doctors', authMiddleware, async (req: Request, res: Response) => {
     try {
         const doctors = await Doctor.find({ hospitalId: req.params.id });
         res.json(doctors);
@@ -49,7 +49,7 @@ router.get('/hospitals/:id/doctors', async (req: Request, res: Response) => {
 });
 
 // GET /api/appointments/check-availability
-router.get('/check-availability', async (req: Request, res: Response) => {
+router.get('/check-availability', authMiddleware, async (req: Request, res: Response) => {
     try {
         const { doctorId, appointmentDate } = req.query;
 
@@ -204,21 +204,27 @@ router.post('/book', authMiddleware, async (req: Request, res: Response) => {
         const date = new Date(appointmentDate);
         date.setHours(0, 0, 0, 0);
 
-        // 2. Count existing appointments for this doctor on this day
-        // Only count SCHEDULED appointments towards the limit. Cancelled ones free up the slot.
-        const count = await Appointment.countDocuments({
-            doctorId: new mongoose.Types.ObjectId(doctorId),
-            appointmentDate: date,
-            status: 'scheduled'
-        });
+        // 2. Atomically reserve a slot using $inc on a counter document
+        const counterDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        const counterId = `${doctorId}_${counterDate}`;
 
-        if (count >= 5) {
+        const SlotCounter = mongoose.connection.collection('slot_counters');
+        const counterResult = await SlotCounter.findOneAndUpdate(
+            { _id: counterId as any },
+            { $inc: { count: 1 } },
+            { upsert: true, returnDocument: 'after' }
+        );
+        const tokenNumber = (counterResult?.count ?? 1);
+
+        if (tokenNumber > 5) {
+            // Rollback the increment since slot is full
+            await SlotCounter.updateOne({ _id: counterId as any }, { $inc: { count: -1 } });
             return res.status(400).json({ message: 'Token limit reached for this doctor on selected date (max 5).' });
         }
 
         const appointmentStatus = status || 'scheduled';
 
-        // 3. Create appointment with next token
+        // 3. Create appointment with reserved token
         const newAppointment = new Appointment({
             patientName,
             patientAge,
@@ -228,7 +234,7 @@ router.post('/book', authMiddleware, async (req: Request, res: Response) => {
             hospitalId: new mongoose.Types.ObjectId(hospitalId),
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
-            tokenNumber: count + 1,
+            tokenNumber,
             status: appointmentStatus,
             userId: userId ? new mongoose.Types.ObjectId(userId) : undefined
         });
@@ -365,11 +371,16 @@ router.post('/walk-in', authMiddleware, staffMiddleware, async (req: Request, re
         const date = new Date();
         date.setHours(0, 0, 0, 0);
 
-        const count = await Appointment.countDocuments({
-            doctorId: new mongoose.Types.ObjectId(doctorId),
-            appointmentDate: date,
-            status: { $nin: ['cancelled', 'completed'] }
-        });
+        // Atomic slot reservation for walk-ins
+        const counterDate = date.toISOString().split('T')[0];
+        const counterId = `${doctorId}_${counterDate}`;
+        const SlotCounter = mongoose.connection.collection('slot_counters');
+        const counterResult = await SlotCounter.findOneAndUpdate(
+            { _id: counterId as any },
+            { $inc: { count: 1 } },
+            { upsert: true, returnDocument: 'after' }
+        );
+        const tokenNumber = (counterResult?.count ?? 1);
 
         const newAppointment = new Appointment({
             patientName,
@@ -380,7 +391,7 @@ router.post('/walk-in', authMiddleware, staffMiddleware, async (req: Request, re
             hospitalId: new mongoose.Types.ObjectId(hospitalId),
             doctorId: new mongoose.Types.ObjectId(doctorId),
             appointmentDate: date,
-            tokenNumber: count + 1,
+            tokenNumber,
             status: 'checked_in', // walk-ins are automatically checked in
             paymentStatus: 'pending',
             // No userId needed for walk-in guest

@@ -71,7 +71,7 @@ export function useTextToSpeech() {
 
     const fetchGoogleTts = async (text: string, lang: string): Promise<string | null> => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/tts/tts`, {
+            const response = await fetch(`${API_BASE_URL}/api/tts/speak`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, languageCode: lang })

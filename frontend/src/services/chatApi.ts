@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './apiConfig';
+import { fetchWithAuth, SESSION_EXPIRED_ERROR } from './authApi';
 
 export type Message = {
   role: 'user' | 'assistant';
@@ -11,8 +12,6 @@ export type ChatSessionSummary = {
   title: string;
   date: string;
 };
-
-import { fetchWithAuth } from './authApi';
 
 /* ---------- CHAT & UPLOAD FUNCTIONS ---------- */
 
@@ -37,6 +36,9 @@ export async function sendChatMessage({
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error(SESSION_EXPIRED_ERROR);
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Error: ${response.status} ${response.statusText}`);
     }
@@ -76,6 +78,9 @@ export async function uploadFile({
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error(SESSION_EXPIRED_ERROR);
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || "File upload failed");
     }
@@ -100,8 +105,7 @@ export async function getChatSessions(): Promise<ChatSessionSummary[]> {
 
     if (!response.ok) {
       if (response.status === 401) {
-        console.warn("Unauthorized to fetch sessions");
-        return []; // Return empty if not logged in
+        throw new Error(SESSION_EXPIRED_ERROR);
       }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Failed to load history: ${response.statusText}`);
@@ -120,6 +124,9 @@ export async function getSessionHistory(sessionId: string): Promise<Message[]> {
     const response = await fetchWithAuth(`${API_BASE_URL}/api/chat/session/${sessionId}`, {});
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error(SESSION_EXPIRED_ERROR);
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.error || `Failed to load session: ${response.statusText}`);
     }

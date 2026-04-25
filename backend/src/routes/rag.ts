@@ -8,6 +8,7 @@ import { Router, Request, Response } from 'express';
 import { vectorStore } from '../services/ragService';
 import { indexDocuments } from '../services/ragService';
 import config from '../config';
+import authMiddleware, { adminMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const router = Router();
  * GET /api/rag/status
  * Get RAG system status
  */
-router.get('/status', async (req: Request, res: Response) => {
+router.get('/status', authMiddleware, async (req: Request, res: Response) => {
   try {
     const stats = await vectorStore.getStats();
     const docCount = stats.totalCount;
@@ -44,7 +45,7 @@ router.get('/status', async (req: Request, res: Response) => {
  * POST /api/rag/index
  * Index documents into RAG system
  */
-router.post('/index', async (req: Request, res: Response) => {
+router.post('/index', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
   try {
     const { documents } = req.body;
     

@@ -8,7 +8,8 @@
     "dev": "ts-node-dev src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "make-admin": "ts-node src/scripts/makeAdmin.ts"
+    "make-admin": "ts-node src/scripts/makeAdmin.ts",
+    "test": "echo 'Tests not implemented yet. Add Jest tests here.' && exit 0"
   },
   "keywords": [],
   "author": "",

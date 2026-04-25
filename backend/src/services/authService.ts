@@ -22,7 +22,7 @@ export function generateAccessToken(userId: string, role: string = 'patient'): s
  * Generate Refresh JWT token for a user.
  */
 export function generateRefreshToken(userId: string): string {
-    return jwt.sign({ userId }, config.JWT_REFRESH_SECRET || config.JWT_SECRET, {
+    return jwt.sign({ userId }, config.JWT_REFRESH_SECRET, {
         expiresIn: (config.JWT_REFRESH_EXPIRES_IN || '7d') as any,
     });
 }

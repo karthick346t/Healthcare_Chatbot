@@ -4,11 +4,12 @@ import Appointment from '../models/Appointment';
 import User from '../models/User';
 import Hospital from '../models/Hospital';
 import { notificationService } from '../services/notificationService';
+import authMiddleware, { staffMiddleware } from '../middleware/auth';
 
 const router = Router();
 
 // POST /api/doctors/:id/block
-router.post('/:id/block', async (req: Request, res: Response) => {
+router.post('/:id/block', authMiddleware, staffMiddleware, async (req: Request, res: Response) => {
     try {
         const doctorId = req.params.id;
         const { date, startTime, endTime, reason } = req.body;
@@ -74,7 +75,7 @@ router.post('/:id/block', async (req: Request, res: Response) => {
 });
 
 // GET /api/doctors - to list all doctors (for staff)
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', authMiddleware, async (req: Request, res: Response) => {
     try {
         const doctors = await Doctor.find().populate('hospitalId', 'name');
         res.json(doctors);

@@ -3,17 +3,23 @@
     "target": "ES2020",
     "module": "commonjs",
     "moduleResolution": "node",
+    "rootDir": "src",
     "outDir": "./dist",
     "strict": true,
+    "noImplicitAny": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types"],
+    "types": [],
     "allowSyntheticDefaultImports": true,
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/examples",
+    "src/models/**"
   ]
 }

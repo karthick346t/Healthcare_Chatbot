@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../services/authService';
+import logger from '../utils/logger';
 
 // Extend Express Request type to include user (with role)
 declare global {
@@ -27,6 +28,13 @@ export default function authMiddleware(
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        logger.warn('Authentication failed: missing Bearer token', {
+            method: req.method,
+            path: req.originalUrl,
+            ip: req.ip,
+            hasAuthorizationHeader: Boolean(authHeader),
+            userAgent: req.headers['user-agent']
+        });
         res.status(401).json({ error: 'Access denied. No token provided.' });
         return;
     }
@@ -36,8 +44,20 @@ export default function authMiddleware(
     try {
         const decoded = verifyToken(token);
         req.user = { userId: decoded.userId, role: decoded.role };
+        logger.debug('Authentication success', {
+            method: req.method,
+            path: req.originalUrl,
+            userId: decoded.userId,
+            role: decoded.role
+        });
         next();
     } catch (err) {
+        logger.warn('Authentication failed: invalid or expired token', {
+            method: req.method,
+            path: req.originalUrl,
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
+        });
         res.status(401).json({ error: 'Invalid or expired token.' });
         return;
     }

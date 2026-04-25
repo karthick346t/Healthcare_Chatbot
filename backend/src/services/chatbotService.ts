@@ -1,14 +1,14 @@
 import axios from "axios";
 import config from "../config";
 import { cleanModelText } from "../utils/cleanText";
-import { retrieveContext, vectorStore } from "./ragService";
+import { advancedRetrieveContext, vectorStore } from "./ragService";
 import { analyzeDocumentTextWithNvidia } from "./aiAnalysis";
-import ragContextManager from "./ragContextManager";
 import Doctor from "../models/Doctor";
 import Hospital from "../models/Hospital";
 import Appointment from "../models/Appointment";
 import User from "../models/User";
 import mongoose from "mongoose";
+import ChatLog from "../models/ChatLog";
 import { uploadAppointmentBackup } from "./awsService";
 import { notificationService } from "./notificationService";
 import symptomChecker from "./symptomChecker";
@@ -131,7 +131,7 @@ async function buildDoctorContext(): Promise<string> {
       docStr = "No doctors are currently available in the database.";
     } else {
       docStr = `### 📋 Available Doctors in Database\n\n`;
-      doctors.forEach((doc: any) => {
+      (doctors as any[]).forEach((doc) => {
         const hospitalName = doc.hospitalId?.name || "Unknown Hospital";
         const location = doc.hospitalId?.location || "Unknown Location";
         const hospitalId = doc.hospitalId?._id || "Unknown_Hospital_ID";
@@ -190,7 +190,7 @@ async function buildAppointmentContext(userId?: string): Promise<string> {
     }
 
     let apptStr = "### 📅 Upcoming Appointments\nYou have the following upcoming appointments:\n";
-    appointments.forEach((appt: any, idx) => {
+    (appointments as any[]).forEach((appt, idx) => {
       const date = new Date(appt.appointmentDate).toLocaleDateString();
       const doctor = appt.doctorId?.name || "Unknown Doctor";
       const specialty = appt.doctorId?.specialty || "General Medicine";
@@ -455,6 +455,7 @@ async function callModel(
   const headers = buildHeaders();
 
   try {
+    // @ts-ignore: allow untyped generic call
     const response = await axios.post<OpenRouterResponse>(GROQ_API_URL, payload, {
       headers,
       timeout: AXIOS_TIMEOUT,
@@ -602,16 +603,34 @@ export async function handleMessage(options: {
 
   try {
     console.log("[RAG] Retrieving context for query...");
-    const ragContext = await retrieveContext(userMessage, recentHistory);
+    const ragContext = await advancedRetrieveContext(userMessage, recentHistory);
 
     const urgency = symptomChecker.checkSymptomUrgency(message);
     const urgencyAdvice = symptomChecker.buildUrgencyContext(urgency);
 
-    console.log(`[RAG] Retrieved ${ragContext.retrievedDocs.length} relevant documents`);
+    console.log(`[RAG] Retrieved ${ragContext.citations.length} chunks (confidence: ${ragContext.confidence}) in ${ragContext.retrievalStats.latencyMs}ms`);
 
-    const formattedContext = `${docContext ? docContext + '\n\n' : ''}${urgencyAdvice}${formatRAGContext(ragContext.retrievedDocs)}`;
+    const formattedContext = `${docContext ? docContext + '\n\n' : ''}${urgencyAdvice}${ragContext.contextText}`;
+    const response = await callWithFallback(userMessage, reqCtx, recentHistory, undefined, formattedContext);
 
-    return await callWithFallback(userMessage, reqCtx, recentHistory, undefined, formattedContext);
+    // Log the interaction (request + response) for audit / debugging
+    try {
+      await ChatLog.create({
+        sessionId,
+        userId: userId || "anonymous",
+        request: userMessage,
+        response,
+        ragStats: {
+          retrievedChunks: ragContext?.citations?.length || 0,
+          confidence: ragContext?.confidence?.toString() || "low",
+          latencyMs: ragContext?.retrievalStats?.latencyMs || 0,
+        },
+      });
+    } catch (e) {
+      console.error("Failed to log chat interaction:", e);
+    }
+
+    return response;
   } catch (error: any) {
     console.error("[handleMessage] RAG retrieval failed, falling back to direct call:", error.message);
     return callWithFallback(userMessage, reqCtx, recentHistory, undefined, docContext);
@@ -637,12 +656,12 @@ export async function handleTriage(
   };
 
   try {
-    const ragContext = await retrieveContext(message, recentHistory, {
-      topK: 3,
-      documentType: "guideline",
+    const ragContext = await advancedRetrieveContext(message, recentHistory, {
+      config: { topKFinal: 3 },
+      filters: { documentType: "guideline" },
     });
 
-    const formattedContext = formatRAGContext(ragContext.retrievedDocs);
+    const formattedContext = ragContext.contextText;
     return await callWithFallback(triagePrompt, reqCtx, recentHistory, undefined, formattedContext);
   } catch (error: any) {
     console.error("[handleTriage] RAG retrieval failed:", error.message);

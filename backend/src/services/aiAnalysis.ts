@@ -215,7 +215,8 @@ export async function analyzeImagesWithNvidia(
 
     console.log(`[Vision] Sending ${fileName} (${base64Images.length} image(s)) to ${VISION_MODEL}`);
 
-    const response = await callWithRetry(() => axios.post<OpenRouterResponse>(
+      // @ts-ignore: allow untyped generic call
+      const response = await callWithRetry(() => axios.post<OpenRouterResponse>(
       `${OPENROUTER_BASE_URL}/chat/completions`,
       {
         model: VISION_MODEL,

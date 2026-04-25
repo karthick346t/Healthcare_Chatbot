@@ -45,6 +45,12 @@ export default {
   PINECONE_API_KEY: process.env.PINECONE_API_KEY as string,
   PINECONE_INDEX_NAME: process.env.PINECONE_INDEX_NAME as string,
 
+  // Advanced RAG Configuration
+  EMBEDDING_MODEL: process.env.EMBEDDING_MODEL || "neuml/pubmedbert-base-embeddings",
+  RAG_USE_HYDE: process.env.RAG_USE_HYDE !== "false",
+  RAG_USE_RERANKER: process.env.RAG_USE_RERANKER !== "false",
+  RERANKER_MODEL: process.env.RERANKER_MODEL || "Xenova/bge-reranker-base",
+
   // Auth Configuration — JWT_SECRET validated above
   JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "15m",

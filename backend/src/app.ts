@@ -8,6 +8,7 @@ import i18next from 'i18next';
 import Backend from 'i18next-fs-backend';
 import i18nextMiddleware from 'i18next-http-middleware';
 
+import mongoose from 'mongoose';
 import chatRouter from './routes/chat';
 import uploadRouter from './routes/upload';
 import ragRouter from './routes/rag';
@@ -21,6 +22,7 @@ import ttsRouter from './routes/ttsRoutes';
 import localizationMiddleware from './middleware/localization';
 import { auditLogger } from './middleware/audit';
 import config from './config';
+import { vectorStore } from './services/ragService';
 
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
@@ -29,10 +31,17 @@ import logger from './utils/logger';
 
 const app = express();
 
+// Request logging with response time
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url}`, {
-    ip: req.ip,
-    userAgent: req.headers['user-agent']
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      statusCode: res.statusCode,
+      responseTime: duration
+    });
   });
   next();
 });
@@ -124,19 +133,30 @@ app.use(auditLogger);
 // ─────────────────────────────────────────────
 app.get('/healthz', async (req: Request, res: Response) => {
   try {
-    const mongoose = require('mongoose');
-    const { vectorStore } = require('./services/ragService');
     const dbState = mongoose.connection.readyState;
+    const dbConnected = dbState === 1;
     const ragStats = await vectorStore.getStats().catch(() => ({ totalCount: 0 }));
+
+    if (!dbConnected) {
+      return res.status(503).json({
+        status: "error",
+        db: "disconnected",
+        rag: { docs: ragStats.totalCount, enabled: config.RAG_ENABLED },
+        uptime: Math.floor(process.uptime()) + 's',
+        env: config.NODE_ENV,
+      });
+    }
+
     res.json({
       status: "ok",
-      db: dbState === 1 ? "connected" : "disconnected",
+      db: "connected",
       rag: { docs: ragStats.totalCount, enabled: config.RAG_ENABLED },
       uptime: Math.floor(process.uptime()) + 's',
       env: config.NODE_ENV,
     });
   } catch (error) {
-    res.status(500).json({ status: "error" });
+    logger.error('Health check failed', error);
+    res.status(503).json({ status: "error", message: "Service unavailable" });
   }
 });
 app.use('/api/chat', chatRouter);
@@ -150,8 +170,12 @@ app.use('/api/admin', adminRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/tts', ttsRouter);
 
-// Swagger UI configuration
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// ─────────────────────────────────────────────
+// Swagger UI (Development only)
+// ─────────────────────────────────────────────
+if (config.NODE_ENV !== 'production') {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // ─────────────────────────────────────────────
 // Serve Frontend (Single-Port Deployment)
@@ -159,10 +183,16 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 const frontendPath = path.join(__dirname, '../public');
 app.use(express.static(frontendPath));
 
+// 404 handler for API routes (must be before SPA catch-all)
+app.use('/api', (req: Request, res: Response) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
 // Catch-all: serve the React app for any non-API route
 app.get(/(.*)/, (req: Request, res: Response) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 export default app;
+
 

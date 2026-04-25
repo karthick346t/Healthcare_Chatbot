@@ -8,6 +8,8 @@
   "If this is a medical emergency, please call your local emergency number.": "यदि यह चिकित्सा आपातकाल है, तो कृपया अपने स्थानीय आपातकालीन नंबर पर कॉल करें।",
   "greeting": "नमस्ते! मैं आपका स्वास्थ्य सहायक हूँ। कृपया अपने लक्षणों का वर्णन करें।",
   "error_invalid_input": "अमान्य इनपुट प्रदान किया गया है।",
+  "error_something_went_wrong": "कुछ गलत हो गया। कृपया फिर से प्रयास करें।",
+  "error_session_expired": "आपका सत्र समाप्त हो गया है। कृपया चैट जारी रखने के लिए फिर से लॉग इन करें।",
   "book_appointment_title": "अपॉइंटमेंट बुक करें",
   "book_appointment_desc": "अपने पास के अस्पतालों और डॉक्टरों को खोजने के लिए अपना स्थान खोजें या चुनें।",
   "search_location_placeholder": "स्थान खोजें (जैसे कोयंबटूर)...",

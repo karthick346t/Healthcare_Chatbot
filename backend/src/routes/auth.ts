@@ -133,7 +133,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
         // 1. Verify JWT signature + expiry
         const decoded = jwt.verify(
             refreshToken,
-            config.JWT_REFRESH_SECRET || config.JWT_SECRET
+            config.JWT_REFRESH_SECRET
         ) as { userId: string };
 
         // 2. Check the token hasn't been revoked in the DB
@@ -214,12 +214,26 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
  */
 router.put('/profile', authMiddleware, async (req: Request, res: Response) => {
     try {
-        const updates = req.body;
-        // Prevent updating sensitive fields via this endpoint
-        delete updates.password;
-        delete updates.role;
-        delete updates.email;
-        delete updates.googleId;
+        // Whitelist only allowed fields — prevents mass-assignment attacks
+        const ALLOWED_FIELDS = [
+            'name', 'phone', 'gender', 'dateOfBirth',
+            'bloodGroup', 'address', 'allergies',
+            'chronicConditions', 'emergencyContact'
+        ] as const;
+
+        const updates: Record<string, any> = {};
+        for (const key of ALLOWED_FIELDS) {
+            if (key in req.body) {
+                updates[key] = req.body[key];
+            }
+        }
+
+        // Extra safety: block MongoDB operators at root level
+        for (const key of Object.keys(updates)) {
+            if (key.startsWith('$')) {
+                return res.status(400).json({ error: 'Invalid update key detected' });
+            }
+        }
 
         const user = await User.findByIdAndUpdate(
             req.user!.userId,

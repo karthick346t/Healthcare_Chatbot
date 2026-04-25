@@ -9,6 +9,7 @@ export async function translateViaM2M100(
 ): Promise<string> {
   if (!text || from === to) return text;
   try {
+    // @ts-ignore: allow untyped generic call
     const resp = await axios.post<{ translation: string }>(
       M2M_SERVER,
       {

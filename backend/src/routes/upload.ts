@@ -7,10 +7,27 @@ import { uploadFileToS3 } from '../services/awsService';
 import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth'; // ✅ Corrected import
 import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../services/aiAnalysis';
-import { exec } from 'child_process';
-import util from 'util';
+import { spawn } from 'child_process';
 
-const execPromise = util.promisify(exec);
+/**
+ * Safely spawn a Python process with file arguments.
+ * Uses array-based args to prevent shell injection.
+ */
+function spawnPython(scriptPath: string, args: string[], timeout = 30000): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    const proc = spawn(pythonPath, [scriptPath, ...args], { timeout });
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (data) => { stdout += data; });
+    proc.stderr.on('data', (data) => { stderr += data; });
+    proc.on('close', (code) => {
+      if (code !== 0) reject(new Error(`Python script exited with code ${code}: ${stderr}`));
+      else resolve({ stdout, stderr });
+    });
+    proc.on('error', (err) => reject(err));
+  });
+}
 
 // ✅ Standard import for version 1.1.1
 const pdfParse = require('pdf-parse');
@@ -89,41 +106,23 @@ async function extractDocxText(docxPath: string): Promise<string> {
   }
 }
 
-// ✅ SECURE: Sanitize upload path to prevent shell injection / path traversal
+// ✅ SECURE: PDF to Image using spawn (no shell injection risk)
 async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
   try {
     console.log('🖼️ Running advanced Vision fallback (PDF to Image)...');
 
-    // Use the absolute path to the script
     const scriptPath = path.join(__dirname, '../scripts/pdf_to_base64.py');
-
-    // Sanitize: reconstruct path from dir + basename to prevent path traversal
-    const safeDir = path.dirname(pdfPath);
-    const safeFile = path.basename(pdfPath).replace(/[^a-zA-Z0-9._-]/g, '_');
-    const safePath = path.join(safeDir, safeFile);
 
     // Validate the path stays within the uploads directory
     const uploadsDir = path.resolve(path.join(__dirname, '../../uploads'));
-    const resolvedPath = path.resolve(safePath);
+    const resolvedPath = path.resolve(pdfPath);
     if (!resolvedPath.startsWith(uploadsDir)) {
       console.error('❌ Path traversal attempt blocked:', pdfPath);
       return null;
     }
 
-    // Use venv python if available, fallback to system python
-    const venvPath = path.join(__dirname, '../../venv/Scripts/python.exe');
-    const pythonCmd = fs.existsSync(venvPath) ? `"${venvPath}"` : 'python';
-
-    // Run the Python script with sanitized paths (quoted for safety)
-    const { stdout, stderr } = await execPromise(
-      `${pythonCmd} "${scriptPath.replace(/"/g, '')}" "${resolvedPath.replace(/"/g, '')}"`,
-      { maxBuffer: 50 * 1024 * 1024 }
-    );
-
-    if (stderr && !stdout) {
-      console.error('❌ Python Script stderr:', stderr);
-      return null;
-    }
+    // Use spawnPython helper for safe argument passing
+    const { stdout } = await spawnPython(scriptPath, [resolvedPath], 30000);
 
     const result = stdout.trim();
     if (result.startsWith('Error')) {
