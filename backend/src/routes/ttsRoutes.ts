@@ -5,12 +5,12 @@ import { body, validationResult } from 'express-validator';
 const router = Router();
 
 /**
- * POST /api/chat/tts
+ * POST /api/tts/speak
  * Synthesize text to speech using Google Cloud TTS.
  * Returns base64 audio data.
  */
 router.post(
-  '/tts',
+  ['/speak', '/tts'],
   [
     body('text').notEmpty().withMessage('Text is required for TTS'),
     body('languageCode').optional().isString()
