@@ -9,6 +9,7 @@ import { env, pipeline, type FeatureExtractionPipeline } from "@xenova/transform
 
 let embedder: FeatureExtractionPipeline | null = null;
 let embedderReady = false;
+let activeEmbeddingModel: string | null = null;
 
 /**
  * Medical domain embedding model options:
@@ -148,6 +149,7 @@ function resolveEmbeddingModel(): string {
 export async function initializeEmbedder(): Promise<void> {
   if (embedderReady) return;
   console.log(`[Embedding] Loading ${EMBEDDING_MODEL}...`);
+  const initStart = Date.now();
   try {
     // Configure transformers.js to resolve local models from our cache root.
     // Then load by model id (not file:// URL), so internal path resolution works.
@@ -161,6 +163,8 @@ export async function initializeEmbedder(): Promise<void> {
         quantized: true,
         cache_dir: cacheDir,
       });
+      activeEmbeddingModel = modelToLoad;
+      console.log(`[Embedding] Pipeline ready for ${modelToLoad} in ${Date.now() - initStart}ms`);
     } catch (err) {
       console.error(`[Embedding] Failed to load ${modelToLoad}:`, err);
       // Fallback to a smaller general model
@@ -170,6 +174,8 @@ export async function initializeEmbedder(): Promise<void> {
         quantized: true,
         cache_dir: cacheDir,
       });
+      activeEmbeddingModel = fallback;
+      console.log(`[Embedding] Fallback pipeline ready for ${fallback} in ${Date.now() - initStart}ms`);
     }
   } catch (err) {
     console.error(`[Embedding] Failed to load ${EMBEDDING_MODEL}:`, err);
@@ -177,9 +183,11 @@ export async function initializeEmbedder(): Promise<void> {
     const fallback = FALLBACK_EMBEDDING_MODEL;
     console.log(`[Embedding] Falling back to ${fallback}`);
     embedder = await pipeline("feature-extraction", fallback, { quantized: true });
+    activeEmbeddingModel = fallback;
+    console.log(`[Embedding] Fallback pipeline ready for ${fallback} in ${Date.now() - initStart}ms`);
   }
   embedderReady = true;
-  console.log(`[Embedding] ${EMBEDDING_MODEL} loaded (${getEmbeddingDimension()}d).`);
+  console.log(`[Embedding] Active model: ${activeEmbeddingModel || EMBEDDING_MODEL} (${getEmbeddingDimension()}d) loaded in ${Date.now() - initStart}ms.`);
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
@@ -187,7 +195,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     await initializeEmbedder();
   }
   if (!embedder) throw new Error("Embedder failed to initialize");
+  const embedStart = Date.now();
   const output = await embedder(text, { pooling: "mean", normalize: true });
+  console.log(`[Embedding] Generated query embedding (${text.length} chars) in ${Date.now() - embedStart}ms`);
   return Array.from(output.data);
 }
 

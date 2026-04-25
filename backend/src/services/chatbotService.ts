@@ -19,9 +19,12 @@ const cache = new NodeCache({ stdTTL: 300, checkperiod: 30 });
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// Model chain: best → fastest fallback
+// Model chain: best → fastest fallback (up to 4 models)
 const PRIMARY_MODEL_ID = "llama-3.3-70b-versatile";   // Best Groq model ✅
 const BACKUP_MODEL_ID = "llama-3.1-8b-instant";       // Fast fallback ✅
+// Additional fallback models as requested
+const COMPOUND_MODEL_ID = "groq/compound";           // 3rd model ✅
+const COMPOUND_MINI_MODEL_ID = "groq/compound-mini"; // 4th model ✅
 
 const AXIOS_TIMEOUT = 25_000; // 25 seconds
 
@@ -503,8 +506,14 @@ async function callModel(
 }
 
 // ----------------------------------------
-// 🔹 Fallback chain: 70b → 8b
+// 🔹 Enhanced fallback chain: up to 4 models with cool‑down handling
 // ----------------------------------------
+/**
+ * Attempts to get a response from the configured model chain.
+ * The order is: PRIMARY → BACKUP → COMPOUND → COMPOUND_MINI.
+ * If a model fails, it is marked in the cache for 180 seconds (3 min) and skipped on subsequent calls.
+ * The primary model retains its existing 429 retry logic.
+ */
 async function callWithFallback(
   message: string,
   reqCtx: RequestContext,
@@ -515,33 +524,83 @@ async function callWithFallback(
   const sanitizedMessage = sanitizeForModeration(message);
   const compactedRag = compactRagContext(ragContext);
 
-  // 1) Primary model with retry on 429
-  const primaryMaxRetries = 2;
-  for (let attempt = 0; attempt <= primaryMaxRetries; attempt++) {
-    try {
-      const backoffMs = attempt === 0 ? 0 : Math.min(10000, 1000 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 250);
-      if (backoffMs > 0) {
-        console.log(`[Backoff] Waiting ${backoffMs}ms before retrying (${PRIMARY_MODEL_ID})...`);
-        await sleep(backoffMs);
+  const modelChain = [
+    PRIMARY_MODEL_ID,
+    BACKUP_MODEL_ID,
+    COMPOUND_MODEL_ID,
+    COMPOUND_MINI_MODEL_ID,
+  ];
+
+  const isCooling = (modelId: string) => !!cache.get(`failed_${modelId}`);
+
+  for (const modelId of modelChain) {
+    if (isCooling(modelId)) {
+      console.warn(`[skip] Model ${modelId} is in cool‑down, skipping.`);
+      continue;
+    }
+
+    // Primary model gets special retry handling for rate‑limit (429)
+    if (modelId === PRIMARY_MODEL_ID) {
+      const maxRetries = 2;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const backoffMs = attempt === 0 ? 0 : Math.min(10000, 1000 * Math.pow(2, attempt - 1)) + Math.floor(Math.random() * 250);
+          if (backoffMs > 0) {
+            console.log(`[Backoff] Waiting ${backoffMs}ms before retrying (${modelId})...`);
+            await sleep(backoffMs);
+          }
+          console.log(`[Model] Attempting (${modelId})${ragContext ? ' with RAG' : ''}... (try ${attempt + 1}/${maxRetries + 1})`);
+          return await callModel(modelId, message, reqCtx, conversationHistory, imageUrl, compactedRag);
+        } catch (err: any) {
+          const status = err?.response?.status;
+          const msg = err?.response?.data?.error?.message || err.message;
+          console.warn(`[⚠️ (${modelId}) retry failed — Status: ${status}, Message: ${msg}]`);
+          if (status !== 429 || attempt === maxRetries) {
+            // Record failure and break to try next model
+            cache.set(`failed_${modelId}`, true, 180);
+            break;
+          }
+        }
       }
-      console.log(`[Model] Attempting (${PRIMARY_MODEL_ID})${ragContext ? ' with RAG' : ''}... (try ${attempt + 1}/${primaryMaxRetries + 1})`);
-      return await callModel(PRIMARY_MODEL_ID, message, reqCtx, conversationHistory, imageUrl, compactedRag);
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.error?.message || err.message;
-      console.warn(`[⚠️ (${PRIMARY_MODEL_ID}) failed — Status: ${status}, Message: ${msg}]`);
-      if (status !== 429 || attempt === primaryMaxRetries) break;
+    } else {
+      try {
+        console.log(`[Model] Attempting (${modelId})${ragContext ? ' with RAG' : ''}...`);
+        return await callModel(modelId, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.error?.message || err.message;
+        console.warn(`[⚠️ (${modelId}) failed — Status: ${status}, Message: ${msg}]`);
+        cache.set(`failed_${modelId}`, true, 180);
+        // continue to next model
+      }
     }
   }
 
-  // 2) Fallback to fast model
-  try {
-    console.warn(`[⚠️ Switching to backup model (${BACKUP_MODEL_ID})]`);
-    return await callModel(BACKUP_MODEL_ID, sanitizedMessage, reqCtx, conversationHistory, imageUrl, compactedRag);
-  } catch (err) {
-    console.error("[❌ All models failed]");
-    return "I'm currently unable to process your message reliably due to service limits. Please try again shortly. If this is urgent, contact a licensed healthcare provider.";
-  }
+  console.error('[❌ All models failed]');
+  return "I'm currently unable to process your message reliably due to service limits. Please try again shortly. If this is urgent, contact a licensed healthcare provider.";
+}
+
+// NOTE: The original two‑model fallback implementation has been removed.
+// The enhanced multi‑model fallback (including compound models) is defined earlier in this file.
+
+const SMALL_TALK_PATTERNS: RegExp[] = [
+  /^(hi|hii|hiii|hiiii)$/i,
+  /^(hello|helo|helloo|hey|heyy|heyy there|hey there|hi there|hi again)$/i,
+  /^(good morning|good afternoon|good evening|good night)$/i,
+  /^(how are you|how are u|how r you|how r u|how's it going|whats up|what's up|sup)$/i,
+  /^(thanks|thank you|thankyou|thx|ok|okay|cool|nice|great|fine)$/i,
+  /^(bye|goodbye|see you|see ya|take care|tc)$/i,
+];
+
+function isGreetingOrSmallTalk(message: string): boolean {
+  const normalized = message
+    .toLowerCase()
+    .trim()
+    .replace(/[!?.,]+/g, "")
+    .replace(/\s+/g, " ");
+
+  if (!normalized || normalized.length > 40) return false;
+  return SMALL_TALK_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
 // ----------------------------------------
@@ -598,6 +657,11 @@ export async function handleMessage(options: {
 
   if (!ragEnabled) {
     console.log("[handleMessage] RAG disabled, using direct model call");
+    return callWithFallback(userMessage, reqCtx, recentHistory, undefined, docContext);
+  }
+
+  if (!docContext && isGreetingOrSmallTalk(message)) {
+    console.log("[handleMessage] Greeting/small-talk detected, bypassing RAG");
     return callWithFallback(userMessage, reqCtx, recentHistory, undefined, docContext);
   }
 

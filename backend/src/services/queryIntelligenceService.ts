@@ -151,6 +151,7 @@ export async function generateHyDE(query: string): Promise<string> {
   const useHyDE = process.env.RAG_USE_HYDE !== "false";
   if (!useHyDE) return query;
 
+  const startTime = Date.now();
   try {
     const response = await axios.post(
       GROQ_API_URL,
@@ -178,12 +179,19 @@ export async function generateHyDE(query: string): Promise<string> {
 
     const hydeDoc = response.data?.choices?.[0]?.message?.content?.trim();
     if (hydeDoc && hydeDoc.length > 50) {
-      console.log(`[HyDE] Generated hypothetical document (${hydeDoc.length} chars)`);
+      console.log(
+        `[HyDE] Generated hypothetical document (${hydeDoc.length} chars) in ${Date.now() - startTime}ms`
+      );
       return hydeDoc;
     }
   } catch (err: any) {
-    console.warn("[HyDE] Generation failed, falling back to original query:", err.message);
+    console.warn(
+      `[HyDE] Generation failed after ${Date.now() - startTime}ms, falling back to original query:`,
+      err.message
+    );
   }
+
+  console.log(`[HyDE] No useful hypothetical document generated in ${Date.now() - startTime}ms`);
 
   return query;
 }

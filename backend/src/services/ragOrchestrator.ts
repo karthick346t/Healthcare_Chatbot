@@ -87,6 +87,7 @@ async function denseRetrieve(
   topK: number,
   filters?: Record<string, any>
 ): Promise<Array<{ id: string; text: string; score: number; metadata: any }>> {
+  const pineconeStart = Date.now();
   const req: any = {
     vector: queryEmbedding,
     topK,
@@ -102,6 +103,10 @@ async function denseRetrieve(
     score?: number;
     metadata?: Record<string, any>;
   }>;
+
+  console.log(
+    `[Pinecone] Query returned ${(matches || []).length} matches in ${Date.now() - pineconeStart}ms (topK=${topK})`
+  );
 
   return matches.map((m) => ({
     id: m.id,
@@ -127,6 +132,7 @@ export async function advancedRetrieveContext(
   const cfg: RetrievalConfig = { ...DEFAULT_RETRIEVAL_CONFIG, ...options.config };
 
   try {
+    const queryIntelStart = Date.now();
     // ── Step 1: Query Intelligence ─────────────────────────────
     const expanded = expandMedicalQuery(query);
     console.log(
@@ -140,27 +146,38 @@ export async function advancedRetrieveContext(
         "EMERGENCY CONTEXT: The user may be experiencing a medical emergency. Prioritize safety and recommend immediate professional care. ";
       console.warn("[RAG] Emergency intent detected — adding safety prefix.");
     }
+    const queryIntelMs = Date.now() - queryIntelStart;
 
     // ── Step 2: Generate Query Variations ──────────────────────
+    const variationStart = Date.now();
     const queries = cfg.useMultiQuery
       ? generateQueryVariations(expanded.expanded)
       : [expanded.expanded];
+    const variationMs = Date.now() - variationStart;
 
     // ── Step 3: Optional HyDE ──────────────────────────────────
+    const hydeStart = Date.now();
     if (cfg.useHyDE) {
       const hydeDoc = await generateHyDE(query);
       if (hydeDoc !== query) {
         queries.push(hydeDoc);
       }
     }
+    const hydeMs = Date.now() - hydeStart;
 
     // ── Step 4: Dense Retrieval (for each query variation) ─────
+    const denseStart = Date.now();
     const denseCandidates: Array<{ id: string; text: string; score: number; metadata: any }> = [];
-    for (const q of queries) {
+    for (const [index, q] of queries.entries()) {
+      const perQueryStart = Date.now();
       const embedding = await generateEmbedding(q);
       const results = await denseRetrieve(embedding, cfg.topKDense, options.filters);
       denseCandidates.push(...results);
+      console.log(
+        `[RAG Dense] Query ${index + 1}/${queries.length} (${q.length} chars) finished in ${Date.now() - perQueryStart}ms and produced ${results.length} candidates`
+      );
     }
+    const denseMs = Date.now() - denseStart;
 
     // Deduplicate dense results (keep highest score per ID)
     const denseMap = new Map<string, (typeof denseCandidates)[0]>();
@@ -173,6 +190,7 @@ export async function advancedRetrieveContext(
     const uniqueDense = Array.from(denseMap.values()).sort((a, b) => b.score - a.score);
 
     // ── Step 5: Sparse Retrieval ───────────────────────────────
+    const sparseStart = Date.now();
     let uniqueSparse: Array<{ id: string; text: string; score: number; metadata: any }> = [];
     if (cfg.useSparse) {
       const sparseCandidates = queries.flatMap((q) => sparseSearch(q, cfg.topKSparse));
@@ -186,14 +204,18 @@ export async function advancedRetrieveContext(
       }
       uniqueSparse = Array.from(sparseMap.values()).sort((a, b) => b.score - a.score);
     }
+    const sparseMs = Date.now() - sparseStart;
 
     // ── Step 6: Reciprocal Rank Fusion ─────────────────────────
+    const fusionStart = Date.now();
     const fused = reciprocalRankFusion(uniqueDense, uniqueSparse, {
       k: 60,
       topK: cfg.topKFusion,
     });
+    const fusionMs = Date.now() - fusionStart;
 
     // ── Step 7: Cross-Encoder Re-Ranking ───────────────────────
+    const rerankStart = Date.now();
     let finalChunks: RankedDocument[] = fused.map((f) => ({
       id: f.id,
       text: f.text,
@@ -206,8 +228,10 @@ export async function advancedRetrieveContext(
     } else {
       finalChunks = finalChunks.slice(0, cfg.topKFinal);
     }
+    const rerankMs = Date.now() - rerankStart;
 
     // ── Step 8: Build Cited Context ────────────────────────────
+    const contextStart = Date.now();
     const context = buildCitedContext(
       finalChunks.map((c) => ({
         id: c.id,
@@ -218,6 +242,7 @@ export async function advancedRetrieveContext(
       query,
       { maxTokens: cfg.maxContextTokens, minRelevance: cfg.minRelevance }
     );
+    const contextMs = Date.now() - contextStart;
 
     // Prepend emergency context if detected
     if (emergencyPrefix) {
@@ -225,6 +250,9 @@ export async function advancedRetrieveContext(
     }
 
     const latencyMs = Date.now() - startTime;
+    console.log(
+      `[RAG Timing] queryIntel=${queryIntelMs}ms | variations=${variationMs}ms | hyde=${hydeMs}ms | dense=${denseMs}ms | sparse=${sparseMs}ms | fusion=${fusionMs}ms | rerank=${rerankMs}ms | context=${contextMs}ms | total=${latencyMs}ms`
+    );
     console.log(
       `[RAG] Retrieved ${finalChunks.length} chunks in ${latencyMs}ms (confidence: ${context.confidence})`
     );

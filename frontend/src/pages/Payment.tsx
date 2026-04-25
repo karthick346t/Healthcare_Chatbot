@@ -107,34 +107,37 @@ export default function Payment() {
         }, 3000); // Check every 3 seconds
     };
 
-    const handleSimulatePayment = async () => {
+        const handleSimulatePayment = async () => {
         if (!appointmentId) return;
         try {
+            // Call the backend simulation endpoint
             await appointmentApi.simulateUpiPayment(appointmentId);
-            // Explicitly force the success UI immediately instead of waiting for the next polling tick
+            // Show a temporary loading state on the QR area before confirming
             if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-            setStatus('confirmed');
-            
-            try {
-                const audio = new Audio('/src/assets/payment_success.mp3');
-                audio.play().catch(e => console.error("Audio playback failed:", e));
-            } catch (e) {
-                console.error("Audio error:", e);
-            }
+            setStatus('processing');
 
+            // Simulate a short processing delay (e.g., 2 seconds) to display the loading overlay
             setTimeout(() => {
-                navigate('/appointments', { 
-                    state: { 
-                        step: 4, 
-                        // Fetch the minimal needed result format to pass to success page
-                        bookingResult: initialResult || { _id: appointmentId, appointmentDate: appointmentDetails?.date, tokenNumber: 1 },
-                        appointmentDetails: appointmentDetails
-                    } 
-                });
-            }, 1500);
-
+                setStatus('confirmed');
+                try {
+                    const audio = new Audio('/src/assets/payment_success.mp3');
+                    audio.play().catch(e => console.error("Audio playback failed:", e));
+                } catch (e) {
+                    console.error("Audio error:", e);
+                }
+                // Navigate after a brief pause to let the success UI be visible
+                setTimeout(() => {
+                    navigate('/appointments', {
+                        state: {
+                            step: 4,
+                            bookingResult: initialResult || { _id: appointmentId, appointmentDate: appointmentDetails?.date, tokenNumber: 1 },
+                            appointmentDetails: appointmentDetails
+                        }
+                    });
+                }, 1500);
+            }, 2000);
         } catch (err: any) {
-             setError("Simulation failed: " + err.message);
+            setError("Simulation failed: " + err.message);
         }
     };
 

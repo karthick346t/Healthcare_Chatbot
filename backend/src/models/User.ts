@@ -8,6 +8,11 @@ export interface IUser extends Document {
     googleId?: string;
     avatar?: string;
     role: 'patient' | 'admin' | 'staff';
+    /**
+     * For users with role "staff", this optional reference links the staff member to a specific hospital.
+     * It allows the system to know which hospital a staff member belongs to (e.g., reception desk).
+     */
+    hospitalId?: mongoose.Types.ObjectId;
     phone?: string;
     gender?: 'Male' | 'Female' | 'Other';
     dateOfBirth?: Date;
@@ -57,6 +62,7 @@ const userSchema = new Schema<IUser>(
             enum: ['patient', 'admin', 'staff'],
             default: 'patient',
         },
+        hospitalId: { type: Schema.Types.ObjectId, ref: 'Hospital' },
         phone: { type: String, trim: true },
         gender: { type: String, enum: ['Male', 'Female', 'Other'] },
         dateOfBirth: { type: Date },

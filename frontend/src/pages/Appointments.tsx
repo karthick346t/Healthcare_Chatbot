@@ -142,11 +142,15 @@ const Appointments = () => {
         if (selectedHospital) {
             const fetchDoctors = async () => {
                 setLoading(true);
+                // Reset any previous error when attempting a new fetch
+                setError(null);
                 try {
                     const data = await appointmentApi.getDoctors(selectedHospital._id);
                     setDoctors(data);
                 } catch (err: any) {
-                    setError(err.message);
+                    // Provide a user-friendly error specific to doctor fetching
+                    setError('Failed to fetch doctors');
+                    console.error('Doctor fetch error:', err);
                 } finally {
                     setLoading(false);
                 }
@@ -483,9 +487,11 @@ Ref ID:  ${bookingResult._id || "N/A"}`;
                     </div>
                 </div>
 
-                {error && (
+                {/* Global error display (e.g., fetching doctors failure) */}
+                {error && step === 2 && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-2xl animate-shake">
-                        {error}
+                        {/* Show a specific message when doctors fail to load */}
+                        {error.includes('Failed to fetch doctors') ? 'Failed to fetch doctors' : error}
                     </div>
                 )}
 

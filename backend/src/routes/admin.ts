@@ -131,6 +131,41 @@ router.post('/hospitals', async (req: Request, res: Response) => {
     }
 });
 
+// POST /api/admin/staff/:id/assign
+// Assign a staff user to a specific hospital
+router.post('/staff/:id/assign', authMiddleware, adminMiddleware, async (req: Request, res: Response) => {
+    try {
+        // Extract staffId from request params; it may be a string or an array of strings
+        const rawStaffId: unknown = req.params.id;
+        const staffId: string = Array.isArray(rawStaffId) ? rawStaffId[0] : String(rawStaffId);
+        // Extract hospitalId from request body; it may be a string or an array of strings
+        const rawHospitalId: unknown = req.body.hospitalId;
+        const hospitalId: string = Array.isArray(rawHospitalId) ? rawHospitalId[0] : String(rawHospitalId);
+
+        if (!mongoose.Types.ObjectId.isValid(staffId)) {
+            return res.status(400).json({ message: 'Invalid staff user ID' });
+        }
+        if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
+            return res.status(400).json({ message: 'Invalid hospital ID' });
+        }
+
+        const staffUser = await User.findById(staffId);
+        if (!staffUser) {
+            return res.status(404).json({ message: 'Staff user not found' });
+        }
+        if (staffUser.role !== 'staff') {
+            return res.status(400).json({ message: 'User is not a staff member' });
+        }
+
+        // Convert hospitalId to ObjectId, casting to string to satisfy TypeScript
+        staffUser.hospitalId = new mongoose.Types.ObjectId(hospitalId as string);
+        await staffUser.save();
+        res.json({ message: 'Staff assigned to hospital successfully', staff: staffUser });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // GET /api/admin/users
 router.get('/users', async (req: Request, res: Response) => {
     try {

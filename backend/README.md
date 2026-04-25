@@ -14,4 +14,9 @@
 
 1. `npm install`
 2. Create `.env` with your OpenAI key.
-3. `npm run dev`
+ 3 | Install Python dependencies for PDF processing:
+   ```
+   pip install PyMuPDF
+   ```
+   This is required for the PDF to image fallback used during uploads.
+ 4 | `npm run dev`

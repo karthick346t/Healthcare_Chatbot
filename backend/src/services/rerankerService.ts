@@ -29,9 +29,10 @@ export async function initializeReranker(): Promise<void> {
   if (rerankerReady) return;
 
   console.log(`[Reranker] Loading ${RERANKER_MODEL}...`);
+  const initStart = Date.now();
   reranker = await pipeline("text-classification", RERANKER_MODEL);
   rerankerReady = true;
-  console.log(`[Reranker] ${RERANKER_MODEL} loaded.`);
+  console.log(`[Reranker] ${RERANKER_MODEL} loaded in ${Date.now() - initStart}ms.`);
 }
 
 export interface RankedDocument {
@@ -55,6 +56,7 @@ export async function rerankDocuments(
   }
 
   if (documents.length === 0) return [];
+  const rerankStart = Date.now();
 
   // Build query-document pairs for cross-encoder
   const pairs = documents.map((d) => `${query} [SEP] ${d.text.substring(0, 512)}`);
@@ -84,6 +86,10 @@ export async function rerankDocuments(
     }))
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, topK);
+
+  console.log(
+    `[Reranker] Re-ranked ${documents.length} documents into top ${topK} in ${Date.now() - rerankStart}ms`
+  );
 
   return ranked;
 }
