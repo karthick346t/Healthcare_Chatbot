@@ -6,7 +6,7 @@ import config from '../config';
  * Provides high-quality AI voices (Neural/WaveNet).
  */
 export class GoogleTtsService {
-  private client: TextToSpeechClient;
+  private client: any;
   private isEnabled: boolean = false;
 
   constructor() {

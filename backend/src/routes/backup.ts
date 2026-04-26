@@ -61,6 +61,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
             Key: fileName,
         });
 
+        // @ts-ignore - AWS SDK version mismatch
         const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 900 });
 
         res.status(200).json({ status: "success", url: signedUrl });

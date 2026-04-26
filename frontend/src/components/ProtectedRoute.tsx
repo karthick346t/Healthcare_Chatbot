@@ -25,11 +25,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Strict onboarding lock: Check if user profile is incomplete (must have phone, dob, bloodgroup, address)
-  const isProfileComplete = Boolean(user?.phone && user?.dateOfBirth && user?.bloodGroup && user?.address);
+  // const isProfileComplete = Boolean(user?.phone && user?.dateOfBirth && user?.bloodGroup && user?.address);
   // And ensure we don't infinitely loop if they are already on /profile
-  if (isAuthenticated && !isProfileComplete && window.location.pathname !== "/profile") {
-    return <Navigate to="/profile" state={{ fromOnboarding: true }} replace />;
-  }
+  // if (isAuthenticated && !isProfileComplete && window.location.pathname !== "/profile") {
+  //   return <Navigate to="/profile" state={{ fromOnboarding: true }} replace />;
+  // }
 
   return <>{children}</>;
 }

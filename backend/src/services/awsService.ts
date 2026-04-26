@@ -101,6 +101,7 @@ export const uploadFileToS3 = async (
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: key,
     });
+    // @ts-ignore - AWS SDK version mismatch between client-s3 and s3-request-presigner
     const presignedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 7 * 24 * 60 * 60 }); // 7 days
 
     console.log(`✅ [AWS] File uploaded with presigned URL (key: ${key})`);

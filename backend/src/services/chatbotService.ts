@@ -124,7 +124,7 @@ Do not say you cannot access the uploaded file. Use the summary and extracted te
 }
 
 async function buildDoctorContext(): Promise<string> {
-  const cachedContext = cache.get<string>("doctorContext");
+  const cachedContext = cache.get("doctorContext") as string | undefined;
   if (cachedContext) return cachedContext;
 
   try {
