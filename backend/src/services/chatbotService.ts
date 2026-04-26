@@ -13,6 +13,8 @@ import { uploadAppointmentBackup } from "./awsService";
 import { notificationService } from "./notificationService";
 import symptomChecker from "./symptomChecker";
 import NodeCache from "node-cache";
+import { MAX_APPOINTMENTS_PER_DOCTOR_PER_DAY } from "../constants/appointments";
+import { reserveSlotToken } from "./slotAllocator";
 
 // Initialize cache with standard TTL of 5 minutes (300 seconds)
 const cache = new NodeCache({ stdTTL: 300, checkperiod: 30 });
@@ -179,7 +181,7 @@ async function buildAppointmentContext(userId?: string): Promise<string> {
     today.setHours(0, 0, 0, 0);
 
     const appointments = await Appointment.find({
-      userId,
+      userId: new mongoose.Types.ObjectId(userId),
       appointmentDate: { $gte: today },
       status: { $in: ['scheduled', 'pending', 'checked_in', 'in_consultation'] }
     })
@@ -354,14 +356,12 @@ async function validateAndSaveBooking(bookingData: any, reqCtx: RequestContext):
     throw new Error("Invalid patient age — must be between 0 and 150");
   }
 
-  // 6. Check slot availability (max 10 per doctor per day)
-  const count = await Appointment.countDocuments({
-    doctorId: new mongoose.Types.ObjectId(doctorId),
-    appointmentDate: dateObj,
-    status: "scheduled",
-  });
-  if (count >= 10) {
-    throw new Error("No available slots for this doctor on the selected date (max 10 per day)");
+  // 6. Reserve slot token atomically using shared allocator
+  let tokenNumber: number;
+  try {
+    tokenNumber = await reserveSlotToken(doctorId, dateObj);
+  } catch (slotError: any) {
+    throw new Error(slotError.message || `No available slots for this doctor on the selected date (max ${MAX_APPOINTMENTS_PER_DOCTOR_PER_DAY} per day)`);
   }
 
   // 7. Save the appointment
@@ -374,7 +374,7 @@ async function validateAndSaveBooking(bookingData: any, reqCtx: RequestContext):
     hospitalId: new mongoose.Types.ObjectId(hospitalId),
     doctorId: new mongoose.Types.ObjectId(doctorId),
     appointmentDate: dateObj,
-    tokenNumber: count + 1,
+    tokenNumber,
     status: "scheduled",
     paymentStatus: "pending",
     userId: reqCtx.userId ? new mongoose.Types.ObjectId(reqCtx.userId) : undefined,
@@ -681,7 +681,7 @@ export async function handleMessage(options: {
     try {
       await ChatLog.create({
         sessionId,
-        userId: userId || "anonymous",
+        userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
         request: userMessage,
         response,
         ragStats: {

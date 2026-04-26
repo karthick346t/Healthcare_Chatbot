@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IFeedback extends Document {
   messageId?: string; // Optional if we don't have explicit message IDs yet
   sessionId: string;
-  userId?: string;
+  userId?: mongoose.Types.ObjectId;
   rating: number; // 1 for thumbs up, -1 for thumbs down
   timestamp: Date;
 }
@@ -11,7 +11,7 @@ export interface IFeedback extends Document {
 const FeedbackSchema: Schema = new Schema({
   messageId: { type: String },
   sessionId: { type: String, required: true },
-  userId: { type: String, index: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   rating: { type: Number, required: true, enum: [1, -1] },
   timestamp: { type: Date, default: Date.now }
 });

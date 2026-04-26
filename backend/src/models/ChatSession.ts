@@ -21,7 +21,7 @@ export interface IDocumentEntry {
 
 export interface IChatSession extends Document {
   sessionId: string;
-  userId?: string;
+  userId?: mongoose.Types.ObjectId;
   messages: IMessage[];
   documents?: IDocumentEntry[];
   lastUpdated: Date;
@@ -29,8 +29,8 @@ export interface IChatSession extends Document {
 }
 
 const ChatSessionSchema: Schema = new Schema({
-  sessionId: { type: String, required: true, unique: true },
-  userId: { type: String, required: true, index: true }, // ✅ Required & Indexed
+  sessionId: { type: String, required: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   messages: [
     {
       role: { type: String, enum: ['user', 'assistant'], required: true },
@@ -54,7 +54,7 @@ const ChatSessionSchema: Schema = new Schema({
   locale: { type: String, default: 'en' }
 });
 
-ChatSessionSchema.index({ sessionId: 1, userId: 1 });
+ChatSessionSchema.index({ sessionId: 1, userId: 1 }, { unique: true });
 
 if (process.env.ENCRYPTION_KEY) {
   ChatSessionSchema.plugin(fieldEncryption, {

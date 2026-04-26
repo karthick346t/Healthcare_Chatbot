@@ -17,7 +17,7 @@ router.get('/stats', async (req: Request, res: Response) => {
         const totalUsers = await User.countDocuments({ role: 'patient' });
         const totalAppointments = await Appointment.countDocuments();
         const pendingAppointments = await Appointment.countDocuments({ status: 'pending' });
-        const confirmedAppointments = await Appointment.countDocuments({ status: 'confirmed' });
+        const scheduledAppointments = await Appointment.countDocuments({ status: { $in: ['scheduled', 'confirmed'] } });
         const cancelledAppointments = await Appointment.countDocuments({ status: 'cancelled' });
         const totalDoctors = await Doctor.countDocuments();
         const totalHospitals = await Hospital.countDocuments();
@@ -27,7 +27,9 @@ router.get('/stats', async (req: Request, res: Response) => {
             appointments: {
                 total: totalAppointments,
                 pending: pendingAppointments,
-                confirmed: confirmedAppointments,
+                scheduled: scheduledAppointments,
+                // Backward-compatible key for existing admin UI consumers
+                confirmed: scheduledAppointments,
                 cancelled: cancelledAppointments
             },
             doctors: totalDoctors,
@@ -75,13 +77,14 @@ router.get('/appointments', async (req: Request, res: Response) => {
 router.put('/appointments/:id/status', async (req: Request, res: Response) => {
     try {
         const { status } = req.body;
-        if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
+        const normalizedStatus = status === 'confirmed' ? 'scheduled' : status;
+        if (!['pending', 'scheduled', 'cancelled'].includes(normalizedStatus)) {
             return res.status(400).json({ message: 'Invalid status' });
         }
 
         const appointment = await Appointment.findByIdAndUpdate(
             req.params.id,
-            { status },
+            { status: normalizedStatus },
             { new: true }
         );
 

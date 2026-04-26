@@ -64,6 +64,19 @@ python 06_export_node_embeddings.py
 deactivate
 cd .. 
 ```
+
+### Backend Python dependencies (PDF scanning)
+The backend includes a small Python helper used for converting scanned PDFs to images. Install its dependencies inside a virtualenv:
+
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+deactivate
+cd ..
+```
+
 _Verify: You should now see a `data` folder inside `backend` with `.jsonl` files._
 
 ---

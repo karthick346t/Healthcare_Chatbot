@@ -21,6 +21,7 @@ import reportRouter from './routes/reports';
 import ttsRouter from './routes/ttsRoutes';
 import localizationMiddleware from './middleware/localization';
 import { auditLogger } from './middleware/audit';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import config from './config';
 import { vectorStore } from './services/ragService';
 
@@ -71,7 +72,13 @@ const limiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests. Please slow down and try again in a minute.' },
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many requests. Please slow down and try again in a minute.'
+    }
+  },
 });
 app.use(limiter);
 
@@ -79,7 +86,13 @@ app.use(limiter);
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
-  message: { error: 'Too many authentication attempts. Please wait a minute.' },
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMITED_AUTH',
+      message: 'Too many authentication attempts. Please wait a minute.'
+    }
+  },
 });
 
 // ─────────────────────────────────────────────
@@ -163,14 +176,15 @@ const frontendPath = path.join(__dirname, '../public');
 app.use(express.static(frontendPath));
 
 // 404 handler for API routes (must be before SPA catch-all)
-app.use('/api', (req: Request, res: Response) => {
-  res.status(404).json({ error: 'API endpoint not found' });
-});
+app.use('/api', notFoundHandler);
 
 // Catch-all: serve the React app for any non-API route
 app.get(/(.*)/, (req: Request, res: Response) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
+
+// Centralized error handler (last middleware)
+app.use(errorHandler);
 
 export default app;
 

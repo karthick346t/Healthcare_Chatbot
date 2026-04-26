@@ -54,7 +54,7 @@ export default function AdminAppointments() {
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm mt-1">View and manage all appointments.</p>
                 </div>
                 <div className="flex items-center gap-3 bg-neu dark:bg-neu-dark p-1.5 rounded-xl shadow-neu-in dark:shadow-neu-in-dark">
-                    {['all', 'pending', 'confirmed', 'cancelled'].map(status => (
+                    {['all', 'pending', 'scheduled', 'cancelled'].map(status => (
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
@@ -110,7 +110,7 @@ export default function AdminAppointments() {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400 max-w-[150px] truncate">{appt.problem}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${appt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${(appt.status === 'scheduled' || appt.status === 'confirmed') ? 'bg-green-50 text-green-700 border-green-200' :
                                                     appt.status === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
                                                         'bg-red-50 text-red-700 border-red-200'
                                                 }`}>
@@ -120,8 +120,22 @@ export default function AdminAppointments() {
                                         <td className="px-6 py-4">
                                             {appt.status === 'pending' && (
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => handleStatusUpdate(appt._id, 'confirmed')} className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 border border-green-200 transition-colors"><HiCheck /></button>
-                                                    <button onClick={() => handleStatusUpdate(appt._id, 'cancelled')} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 transition-colors"><HiX /></button>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(appt._id, 'scheduled')}
+                                                        aria-label="Mark appointment as scheduled"
+                                                        title="Mark as scheduled"
+                                                        className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 border border-green-200 transition-colors"
+                                                    >
+                                                        <HiCheck />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(appt._id, 'cancelled')}
+                                                        aria-label="Cancel appointment"
+                                                        title="Cancel appointment"
+                                                        className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 transition-colors"
+                                                    >
+                                                        <HiX />
+                                                    </button>
                                                 </div>
                                             )}
                                         </td>

@@ -9,6 +9,7 @@ interface Stats {
     appointments: {
         total: number;
         pending: number;
+        scheduled?: number;
         confirmed: number;
         cancelled: number;
     };
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
     const [recentUsers, setRecentUsers] = useState<any[]>([]);
     const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const scheduledCount = stats?.appointments.scheduled ?? stats?.appointments.confirmed ?? 0;
 
     useEffect(() => {
         if (!user || user.role !== 'admin') {
@@ -113,8 +115,8 @@ export default function AdminDashboard() {
                         <div className="flex h-12 rounded-xl overflow-hidden shadow-inner mb-4">
                             {stats?.appointments.total ? (
                                 <>
-                                    <div style={{ width: `${(stats.appointments.confirmed / stats.appointments.total) * 100}%` }} className="bg-emerald-500 h-full transition-all group relative">
-                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold pointer-events-none">{stats.appointments.confirmed}</div>
+                                    <div style={{ width: `${(scheduledCount / stats.appointments.total) * 100}%` }} className="bg-emerald-500 h-full transition-all group relative">
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold pointer-events-none">{scheduledCount}</div>
                                     </div>
                                     <div style={{ width: `${(stats.appointments.pending / stats.appointments.total) * 100}%` }} className="bg-orange-500 h-full transition-all group relative">
                                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-bold pointer-events-none">{stats.appointments.pending}</div>
@@ -129,7 +131,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center justify-center gap-6">
-                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Confirmed ({stats?.appointments.confirmed || 0})</span></div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Scheduled ({scheduledCount})</span></div>
                             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-orange-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Pending ({stats?.appointments.pending || 0})</span></div>
                             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500"></div><span className="text-xs text-neutral-600 dark:text-neutral-300 font-medium">Cancelled ({stats?.appointments.cancelled || 0})</span></div>
                         </div>

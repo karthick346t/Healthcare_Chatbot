@@ -5,6 +5,7 @@ import User from '../models/User';
 import Appointment from '../models/Appointment';
 import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth';
+import mongoose from 'mongoose';
 
 
 const router = Router();
@@ -24,15 +25,16 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
             res.status(401).json({ error: 'Unauthorized' });
             return;
         }
+        const userObjectId = new mongoose.Types.ObjectId(userId);
 
         // 1. Fetch User Data
         const user = await User.findById(userId).select('-password');
 
         // 2. Fetch Appointments
-        const appointments = await Appointment.find({ userId });
+        const appointments = await Appointment.find({ userId: userObjectId });
 
         // 3. Fetch Chat Sessions
-        const chatSessions = await ChatSession.find({ userId });
+        const chatSessions = await ChatSession.find({ userId: userObjectId });
 
         // 4. Assemble Backup Payload
         const backupData = {

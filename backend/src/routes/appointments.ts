@@ -7,6 +7,8 @@ import { uploadAppointmentBackup, fetchAppointmentsFromS3 } from '../services/aw
 import mongoose from 'mongoose';
 import User from '../models/User';
 import authMiddleware, { staffMiddleware } from '../middleware/auth';
+import { MAX_APPOINTMENTS_PER_DOCTOR_PER_DAY } from '../constants/appointments';
+import { reserveSlotToken } from '../services/slotAllocator';
 
 const router = Router();
 
@@ -68,7 +70,7 @@ router.get('/check-availability', authMiddleware, async (req: Request, res: Resp
             status: 'scheduled'
         });
 
-        const maxSlots = 5;
+        const maxSlots = MAX_APPOINTMENTS_PER_DOCTOR_PER_DAY;
         const availableSlots = maxSlots - count;
 
         res.json({
@@ -205,21 +207,11 @@ router.post('/book', authMiddleware, async (req: Request, res: Response) => {
         date.setHours(0, 0, 0, 0);
 
         // 2. Atomically reserve a slot using $inc on a counter document
-        const counterDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
-        const counterId = `${doctorId}_${counterDate}`;
-
-        const SlotCounter = mongoose.connection.collection('slot_counters');
-        const counterResult = await SlotCounter.findOneAndUpdate(
-            { _id: counterId as any },
-            { $inc: { count: 1 } },
-            { upsert: true, returnDocument: 'after' }
-        );
-        const tokenNumber = (counterResult?.count ?? 1);
-
-        if (tokenNumber > 5) {
-            // Rollback the increment since slot is full
-            await SlotCounter.updateOne({ _id: counterId as any }, { $inc: { count: -1 } });
-            return res.status(400).json({ message: 'Token limit reached for this doctor on selected date (max 5).' });
+        let tokenNumber: number;
+        try {
+            tokenNumber = await reserveSlotToken(doctorId, date);
+        } catch (slotError: any) {
+            return res.status(400).json({ message: slotError.message });
         }
 
         const appointmentStatus = status || 'scheduled';
@@ -372,15 +364,12 @@ router.post('/walk-in', authMiddleware, staffMiddleware, async (req: Request, re
         date.setHours(0, 0, 0, 0);
 
         // Atomic slot reservation for walk-ins
-        const counterDate = date.toISOString().split('T')[0];
-        const counterId = `${doctorId}_${counterDate}`;
-        const SlotCounter = mongoose.connection.collection('slot_counters');
-        const counterResult = await SlotCounter.findOneAndUpdate(
-            { _id: counterId as any },
-            { $inc: { count: 1 } },
-            { upsert: true, returnDocument: 'after' }
-        );
-        const tokenNumber = (counterResult?.count ?? 1);
+        let tokenNumber: number;
+        try {
+            tokenNumber = await reserveSlotToken(doctorId, date);
+        } catch (slotError: any) {
+            return res.status(400).json({ message: slotError.message });
+        }
 
         const newAppointment = new Appointment({
             patientName,

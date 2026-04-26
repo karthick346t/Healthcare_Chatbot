@@ -8,6 +8,16 @@ import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth'; // ✅ Corrected import
 import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../services/aiAnalysis';
 import { spawn } from 'child_process';
+import mongoose from 'mongoose';
+
+function isDuplicateSessionIdError(error: unknown): error is { code: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: number }).code === 11000
+  );
+}
 
 /**
  * Safely spawn a Python process with file arguments.
@@ -15,7 +25,29 @@ import { spawn } from 'child_process';
  */
 function spawnPython(scriptPath: string, args: string[], timeout = 30000): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    const backendRoot = path.resolve(__dirname, '../../');
+    const pythonCandidates = process.platform === 'win32'
+      ? [
+          process.env.PYTHON_PATH,
+          path.join(backendRoot, '.venv', 'Scripts', 'python.exe'),
+          path.join(backendRoot, 'venv', 'Scripts', 'python.exe'),
+          'python',
+          'py',
+        ]
+      : [
+          process.env.PYTHON_PATH,
+          path.join(backendRoot, '.venv', 'bin', 'python'),
+          path.join(backendRoot, 'venv', 'bin', 'python'),
+          'python3',
+          'python',
+        ];
+
+    const pythonPath = pythonCandidates.find((candidate) => {
+      if (!candidate) return false;
+      // Binary names resolve from PATH; absolute paths must exist.
+      return path.isAbsolute(candidate) ? fs.existsSync(candidate) : true;
+    }) || (process.platform === 'win32' ? 'python' : 'python3');
+
     const proc = spawn(pythonPath, [scriptPath, ...args], { timeout });
     let stdout = '';
     let stderr = '';
@@ -131,8 +163,22 @@ async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
     }
 
     return result; // This is the base64 string
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ PDF to Image fallback failed:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (typeof msg === 'string' && msg.includes("No module named 'fitz'")) {
+      console.error("⚠️ Python module 'fitz' (PyMuPDF) is not installed in the environment used by the Node server.");
+      if (process.platform === 'win32') {
+        console.error("   Install it in backend virtualenv (PowerShell):");
+        console.error("     cd backend");
+        console.error("     .\\.venv\\Scripts\\Activate.ps1");
+        console.error("     pip install -r requirements.txt");
+      } else {
+        console.error("   Install it in backend virtualenv:");
+        console.error("     cd backend && source .venv/bin/activate && pip install -r requirements.txt");
+      }
+      console.error("   Or simply: pip install PyMuPDF");
+    }
     return null;
   }
 }
@@ -149,6 +195,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
   try {
     const { locale = 'en', sessionId, conversationHistory } = req.body;
     const userId = req.user!.userId; // ✅ Authenticated User
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     let history = [];
     if (conversationHistory) {
@@ -291,30 +338,49 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
 
     // --- 3. SAVE TO DB (Chat History) ---
     if (sessionId) {
-      await ChatSession.findOneAndUpdate(
-        { sessionId },
-        {
-          $setOnInsert: { locale, userId }, // ✅ Ensure userId is set
-          $push: {
-            messages: [
-              {
-                role: 'user',
-                content: `Uploaded file: ${file.originalname}`,
-                timestamp: new Date(),
-                attachmentUrl: s3Url || undefined
-              },
-              {
-                role: 'assistant',
-                content: responseMessage,
-                timestamp: new Date()
-              }
-            ],
-            documents: documentEntry
-          },
-          $set: { lastUpdated: new Date() }
+      const updateDoc = {
+        $setOnInsert: { locale, userId: userObjectId }, // ✅ Ensure userId is set
+        $push: {
+          messages: [
+            {
+              role: 'user',
+              content: `Uploaded file: ${file.originalname}`,
+              timestamp: new Date(),
+              attachmentUrl: s3Url || undefined
+            },
+            {
+              role: 'assistant',
+              content: responseMessage,
+              timestamp: new Date()
+            }
+          ],
+          documents: documentEntry
         },
-        { returnDocument: 'after', upsert: true }
-      );
+        $set: { lastUpdated: new Date() }
+      };
+
+      try {
+        await ChatSession.findOneAndUpdate(
+          { sessionId, userId: userObjectId },
+          updateDoc,
+          { returnDocument: 'after', upsert: true }
+        );
+      } catch (error) {
+        // Backward-compat: older DBs may still have a unique `sessionId` index.
+        // If upsert races/conflicts, update existing session by `sessionId`.
+        if (isDuplicateSessionIdError(error)) {
+          await ChatSession.findOneAndUpdate(
+            { sessionId },
+            {
+              $push: updateDoc.$push,
+              $set: { ...updateDoc.$set, userId: userObjectId }
+            },
+            { returnDocument: 'after', upsert: false }
+          );
+        } else {
+          throw error;
+        }
+      }
     }
 
     // --- 4. RESPONSE ---
