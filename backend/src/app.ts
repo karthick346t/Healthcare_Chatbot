@@ -56,29 +56,10 @@ app.use(helmet({
 }));
 
 // ─────────────────────────────────────────────
-// CORS — only allow known frontend origins
+// CORS — TEMPORARILY ALLOW ALL FOR CLOUD DEPLOYMENT
 // ─────────────────────────────────────────────
 app.use(cors({
-  origin: (origin, callback) => {
-    // 1. Allow requests with no origin (e.g. server-to-server, or same-origin simple requests)
-    if (!origin) return callback(null, true);
-
-    // 2. Allow if it matches our configured origins (from .env)
-    if (config.FRONTEND_ORIGINS.includes(origin)) {
-      return callback(null, true);
-    }
-
-    // 3. Special Case: Allow the same origin if we are serving the frontend (Single-Port Deployment)
-    // This allows the raw IP address to work without manually adding it to .env
-    const isSameOrigin = origin.includes('localhost') || origin.includes('127.0.0.1') || 
-                         (process.env.NODE_ENV === 'production'); 
-    
-    if (isSameOrigin) {
-      return callback(null, true);
-    }
-
-    callback(new Error(`CORS: origin '${origin}' is not allowed.`));
-  },
+  origin: true, // Allow all origins to fix the 500 error on raw IP
   credentials: true,
 }));
 
