@@ -10,6 +10,15 @@ import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../servi
 import { spawn } from 'child_process';
 import mongoose from 'mongoose';
 
+function isDuplicateSessionIdError(error: unknown): error is { code: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: number }).code === 11000
+  );
+}
+
 /**
  * Safely spawn a Python process with file arguments.
  * Uses array-based args to prevent shell injection.
@@ -329,30 +338,49 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
 
     // --- 3. SAVE TO DB (Chat History) ---
     if (sessionId) {
-      await ChatSession.findOneAndUpdate(
-        { sessionId, userId: userObjectId },
-        {
-          $setOnInsert: { locale, userId: userObjectId }, // ✅ Ensure userId is set
-          $push: {
-            messages: [
-              {
-                role: 'user',
-                content: `Uploaded file: ${file.originalname}`,
-                timestamp: new Date(),
-                attachmentUrl: s3Url || undefined
-              },
-              {
-                role: 'assistant',
-                content: responseMessage,
-                timestamp: new Date()
-              }
-            ],
-            documents: documentEntry
-          },
-          $set: { lastUpdated: new Date() }
+      const updateDoc = {
+        $setOnInsert: { locale, userId: userObjectId }, // ✅ Ensure userId is set
+        $push: {
+          messages: [
+            {
+              role: 'user',
+              content: `Uploaded file: ${file.originalname}`,
+              timestamp: new Date(),
+              attachmentUrl: s3Url || undefined
+            },
+            {
+              role: 'assistant',
+              content: responseMessage,
+              timestamp: new Date()
+            }
+          ],
+          documents: documentEntry
         },
-        { returnDocument: 'after', upsert: true }
-      );
+        $set: { lastUpdated: new Date() }
+      };
+
+      try {
+        await ChatSession.findOneAndUpdate(
+          { sessionId, userId: userObjectId },
+          updateDoc,
+          { returnDocument: 'after', upsert: true }
+        );
+      } catch (error) {
+        // Backward-compat: older DBs may still have a unique `sessionId` index.
+        // If upsert races/conflicts, update existing session by `sessionId`.
+        if (isDuplicateSessionIdError(error)) {
+          await ChatSession.findOneAndUpdate(
+            { sessionId },
+            {
+              $push: updateDoc.$push,
+              $set: { ...updateDoc.$set, userId: userObjectId }
+            },
+            { returnDocument: 'after', upsert: false }
+          );
+        } else {
+          throw error;
+        }
+      }
     }
 
     // --- 4. RESPONSE ---

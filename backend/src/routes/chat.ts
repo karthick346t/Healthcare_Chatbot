@@ -12,6 +12,15 @@ import mongoose from 'mongoose';
 
 const router = Router();
 
+function isDuplicateSessionIdError(error: unknown): error is { code: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: number }).code === 11000
+  );
+}
+
 // --- CONFIG: Multer (Memory Storage for quick processing) ---
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -141,20 +150,40 @@ router.post(
       }
 
       // --- E. SAVE TO MONGODB (User Scoped, strict userId match) ---
-      const updatedSession = await ChatSession.findOneAndUpdate(
-        { sessionId, userId: userObjectId }, // ✅ Strict user-scoped session — prevents cross-user hijack
-        {
-          $setOnInsert: { locale, userId: userObjectId },
-          $push: {
-            messages: [
-              { role: 'user', content: message, timestamp: new Date() },
-              { role: 'assistant', content: output, timestamp: new Date() }
-            ]
-          },
-          $set: { lastUpdated: new Date() }
+      const updateDoc = {
+        $setOnInsert: { locale, userId: userObjectId },
+        $push: {
+          messages: [
+            { role: 'user', content: message, timestamp: new Date() },
+            { role: 'assistant', content: output, timestamp: new Date() }
+          ]
         },
-        { returnDocument: 'after', upsert: true }
-      );
+        $set: { lastUpdated: new Date() }
+      };
+
+      let updatedSession = null;
+      try {
+        updatedSession = await ChatSession.findOneAndUpdate(
+          { sessionId, userId: userObjectId }, // ✅ Strict user-scoped session — prevents cross-user hijack
+          updateDoc,
+          { returnDocument: 'after', upsert: true }
+        );
+      } catch (error) {
+        // Backward-compat: older DBs may still have a unique `sessionId` index.
+        // If upsert conflicts, update existing session by `sessionId`.
+        if (isDuplicateSessionIdError(error)) {
+          updatedSession = await ChatSession.findOneAndUpdate(
+            { sessionId },
+            {
+              $push: updateDoc.$push,
+              $set: { ...updateDoc.$set, userId: userObjectId }
+            },
+            { returnDocument: 'after', upsert: false }
+          );
+        } else {
+          throw error;
+        }
+      }
 
       // --- F. S3 BACKUP (non-blocking) ---
       if (updatedSession) {
