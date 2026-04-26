@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { HiLockClosed, HiShieldCheck, HiCalendar, HiQrcode } from 'react-icons/hi';
 import QRCode from 'qrcode';
 import { appointmentApi } from '../services/appointmentApi';
+import successSound from '../assets/payment_success.mp3';
 
 export default function Payment() {
     const navigate = useNavigate();
@@ -84,7 +85,7 @@ export default function Payment() {
                     
                     // Play success sound
                     try {
-                        const audio = new Audio('/src/assets/payment_success.mp3');
+                        const audio = new Audio(successSound);
                         audio.play().catch(e => console.error("Audio playback failed:", e));
                     } catch (e) {
                          console.error("Audio error:", e);
@@ -120,7 +121,7 @@ export default function Payment() {
             setTimeout(() => {
                 setStatus('confirmed');
                 try {
-                    const audio = new Audio('/src/assets/payment_success.mp3');
+                    const audio = new Audio(successSound);
                     audio.play().catch(e => console.error("Audio playback failed:", e));
                 } catch (e) {
                     console.error("Audio error:", e);
