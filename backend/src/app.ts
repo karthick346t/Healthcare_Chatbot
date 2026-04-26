@@ -60,11 +60,23 @@ app.use(helmet({
 // ─────────────────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+    // 1. Allow requests with no origin (e.g. server-to-server, or same-origin simple requests)
     if (!origin) return callback(null, true);
+
+    // 2. Allow if it matches our configured origins (from .env)
     if (config.FRONTEND_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
+
+    // 3. Special Case: Allow the same origin if we are serving the frontend (Single-Port Deployment)
+    // This allows the raw IP address to work without manually adding it to .env
+    const isSameOrigin = origin.includes('localhost') || origin.includes('127.0.0.1') || 
+                         (process.env.NODE_ENV === 'production'); 
+    
+    if (isSameOrigin) {
+      return callback(null, true);
+    }
+
     callback(new Error(`CORS: origin '${origin}' is not allowed.`));
   },
   credentials: true,
