@@ -50,23 +50,9 @@ app.use((req, res, next) => {
 // Security Headers (Helmet)
 // ─────────────────────────────────────────────
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      // NOTE: 'unsafe-inline' kept because Swagger UI (/api/docs) injects inline scripts.
-      // If Swagger is moved behind auth or removed, drop 'unsafe-inline' too.
-      // 'unsafe-eval' intentionally removed — it enables arbitrary JS eval().
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "http://localhost:*", "ws://localhost:*"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
-    },
-  },
+  contentSecurityPolicy: false, // Disabled for raw IP deployment to avoid HTTPS upgrade issues
   crossOriginOpenerPolicy: false,
+  hsts: false, // Disabled: prevents forcing HTTPS which was causing ERR_SSL_PROTOCOL_ERROR
 }));
 
 // ─────────────────────────────────────────────
