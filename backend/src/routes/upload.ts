@@ -15,7 +15,29 @@ import { spawn } from 'child_process';
  */
 function spawnPython(scriptPath: string, args: string[], timeout = 30000): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const pythonPath = process.platform === 'win32' ? 'python' : 'python3';
+    const backendRoot = path.resolve(__dirname, '../../');
+    const pythonCandidates = process.platform === 'win32'
+      ? [
+          process.env.PYTHON_PATH,
+          path.join(backendRoot, '.venv', 'Scripts', 'python.exe'),
+          path.join(backendRoot, 'venv', 'Scripts', 'python.exe'),
+          'python',
+          'py',
+        ]
+      : [
+          process.env.PYTHON_PATH,
+          path.join(backendRoot, '.venv', 'bin', 'python'),
+          path.join(backendRoot, 'venv', 'bin', 'python'),
+          'python3',
+          'python',
+        ];
+
+    const pythonPath = pythonCandidates.find((candidate) => {
+      if (!candidate) return false;
+      // Binary names resolve from PATH; absolute paths must exist.
+      return path.isAbsolute(candidate) ? fs.existsSync(candidate) : true;
+    }) || (process.platform === 'win32' ? 'python' : 'python3');
+
     const proc = spawn(pythonPath, [scriptPath, ...args], { timeout });
     let stdout = '';
     let stderr = '';
@@ -131,8 +153,22 @@ async function extractPdfAsImage(pdfPath: string): Promise<string | null> {
     }
 
     return result; // This is the base64 string
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ PDF to Image fallback failed:', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (typeof msg === 'string' && msg.includes("No module named 'fitz'")) {
+      console.error("⚠️ Python module 'fitz' (PyMuPDF) is not installed in the environment used by the Node server.");
+      if (process.platform === 'win32') {
+        console.error("   Install it in backend virtualenv (PowerShell):");
+        console.error("     cd backend");
+        console.error("     .\\.venv\\Scripts\\Activate.ps1");
+        console.error("     pip install -r requirements.txt");
+      } else {
+        console.error("   Install it in backend virtualenv:");
+        console.error("     cd backend && source .venv/bin/activate && pip install -r requirements.txt");
+      }
+      console.error("   Or simply: pip install PyMuPDF");
+    }
     return null;
   }
 }
