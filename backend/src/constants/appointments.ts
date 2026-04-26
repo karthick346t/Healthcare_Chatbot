@@ -1,0 +1,2 @@
+export const MAX_APPOINTMENTS_PER_DOCTOR_PER_DAY = 5;
+

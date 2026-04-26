@@ -8,6 +8,7 @@ import ChatSession from '../models/ChatSession';
 import authMiddleware from '../middleware/auth'; // ✅ Corrected import
 import { analyzeDocumentTextWithNvidia, analyzeImagesWithNvidia } from '../services/aiAnalysis';
 import { spawn } from 'child_process';
+import mongoose from 'mongoose';
 
 /**
  * Safely spawn a Python process with file arguments.
@@ -185,6 +186,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
   try {
     const { locale = 'en', sessionId, conversationHistory } = req.body;
     const userId = req.user!.userId; // ✅ Authenticated User
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     let history = [];
     if (conversationHistory) {
@@ -328,9 +330,9 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
     // --- 3. SAVE TO DB (Chat History) ---
     if (sessionId) {
       await ChatSession.findOneAndUpdate(
-        { sessionId, userId },
+        { sessionId, userId: userObjectId },
         {
-          $setOnInsert: { locale, userId }, // ✅ Ensure userId is set
+          $setOnInsert: { locale, userId: userObjectId }, // ✅ Ensure userId is set
           $push: {
             messages: [
               {

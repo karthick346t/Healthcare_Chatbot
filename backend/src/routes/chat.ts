@@ -8,6 +8,7 @@ import { uploadSessionToS3 } from '../services/awsService';
 import authMiddleware from '../middleware/auth';
 import { emergencyInterceptor } from '../middleware/emergency';
 import Feedback from '../models/Feedback';
+import mongoose from 'mongoose';
 
 const router = Router();
 
@@ -23,8 +24,9 @@ const upload = multer({
 router.get('/sessions', authMiddleware, async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId; // ✅ Authenticated User ID
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const sessions = await ChatSession.find({ userId }) // ✅ Filter by User
+    const sessions = await ChatSession.find({ userId: userObjectId }) // ✅ Filter by User
       .sort({ lastUpdated: -1 })
       .select('sessionId messages lastUpdated')
       .limit(50); // Increased limit since it's user-scoped
@@ -54,9 +56,10 @@ router.get('/session/:sessionId', authMiddleware, async (req: Request, res: Resp
   try {
     const { sessionId } = req.params;
     const userId = req.user!.userId;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     // ✅ Ensure session belongs to user
-    const session = await ChatSession.findOne({ sessionId, userId });
+    const session = await ChatSession.findOne({ sessionId, userId: userObjectId });
 
     if (!session) {
       res.status(404).json({ error: 'Session not found' });
@@ -91,6 +94,7 @@ router.post(
 
     let { message, locale = 'en', sessionId } = req.body;
     const userId = req.user!.userId;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
     console.log(`📩 Chat request | User: ${userId} | Session: ${sessionId}`);
 
@@ -98,7 +102,7 @@ router.post(
       // --- A. LOAD VERIFIED HISTORY FROM DB (not client) ---
       // This prevents prompt injection attacks via manipulated conversationHistory
       let conversationHistory: { role: string; content: string }[] = [];
-      const existingSession = await ChatSession.findOne({ sessionId, userId });
+      const existingSession = await ChatSession.findOne({ sessionId, userId: userObjectId });
       const sessionDocuments = existingSession?.documents || [];
       if (existingSession && existingSession.messages.length > 0) {
         // Use last 20 messages from the trusted DB record (sliding window)
@@ -138,9 +142,9 @@ router.post(
 
       // --- E. SAVE TO MONGODB (User Scoped, strict userId match) ---
       const updatedSession = await ChatSession.findOneAndUpdate(
-        { sessionId, userId }, // ✅ Strict user-scoped session — prevents cross-user hijack
+        { sessionId, userId: userObjectId }, // ✅ Strict user-scoped session — prevents cross-user hijack
         {
-          $setOnInsert: { locale, userId },
+          $setOnInsert: { locale, userId: userObjectId },
           $push: {
             messages: [
               { role: 'user', content: message, timestamp: new Date() },
@@ -177,8 +181,9 @@ router.delete('/session/:sessionId', authMiddleware, async (req: Request, res: R
   try {
     const { sessionId } = req.params;
     const userId = req.user!.userId;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const result = await ChatSession.findOneAndDelete({ sessionId, userId });
+    const result = await ChatSession.findOneAndDelete({ sessionId, userId: userObjectId });
 
     if (!result) {
       return res.status(404).json({ error: 'Session not found or access denied' });
@@ -205,7 +210,7 @@ router.post('/feedback', authMiddleware, async (req: Request, res: Response) => 
 
     const feedback = new Feedback({
       sessionId,
-      userId,
+      userId: new mongoose.Types.ObjectId(userId),
       rating,
       messageId
     });

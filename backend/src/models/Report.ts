@@ -44,4 +44,7 @@ const ReportSchema: Schema = new Schema({
     date: { type: Date, default: Date.now }
 }, { timestamps: true });
 
+ReportSchema.index({ patientId: 1, date: -1 });
+ReportSchema.index({ patientId: 1, category: 1, date: -1 });
+
 export default mongoose.model<IReport>('Report', ReportSchema);

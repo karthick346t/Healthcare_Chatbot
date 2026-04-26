@@ -1,24 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose, { Schema } from 'mongoose';
-
-// ─────────────────────────────────────────────
-// Audit Log Model (inline — keeps middleware self-contained)
-// ─────────────────────────────────────────────
-const AuditLogSchema = new Schema({
-  userId:    { type: String, default: 'anonymous' },
-  method:    { type: String, required: true },
-  path:      { type: String, required: true },
-  status:    { type: Number },
-  ip:        { type: String },
-  userAgent: { type: String },
-  timestamp: { type: Date, default: Date.now },
-});
-
-// compound index for efficient lookups by user + time
-AuditLogSchema.index({ userId: 1, timestamp: -1 });
-
-const AuditLog = mongoose.models['AuditLog'] ||
-  mongoose.model('AuditLog', AuditLogSchema);
+import mongoose from 'mongoose';
+import AuditLog from '../models/AuditLog';
 
 // ─────────────────────────────────────────────
 // Middleware
@@ -35,7 +17,7 @@ export function auditLogger(req: Request, res: Response, next: NextFunction): vo
   // Capture status code after response finishes
   res.on('finish', () => {
     const entry = {
-      userId:    req.user?.userId ?? 'anonymous',
+      userId:    req.user?.userId ? new mongoose.Types.ObjectId(req.user.userId) : undefined,
       method:    req.method,
       path:      req.path,
       status:    res.statusCode,
