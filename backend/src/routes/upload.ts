@@ -328,7 +328,7 @@ router.post('/', authMiddleware, upload.single('file'), async (req: Request, res
     // --- 3. SAVE TO DB (Chat History) ---
     if (sessionId) {
       await ChatSession.findOneAndUpdate(
-        { sessionId },
+        { sessionId, userId },
         {
           $setOnInsert: { locale, userId }, // ✅ Ensure userId is set
           $push: {

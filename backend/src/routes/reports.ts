@@ -14,6 +14,14 @@ router.use(authMiddleware);
 router.get('/patient/:patientId', async (req: any, res: Response) => {
     try {
         const { patientId } = req.params;
+        const userId = req.user?.userId;
+        const userRole = req.user?.role;
+
+        // Only admins can fetch another patient's reports.
+        if (userRole !== 'admin' && patientId !== userId) {
+            return res.status(403).json({ message: 'Access denied. Unauthorized patient report access.' });
+        }
+
         const reports = await Report.find({ patientId }).sort({ date: -1 });
         res.json(reports);
     } catch (error: any) {
